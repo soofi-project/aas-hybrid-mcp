@@ -1,0 +1,383 @@
+name: aas-hybrid-mcp
+
+networks:
+  aas-network:
+    driver: bridge
+
+services:
+
+  ########### Kafka ###################################################################
+
+  kafka:
+    image: confluentinc/cp-kafka:${KAFKA_VERSION}
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTER_BROKER://kafka:9094,PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTER_BROKER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTER_BROKER://:9094,CONTROLLER://:9095,PLAINTEXT://:9092,EXTERNAL://:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTER_BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_BROKER_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9095
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: jmpccZs2RHaYUbZ-LgaIhQ
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 10485760
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 10485760
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/kafka/9092"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - aas-network
+
+  ########### MongoDB ###################################################################
+
+  mongo:
+    image: mongo:${MONGODB_VERSION}
+    hostname: mongo
+    container_name: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoAdmin
+      MONGO_INITDB_ROOT_PASSWORD: mongoPassword
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "mongodb://mongoAdmin:mongoPassword@localhost:27017/admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    networks:
+      - aas-network
+
+  ########### BaSyx Components ###################################################################
+
+  aas-registry:
+    image: eclipsebasyx/aas-registry-log-mongodb:${BASYX_V3_VERSION}
+    container_name: aas-registry
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - aas-network
+
+  submodel-registry:
+    image: eclipsebasyx/submodel-registry-log-mongodb:${BASYX_V3_VERSION}
+    container_name: submodel-registry
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - aas-network
+
+  aas-discovery:
+    image: eclipsebasyx/aas-discovery:${BASYX_V3_VERSION}
+    container_name: aas-discovery
+    restart: unless-stopped
+    ports:
+      - "9100:8081"
+    environment:
+      BASYX_BACKEND: MongoDB
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+      SPRING_DATA_MONGODB_DATABASE: aas-env
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - aas-network
+
+  aas-environment:
+    image: eclipsebasyx/aas-environment:${BASYX_V3_VERSION}
+    container_name: aas-environment
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      BASYX_BACKEND: MongoDB
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+      SPRING_DATA_MONGODB_DATABASE: aas-env
+      BASYX_FEATURE_KAFKA_ENABLED: true
+      BASYX_AASREPOSITORY_FEATURE_DISCOVERYINTEGRATION: http://aas-discovery:8081
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      BASYX_AASREPOSITORY_FEATURE_REGISTRYINTEGRATION: http://aas-registry:8080
+      BASYX_SUBMODELREPOSITORY_FEATURE_REGISTRYINTEGRATION: http://submodel-registry:8080
+      BASYX_AASREPOSITORY_FEATURE_AASXUPLOAD_ENABLED: "true"
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_ENVIRONMENT: file:/application/files/aasx/
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      BASYX_EXTERNALURL: http://localhost:8081,http://aas-environment:8081,http://host.docker.internal:8081
+      SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_REQUEST_SIZE: 10485760
+    volumes:
+      - ./aasx/:/application/files/aasx/
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      aas-registry:
+        condition: service_healthy
+      submodel-registry:
+        condition: service_healthy
+      aas-discovery:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "http://localhost:8081/actuator/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 3600s
+    networks:
+      - aas-network
+
+  ########### Kafka Connect — RAG (HTTP Sink) ############################################
+
+  kafka-connect-rag:
+    image: aas-hybrid-mcp-kafka-connect-rag:${KAFKA_VERSION}-${RAG_CONNECT_VERSION}
+    container_name: kafka-connect-rag
+    restart: unless-stopped
+    build:
+      context: kafka-connect-rag
+    pull_policy: never
+    ports:
+      - "8085:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-rag"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect=INFO"
+      BASYX_AAS_REPO_URL: http://aas-environment:8081
+      BASYX_SM_REPO_URL: http://aas-environment:8081
+    depends_on:
+      kafka:
+        condition: service_healthy
+      aas-environment:
+        condition: service_healthy
+    volumes:
+      - ./kafka-connect-rag/config/http-sink-connector.json:/etc/kafka-connect/config/http-sink-connector.json
+      - ./kafka-connect-rag/scripts/entrypoint.sh:/etc/basyx/entrypoint.sh
+      - ./logs:/tmp/kafka-logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - aas-network
+
+  ########### Kafka Connect — Neo4j (pre-built image) ####################################
+
+  kafka-connect-neo4j:
+    image: dfkibasys/aas-neo4j-kafka-connect-plugin:${NEO4J_KAFKA_CONNECT_VERSION}
+    container_name: kafka-connect-neo4j
+    restart: unless-stopped
+    ports:
+      - "8084:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-neo4j"
+      CONNECT_LOG4J_LOGGERS: "de.dfki.cos=INFO,org.apache.kafka.connect=ERROR,org.apache.kafka.connect.runtime=WARN,io.pebbletemplates.pebble=ERROR"
+      BASYX_AAS_REPO_URL: http://aas-environment:8081
+      BASYX_NEO4J_TARGET_URL: http://neo4j:7474/db/neo4j/tx/commit
+      CONNECT_CONSUMER_POLL_INTERVAL_MS: "100"
+      CONNECT_CONSUMER_FETCH_MAX_WAIT_MS: "50"
+      CONNECT_CONSUMER_FETCH_MIN_BYTES: "1"
+      CONNECT_CONSUMER_MAX_POLL_RECORDS: "500"
+      CONNECT_CONSUMER_OVERRIDE_SESSION_TIMEOUT:MS: "30000"
+      CONNECT_CONSUMER_OVERRIDE_MAX_POLL_INTERVAL_MS: "600000"
+      CONNECT_CONSUMER_OVERRIDE_HEARTBEAT_INTERVAL_MS: "3000"
+    depends_on:
+      kafka:
+        condition: service_started
+      neo4j:
+        condition: service_healthy
+    networks:
+      - aas-network
+
+  ########### Management UIs ###########################################################
+
+  akhq:
+    image: tchiotludo/akhq:${AKHQ_VERSION}
+    container_name: akhq
+    restart: unless-stopped
+    ports:
+      - "8086:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:9092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - aas-network
+
+  aas-gui:
+    image: eclipsebasyx/aas-gui:${AAS_WEBUI_VERSION}
+    container_name: aas-gui
+    restart: unless-stopped
+    ports:
+      - "8099:3000"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      AAS_DISCOVERY_PATH: http://localhost:9100
+      AAS_REGISTRY_PATH: http://localhost:8083
+      SUBMODEL_REGISTRY_PATH: http://localhost:8082
+      AAS_REPO_PATH: http://localhost:8081/shells
+      SUBMODEL_REPO_PATH: http://localhost:8081/submodels
+      CD_REPO_PATH: http://localhost:8081/concept-descriptions
+    depends_on:
+      aas-registry:
+        condition: service_healthy
+      submodel-registry:
+        condition: service_healthy
+      aas-environment:
+        condition: service_healthy
+    networks:
+      - aas-network
+
+  ########### Neo4j ####################################################################
+
+  neo4j:
+    image: dfki-neo4j:5.26.8-community-bullseye-apoc
+    build:
+      context: neo4j
+    container_name: neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: none
+      NEO4J_dbms_memory_heap_max__size: 8G
+      NEO4J_dbms_memory_pagecache_size: 4G
+    healthcheck:
+      test: ["CMD", "cypher-shell", "RETURN 1"]
+      interval: 30s
+      start_period: 8s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aas-network
+
+  ########### Weaviate #################################################################
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:${WEAVIATE_VERSION}
+    container_name: weaviate
+    restart: unless-stopped
+    ports:
+      - "8070:8080"
+      - "50051:50051"
+    volumes:
+      - weaviate_content:/var/lib/weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "none"
+      CLUSTER_HOSTNAME: "node1"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aas-network
+
+  ########### Embedding Service ########################################################
+
+  embedding-service:
+    build:
+      context: ./embedding-service
+      args:
+        VARIANT: ${EMBEDDING_VARIANT}
+    container_name: embedding-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.embedding
+      - ${SECRETS_PATH}
+    environment:
+      - WEAVIATE_HOST=weaviate
+      - BASYX_SUBMODEL_REPO=http://aas-environment:8081
+    depends_on:
+      - weaviate
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
+        reservations:
+          memory: 2048M
+    networks:
+      - aas-network
+
+  ########### MCP Inspector ############################################################
+
+  mcp-inspector:
+    image: ghcr.io/modelcontextprotocol/inspector:${MCPINSPECTOR_VERSION}
+    container_name: mcp-inspector
+    restart: unless-stopped
+    ports:
+      - "6274:6274"
+      - "6277:6277"
+    environment:
+      HOST: "0.0.0.0"
+      MCP_PROXY_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      MCP_AUTO_OPEN_ENABLED: "false"
+    networks:
+      - aas-network
+
+volumes:
+  weaviate_content:

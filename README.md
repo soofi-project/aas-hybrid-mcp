@@ -1,93 +1,143 @@
 # AAS Hybrid MCP
 
+A hybrid MCP (Model Context Protocol) server that combines Neo4j graph queries and Weaviate vector search for Asset Administration Shell (AAS) environments.
 
+The server enables AI agents to explore AAS structures via Cypher queries against a Neo4j knowledge graph and to search PDF documents embedded in Weaviate — including automatic graph traversal from AAS to linked documents.
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Architecture
 
 ```
-cd existing_repo
-git remote add origin https://mrk40.dfki.de/soofi/aas-hybrid-mcp.git
-git branch -M main
-git push -uf origin main
+                  +-----------+
+                  | BaSyx AAS |
+                  | Environment|
+                  +-----+-----+
+                        |
+                   Kafka Events
+                   /         \
+                  v           v
+  +---------------+   +------------------+
+  | kafka-connect |   | kafka-connect    |
+  | neo4j         |   | rag (HTTP Sink)  |
+  +-------+-------+   +--------+---------+
+          |                     |
+          v                     v
+     +--------+        +-----------------+
+     | Neo4j  |        | embedding-      |
+     | (Graph)|        | service (Flask) |
+     +--------+        +--------+--------+
+          |                     |
+          |                     v
+          |              +-----------+
+          |              | Weaviate  |
+          |              | (Vectors) |
+          |              +-----------+
+          |                     |
+          +----------+----------+
+                     |
+              +------+-------+
+              | aas-hybrid-  |
+              | mcp (Server) |
+              +--------------+
 ```
 
-## Integrate with your tools
+**Data flow:** BaSyx publishes AAS/Submodel events to Kafka. Two Kafka Connect instances consume these events — one builds a Neo4j graph (structure), the other triggers the embedding service which extracts PDF text, chunks it, and stores vectors in Weaviate. The hybrid MCP server queries both databases.
 
-* [Set up project integrations](https://mrk40.dfki.de/soofi/aas-hybrid-mcp/-/settings/integrations)
+## Prerequisites
 
-## Collaborate with your team
+- Docker and Docker Compose
+- API key for the configured embedding provider (see [Embedding Configuration](#embedding-configuration))
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Quickstart
 
-## Test and Deploy
+```bash
+# 1. Create your secrets file
+cp .env.secrets.example ~/.env.secrets
+# Edit ~/.env.secrets and add your API key(s)
 
-Use the built-in continuous integration in GitLab.
+# 2. Start the stack
+./up.sh
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+# 3. First time: build images
+./up.sh --build
 
-***
+# 4. Stop
+./down.sh
 
-# Editing this README
+# 5. Stop and wipe all data (volumes)
+./down.sh --clean
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Services
 
-## Suggestions for a good README
+| Service | Port | Description |
+|---|---|---|
+| AAS GUI | [localhost:8099](http://localhost:8099) | BaSyx Web UI |
+| AAS Environment | [localhost:8081](http://localhost:8081) | AAS/Submodel Repository (MongoDB-backed) |
+| AAS Registry | [localhost:8083](http://localhost:8083) | AAS Registry |
+| Submodel Registry | [localhost:8082](http://localhost:8082) | Submodel Registry |
+| AAS Discovery | [localhost:9100](http://localhost:9100) | AAS Discovery |
+| Neo4j Browser | [localhost:7474](http://localhost:7474) | Graph database UI |
+| Neo4j Bolt | localhost:7687 | Neo4j driver protocol |
+| Weaviate | [localhost:8070](http://localhost:8070) | Vector database HTTP API |
+| Weaviate gRPC | localhost:50051 | Vector database gRPC API |
+| Embedding Service | [localhost:8000](http://localhost:8000/health) | PDF ingestion service |
+| AKHQ | [localhost:8086](http://localhost:8086) | Kafka management UI |
+| Kafka (external) | localhost:9093 | Kafka broker |
+| Kafka Connect Neo4j | localhost:8084 | Neo4j connector REST API |
+| Kafka Connect RAG | localhost:8085 | HTTP Sink connector REST API |
+| **AAS Hybrid MCP** | **localhost:8110** | **Hybrid MCP Server (Phase 2)** |
+| MCP Inspector | [localhost:6274](http://localhost:6274) | MCP debugging tool |
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Embedding Configuration
 
-## Name
-Choose a self-explaining name for your project.
+The embedding model is configured in `.env.embedding` and shared between the embedding service and the MCP server. Both **must** use the same model — vectors from different models are incompatible.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+# .env.embedding
+EMBEDDING_MODEL=openai:text-embedding-3-small
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Supported providers:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+| Provider | Example | API Key Variable |
+|---|---|---|
+| OpenAI | `openai:text-embedding-3-small` | `OPENAI_API_KEY` |
+| Ollama (local) | `ollama:nomic-embed-text` | none |
+| Google GenAI | `google_genai:text-embedding-004` | `GOOGLE_API_KEY` |
+| Voyage AI | `voyageai:voyage-3` | `VOYAGE_API_KEY` |
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+API keys go into `~/.env.secrets` (outside the repo, referenced via `SECRETS_PATH` in `.env`).
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## PDF Processing Variants
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+The embedding service has two PDF backends, controlled via `EMBEDDING_VARIANT` in `.env`:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+| Variant | Backend | Image Size | Best for |
+|---|---|---|---|
+| `fast` (default) | pymupdf4llm | ~50 MB | Well-structured PDFs, fast builds |
+| `precise` | docling (ML) | ~3 GB | Complex layouts, tables without lines, future image extraction |
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Rebuild after changing: `./up.sh --build`
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Project Structure
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```
+aas-hybrid-mcp/
+├── mcp-server/              # Hybrid MCP Server (Python/FastMCP)
+│   └── src/aas_hybrid_mcp/
+├── embedding-service/       # PDF ingestion: Kafka events -> Weaviate
+├── kafka-connect-rag/       # HTTP Sink Kafka Connect (sends events to embedding-service)
+├── neo4j/                   # Custom Neo4j image with APOC plugin
+├── aasx/                    # Test AASX files
+├── docker-compose.yml
+├── .env                     # Version pins
+├── .env.embedding           # Embedding model configuration
+├── up.sh / down.sh          # Stack management scripts
+└── CLAUDE.md
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+The Neo4j Kafka Connect plugin is used as a pre-built Docker image (`dfkibasys/aas-neo4j-kafka-connect-plugin`) — no Java code in this repo.
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+MIT — DFKI GmbH
