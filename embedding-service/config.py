@@ -20,6 +20,9 @@ CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "150"))
 EMBEDDING_BATCH_SIZE: int = int(os.getenv("EMBEDDING_BATCH_SIZE", "100"))
 DOWNLOAD_TIMEOUT: int = int(os.getenv("DOWNLOAD_TIMEOUT", "30"))
 
+# Error handling: "abort" = retry all failures, "skip" = log permanent errors and continue
+ON_PROCESSING_ERROR: str = os.getenv("ON_PROCESSING_ERROR", "abort")
+
 # Flask
 FLASK_PORT: int = int(os.getenv("FLASK_PORT", "8000"))
 

@@ -4,11 +4,20 @@ import base64
 import logging
 from collections import deque
 
+import requests
+
 from config import BASYX_SUBMODEL_REPO
 from pdf import chunk_text, compute_embeddings, convert_pdf_to_markdown, download_pdf
 from vectorstore import delete_documents, insert_chunks
 
 log = logging.getLogger(__name__)
+
+
+class PermanentProcessingError(Exception):
+    """Raised when an event cannot be processed regardless of retries.
+
+    Examples: corrupt PDF, 404 from BaSyx, no text extracted.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -102,7 +111,14 @@ def _ingest_pdf(
     submodel_id: str,
     sm_element_path: str | None = None,
 ) -> None:
-    """Download a PDF, convert, chunk, embed, and store in Weaviate."""
+    """Download a PDF, convert, chunk, embed, and store in Weaviate.
+
+    Raises:
+        PermanentProcessingError: PDF cannot be processed (corrupt, 404, no text).
+            Will not succeed on retry.
+        Exception: Transient errors (network timeout, service down) bubble up
+            unchanged — caller decides whether to retry.
+    """
     resolved_url = _resolve_pdf_url(url, submodel_id, id_short)
     source = _source_name(resolved_url)
 
@@ -111,13 +127,28 @@ def _ingest_pdf(
         id_short, submodel_id, resolved_url,
     )
 
-    pdf_bytes = download_pdf(resolved_url)
-    markdown = convert_pdf_to_markdown(pdf_bytes)
+    try:
+        pdf_bytes = download_pdf(resolved_url)
+    except requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code in (404, 410):
+            raise PermanentProcessingError(
+                f"PDF not found at {resolved_url} (HTTP {exc.response.status_code})"
+            ) from exc
+        raise  # other HTTP errors (5xx, 429) are transient
+
+    try:
+        markdown = convert_pdf_to_markdown(pdf_bytes)
+    except Exception as exc:
+        raise PermanentProcessingError(
+            f"Failed to convert PDF {source}: {exc}"
+        ) from exc
+
     texts = chunk_text(markdown)
 
     if not texts or all(not t.strip() for t in texts):
-        log.warning("No text extracted from PDF %s — skipping", source)
-        return
+        raise PermanentProcessingError(
+            f"No text extracted from PDF {source}"
+        )
 
     vectors = compute_embeddings(texts)
 
