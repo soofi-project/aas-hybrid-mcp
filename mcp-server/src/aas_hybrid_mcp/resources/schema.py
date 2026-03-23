@@ -1,6 +1,6 @@
 """MCP resource: AAS graph schema documentation."""
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 _GRAPH_SCHEMA = """\
 # AAS Neo4j Graph Schema

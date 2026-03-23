@@ -36,11 +36,15 @@ COPY pyproject.toml .
 RUN pip install --no-cache-dir --prefix=/install ".[fast]"
 
 # ---------------------------------------------------------------------------
-# Final image: pick the variant
+# Variant selector: resolve build arg to a concrete stage
+# ---------------------------------------------------------------------------
+ARG VARIANT=fast
+FROM builder-${VARIANT} AS selected-builder
+
+# ---------------------------------------------------------------------------
+# Final image
 # ---------------------------------------------------------------------------
 FROM python:3.11-slim
-
-ARG VARIANT=fast
 
 RUN apt-get update && apt-get install -y \
     libgl1 \
@@ -51,7 +55,7 @@ RUN useradd --create-home appuser
 USER appuser
 WORKDIR /app
 
-COPY --from=builder-${VARIANT} /install /usr/local
+COPY --from=selected-builder /install /usr/local
 COPY app.py config.py handlers.py pdf.py vectorstore.py ./
 
 EXPOSE 8000

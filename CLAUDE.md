@@ -35,17 +35,19 @@ Infrastructure stack without MCP server.
 
 ### Phase 2: Minimal MCP Server with Cypher Tool ✅
 - `query_aas_graph` tool — Cypher queries against Neo4j with read-only enforcement
-- `get_aas_graph_schema` tool — dynamic schema discovery from Neo4j
 - `aas://schema/graph` resource — complete AAS graph schema documentation (derived from Kafka Connect plugin source)
-- Dockerfile, docker-compose service on port 8110
+- Dockerfile, docker-compose service on port 8110, streamable-http via fastmcp + uvicorn
 
 ### Phase 3: ~~Schema Tool~~ (merged into Phase 2)
 
-### Phase 4: Weaviate Client and Document Search
-`search_aas_documents` with direct submodel_id-based vector search.
+### Phase 4: Weaviate Client and Document Search ✅
+- `search_aas_documents` tool — semantic vector search over ingested PDF documents
+- Optional `submodel_id` filter (LLM discovers IDs via `query_aas_graph`, then scopes search)
+- Sync Weaviate client with langchain query embeddings (same model as embedding-service)
+- Shared `.env.embedding` ensures vector compatibility between services
 
-### Phase 5: Hybrid Document Search
-Core feature — `aas_id` parameter triggers automatic graph traversal (AAS → Submodels → Files) then vector search across all found documents.
+### Phase 5: ~~Hybrid Document Search~~ (merged into Phase 4)
+LLM orchestrates graph traversal + document search itself using the two tools — no need for automatic traversal logic.
 
 ### Phase 6: MCP Resources and IDTA Submodel Templates
 - `aas://schema/graph` resource (already done in Phase 2)

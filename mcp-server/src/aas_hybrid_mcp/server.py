@@ -2,24 +2,27 @@
 
 import logging
 
-from mcp.server.fastmcp import FastMCP
+import uvicorn
+from fastmcp import FastMCP
 
 from aas_hybrid_mcp.resources import schema
-from aas_hybrid_mcp.tools import cypher_query
+from aas_hybrid_mcp.tools import cypher_query, document_search
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
-mcp = FastMCP("AAS Hybrid MCP", host="0.0.0.0", port=8110)
+mcp = FastMCP("AAS Hybrid MCP")
 
 cypher_query.register(mcp)
+document_search.register(mcp)
 schema.register(mcp)
 
 
 def main():
-    mcp.run(transport="sse")
+    app = mcp.http_app()
+    uvicorn.run(app, host="0.0.0.0", port=8110)
 
 
 if __name__ == "__main__":
