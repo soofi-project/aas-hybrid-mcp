@@ -22,6 +22,7 @@ WEAVIATE_HOST: str = os.getenv("WEAVIATE_HOST", "weaviate")
 WEAVIATE_HTTP_PORT: int = int(os.getenv("WEAVIATE_PORT", "8080"))
 WEAVIATE_GRPC_PORT: int = int(os.getenv("WEAVIATE_GRPC_PORT", "50051"))
 WEAVIATE_COLLECTION: str = os.getenv("WEAVIATE_COLLECTION", "aas_documents")
+IDTA_TEMPLATE_COLLECTION: str = "IdtaTemplateSpec"
 
 # ---------------------------------------------------------------------------
 # Embedding model (lazy singleton)
@@ -167,6 +168,67 @@ async def search(
         _search_sync,
         query,
         submodel_id=submodel_id,
+        limit=limit,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Template search (sync — called via asyncio.to_thread from MCP tools)
+# ---------------------------------------------------------------------------
+
+
+def _search_templates_sync(
+    query: str,
+    *,
+    template_name: str | None = None,
+    limit: int = 5,
+) -> list[dict]:
+    """Compute query embedding and run a near_vector search on IdtaTemplateSpec."""
+    client = _get_client()
+
+    if not client.collections.exists(IDTA_TEMPLATE_COLLECTION):
+        return []
+
+    model = _get_embedding_model()
+    vector = model.embed_query(query)
+
+    collection = client.collections.get(IDTA_TEMPLATE_COLLECTION)
+
+    filters = None
+    if template_name:
+        filters = wvq.Filter.by_property("templateName").equal(template_name)
+
+    response = collection.query.near_vector(
+        near_vector=vector,
+        limit=limit,
+        filters=filters,
+        return_metadata=wvq.MetadataQuery(distance=True),
+    )
+
+    return [
+        {
+            "text": obj.properties.get("text", ""),
+            "templateName": obj.properties.get("templateName", ""),
+            "pdfSource": obj.properties.get("pdfSource", ""),
+            "version": obj.properties.get("version", ""),
+            "semanticId": obj.properties.get("semanticId", ""),
+            "score": 1 - (obj.metadata.distance or 0),
+        }
+        for obj in response.objects
+    ]
+
+
+async def search_templates(
+    query: str,
+    *,
+    template_name: str | None = None,
+    limit: int = 5,
+) -> list[dict]:
+    """Async wrapper — runs the sync template search in a thread pool."""
+    return await asyncio.to_thread(
+        _search_templates_sync,
+        query,
+        template_name=template_name,
         limit=limit,
     )
 

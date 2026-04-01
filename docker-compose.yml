@@ -335,6 +335,27 @@ services:
     networks:
       - aas-network
 
+  ########### Submodel Templates Sync (init container) ##################################
+
+  submodel-templates-sync:
+    build:
+      context: ./submodel-templates-sync
+    container_name: submodel-templates-sync
+    restart: "no"
+    env_file:
+      - .env.embedding
+      - ${SECRETS_PATH}
+    environment:
+      WEAVIATE_HOST: weaviate
+      TEMPLATES_OUTPUT_DIR: /data/templates
+    volumes:
+      - template_data:/data/templates
+    depends_on:
+      weaviate:
+        condition: service_healthy
+    networks:
+      - aas-network
+
   ########### Embedding Service ########################################################
 
   embedding-service:
@@ -379,10 +400,71 @@ services:
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_DATABASE: neo4j
       WEAVIATE_HOST: weaviate
+      TEMPLATES_DIR: /data/templates
+    volumes:
+      - template_data:/data/templates:ro
     depends_on:
       neo4j:
         condition: service_healthy
       weaviate:
+        condition: service_healthy
+      submodel-templates-sync:
+        condition: service_completed_successfully
+    networks:
+      - aas-network
+
+  ########### Open WebUI ##################################################################
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v${OPEN_WEBUI_VERSION}
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    env_file:
+      - ${SECRETS_PATH}
+    environment:
+      WEBUI_AUTH: "true"
+      WEBUI_SECRET_KEY: aas-hybrid-mcp-dev-key
+      WEBUI_ADMIN_EMAIL: ${OPEN_WEBUI_EMAIL}
+      WEBUI_ADMIN_PASSWORD: ${OPEN_WEBUI_PASSWORD}
+      ENABLE_SIGNUP: "false"
+      OFFLINE_MODE: "true"
+      RAG_EMBEDDING_MODEL_AUTO_UPDATE: "false"
+      RAG_RERANKING_MODEL_AUTO_UPDATE: "false"
+      #OLLAMA_BASE_URL: http://host.docker.internal:11434
+      ENABLE_OLLAMA_API: "false"
+      ENABLE_OPENAI_API: "true"
+      DEFAULT_MODELS: "aas-assistant"
+    #  OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://10.2.10.33:8000/v1"
+    #  OPENAI_API_KEYS: "${OPENAI_API_KEY};no-key"
+      TOOL_SERVER_CONNECTIONS: '[{"url":"http://aas-hybrid-mcp:8110/mcp/","type":"mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"aas-hybrid-mcp","name":"AAS Hybrid MCP","description":"Neo4j graph queries, Weaviate document search, and IDTA template search for Asset Administration Shells"}}]'
+    volumes:
+      - open_webui_data:/app/backend/data
+    depends_on:
+      aas-hybrid-mcp:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:8080/health | jq -e '.status == true'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    networks:
+      - aas-network
+
+  ########### Open WebUI Model Seed (init container) ######################################
+
+  open-webui-seed:
+    build:
+      context: ./open-webui
+    container_name: open-webui-seed
+    restart: "no"
+    environment:
+      SEED_EMAIL:  ${OPEN_WEBUI_EMAIL}
+      SEED_PASSWORD: ${OPEN_WEBUI_PASSWORD}
+    depends_on:
+      open-webui:
         condition: service_healthy
     networks:
       - aas-network
@@ -400,8 +482,16 @@ services:
       HOST: "0.0.0.0"
       MCP_PROXY_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
       MCP_AUTO_OPEN_ENABLED: "false"
+    depends_on:
+      # Anchor for docker compose up --wait: ensures one-shot init containers
+      # (open-webui-seed, submodel-templates-sync) have completed before the
+      # stack is considered ready.
+      open-webui-seed:
+        condition: service_completed_successfully
     networks:
       - aas-network
 
 volumes:
   weaviate_content:
+  template_data:
+  open_webui_data:

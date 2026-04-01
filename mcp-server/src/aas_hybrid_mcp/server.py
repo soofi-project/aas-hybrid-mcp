@@ -5,8 +5,8 @@ import logging
 import uvicorn
 from fastmcp import FastMCP
 
-from aas_hybrid_mcp.resources import schema
-from aas_hybrid_mcp.tools import cypher_query, document_search
+from aas_hybrid_mcp.resources import schema, templates
+from aas_hybrid_mcp.tools import cypher_query, document_search, template_search
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,7 +17,9 @@ mcp = FastMCP("AAS Hybrid MCP")
 
 cypher_query.register(mcp)
 document_search.register(mcp)
+template_search.register(mcp)
 schema.register(mcp)
+templates.register(mcp)
 
 
 def main():

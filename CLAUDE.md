@@ -8,10 +8,11 @@ AAS Hybrid MCP — a hybrid MCP server combining Neo4j graph queries and Weaviat
 
 ## Tech Stack
 
-- **MCP Server:** Python with FastMCP SDK (SSE transport), port 8110
+- **MCP Server:** Python with FastMCP SDK (streamable-http transport), port 8110
 - **Neo4j:** Read-only Cypher queries via async driver
 - **Weaviate:** Hybrid search (keyword + vector) with langchain embeddings
 - **Embedding Service:** Flask/gunicorn, PDF ingestion via Kafka events
+- **Open WebUI:** Chat frontend with native MCP tool server integration (streamable-http)
 - **Infrastructure:** Docker Compose, single bridge network (`aas-network`), BaSyx AAS with MongoDB backend
 - **GPU (optional):** NVIDIA H200 with Triton Inference Server for layout analysis, OCR, VLM, and embeddings
 
@@ -49,18 +50,51 @@ Infrastructure stack without MCP server.
 ### Phase 5: ~~Hybrid Document Search~~ (merged into Phase 4)
 LLM orchestrates graph traversal + document search itself using the two tools — no need for automatic traversal logic.
 
-### Phase 6: MCP Resources and IDTA Submodel Templates
+### Phase 6: MCP Resources, IDTA Submodel Templates, and Open WebUI ✅
 - `aas://schema/graph` resource (already done in Phase 2)
 - **IDTA Submodel Template integration:**
   - Init container (`submodel-templates-sync`) clones https://github.com/admin-shell-io/submodel-templates
-  - Shares volume with MCP server and embedding service
+  - Repo structure: `published/<Name>/<Major>/<Minor>/[<Patch>/]` — numeric dirs, PDFs fall back to parent level if absent at patch level
+  - Idempotent: stores repo HEAD SHA in Weaviate `SyncMetadata` collection, skips re-ingestion on unchanged repo
+  - Shares `template_data` volume with MCP server (read-only)
   - **Structured index resource** `aas://templates/index` — generated from template JSONs (name, semanticId, description per template)
   - **Per-template resource** `aas://template/{name}` — element structure extracted from JSON (modelType, idShort, semanticId, nesting)
-  - **Semantic search over spec PDFs** — init container pushes IDTA spec PDFs into embedding service → separate Weaviate collection (`IdtaTemplateSpec`)
-  - **MCP tool** `search_idta_templates(query)` — vector search over template specifications, for questions like "is there a template for safety certificates?" or "how to store handover documentation?"
+  - **Semantic search over spec PDFs** — init container converts PDFs via pymupdf4llm, chunks, embeds, and inserts into separate Weaviate collection (`IdtaTemplateSpec`). ~43 PDFs, ~6200 chunks.
+  - **MCP tool** `search_idta_templates(query, template_name?, limit?)` — vector search over template specifications, for questions like "is there a template for safety certificates?" or "how to store handover documentation?"
   - ~45 published templates, auto-discovered from directory structure, latest version per template
+- **Open WebUI integration:**
+  - Chat frontend on port 8090 with MCP tool server connection via `TOOL_SERVER_CONNECTIONS` env var
+  - For `type: "mcp"`, Open WebUI uses `streamablehttp_client(url)` directly — the full MCP endpoint URL goes in `url`, not split across `url`+`path`
+  - Workspace model seeded via init container (`open-webui-seed`): signup/signin → model import API
+  - `DEFAULT_MODELS` env var pre-selects the AAS Assistant in new chats
+  - **Limitation:** Open WebUI v0.8.6 exposes MCP tools but not MCP resources to the LLM — resources require the LangGraph agent layer (Phase 7)
 
-### Phase 7 (Future): Image Extraction + MinIO
+### Phase 7: LangGraph Agent + Observability
+- **Architecture:** `Open WebUI (UI) → LangGraph Agent (orchestration) → MCP Server (tools + resources)`
+- **LangGraph agent container** (`aas-agent`) exposes OpenAI-compatible `/v1/chat/completions` endpoint
+  - Open WebUI talks to it like any OpenAI API — no MCP support in Open WebUI needed
+  - Agent connects to MCP server via streamable-http as MCP client
+- **Resource injection:** Agent loads `aas://schema/graph` into context automatically, not as tool call
+- **Workflow enforcement via LangGraph states:**
+  - Schema loaded → Graph query → Submodel ID extraction → Document search → Response
+  - Automatic retry/fallback: if one submodel returns no docs, try next with File elements
+  - Prevents common LLM mistakes (e.g. `Asset→Submodel` instead of `AAS→Submodel`)
+- **OpenTelemetry instrumentation:**
+  - Auto-instrumentation via `opentelemetry-instrument` (zero code changes)
+  - LangChain has native OTel integration — spans per tool call, LLM invocation, chain step
+  - Traces: which tools called, parameters, results, latency, errors
+- **Langfuse as OTel-compatible trace backend:**
+  - Aggregates traces, visualizes agent workflows, tracks success/error rates
+  - Enables analysis: "X% of graph queries fail because model uses wrong start node"
+- **Feedback loop (async, future):**
+  - Error pattern detection from Langfuse traces
+  - Automatic system prompt refinement based on observed failure modes
+  - Tool description optimization based on parameter error rates
+  - MCP endpoint adjustment (e.g. adding validation, rewriting descriptions)
+- **vLLM support:** Configurable LLM backend — OpenAI API, vLLM on H200, or Ollama
+  - `docker-compose.vllm.yml` overlay for GPU deployment with embedding + chat on H200
+
+### Phase 8 (Future): Image Extraction + MinIO
 - Extract images from PDFs (docling) → store on MinIO → reference in Weaviate metadata
 - Weaviate schema: `HandoverDocument` and `TechnicalImage` classes with cross-references
 - Each image gets two text layers:
@@ -69,7 +103,7 @@ LLM orchestrates graph traversal + document search itself using the two tools �
 - Hybrid search over both layers for exact terms + semantic concepts
 - Photo-based asset identification (camera photo → match stored images → identify AAS)
 
-### Phase 8 (Future): GPU/Triton Hybrid Dispatcher
+### Phase 9 (Future): GPU/Triton Hybrid Dispatcher
 - Per-page routing with PyMuPDF pre-flight check:
   - **Empty page check:** < 100 chars text but large file size → OCR needed → Triton
   - **Vector density:** > 500 graphic paths (get_drawings()) → complex drawings → Triton
@@ -78,7 +112,7 @@ LLM orchestrates graph traversal + document search itself using the two tools �
 - Configurable `ExtractionPolicy`: fast / precise / hybrid
 - Map extracted data to IDTA Teilmodell attributes (DocumentID, Status, Version)
 
-### Phase 9 (Future): Natural Language AAS Editor
+### Phase 10 (Future): Natural Language AAS Editor
 - Write access to BaSyx AAS API (create/update shells, submodels, elements)
 - **PDF-to-AAS workflow:** User uploads asset PDFs (datasheets, manuals, certificates) → agent extracts information → creates/updates AAS with correct IDTA submodel structure
 - Agent uses IDTA templates (from Phase 6) as structural guide for correct element placement
@@ -86,7 +120,7 @@ LLM orchestrates graph traversal + document search itself using the two tools �
 - MCP tools: `create_submodel`, `update_element`, `upload_document`
 - Conversational: user can refine, correct, add context in natural language
 
-### Phase 10 (Future/Research): Multimodal AAS Media Search
+### Phase 11 (Future/Research): Multimodal AAS Media Search
 - **Goal:** Bilder und Schulungsvideos aus der Verwaltungsschale in Weaviate aufnehmen und multimodal durchsuchbar machen
 - **Configurable:** Kafka Connect Sink konfigurierbar ob Medienverarbeitung aktiv (`MEDIA_PROCESSING_ENABLED`), da rechenintensiv und nicht für jeden Anwendungsfall nötig
 - **Bilder (direkt aus AAS):**
@@ -139,10 +173,11 @@ LLM orchestrates graph traversal + document search itself using the two tools �
 ### Our Differentiator
 Existing work falls into three categories: (1) batch AAS generation from text, (2) AAS as data source for RAG, (3) generic GraphRAG patterns. **None combines all three in a single interactive system.** Our approach is unique in:
 - **Hybrid MCP server** combining graph queries (Neo4j) + vector search (Weaviate) in one tool interface
-- **Conversational** via MCP — agent interactively queries, searches, and (Phase 9) creates/edits AAS
+- **Conversational** via MCP — agent interactively queries, searches, and (Phase 10) creates/edits AAS
 - **IDTA template awareness** — agent knows standardized submodel structures for correct element placement
 - **Kafka-driven knowledge graph** — live sync from BaSyx AAS environment, not static import
-- **Multimodal media search** (Phase 10) — Bilder und Videos aus der AAS via CLIP/Whisper/Reranker durchsuchbar, konfigurierbar über Kafka Connect
+- **LangGraph agent with OTel observability** (Phase 7) — enforced workflows, auto-injected resources, Langfuse trace analysis for async self-improvement
+- **Multimodal media search** (Phase 11) — Bilder und Videos aus der AAS via CLIP/Whisper/Reranker durchsuchbar, konfigurierbar über Kafka Connect
 
 ## AAS Neo4j Graph Schema
 
@@ -160,10 +195,21 @@ The graph is created by the Kafka Connect plugin (`dfkibasys/aas-neo4j-kafka-con
 aas-hybrid-mcp/
 ├── mcp-server/              # Hybrid MCP Server (Python/FastMCP)
 │   └── src/aas_hybrid_mcp/
-│       ├── server.py        # FastMCP entry point (SSE, port 8110)
+│       ├── server.py        # FastMCP entry point (streamable-http, port 8110)
 │       ├── neo4j_client.py  # Async Neo4j driver (read-only)
-│       ├── tools/           # MCP tools (cypher_query.py, document_search.py)
-│       └── resources/       # MCP resources (schema.py)
+│       ├── weaviate_client.py # Sync Weaviate client (aas_documents + IdtaTemplateSpec)
+│       ├── tools/           # MCP tools (cypher_query, document_search, template_search)
+│       └── resources/       # MCP resources (schema, templates)
+├── submodel-templates-sync/ # Init container: clone IDTA templates, extract JSON, ingest PDFs
+│   ├── main.py              # Discovery, extraction, chunking, embedding, Weaviate ingestion
+│   ├── Dockerfile           # Multi-stage (builder + runtime with git)
+│   └── pyproject.toml
+├── open-webui/              # Open WebUI configuration + seed init container
+│   ├── model.json           # Workspace model definition (seeded via API)
+│   ├── seed-model.sh        # Init script: signup/signin → model import
+│   ├── system-prompt.md     # AAS assistant system prompt
+│   └── Dockerfile           # Alpine + curl + jq for seeding
+├── aas-agent/               # (Phase 7) LangGraph agent with OpenAI-compatible API
 ├── embedding-service/       # PDF ingestion (flat layout, no src/)
 │   ├── app.py               # Flask routes
 │   ├── config.py            # ENV-based configuration
