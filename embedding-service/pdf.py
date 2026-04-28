@@ -1,9 +1,4 @@
-"""PDF download, conversion to markdown, chunking, and embedding.
-
-Supports two PDF backends (auto-detected at import time):
-- docling (full): ML-based, better table/layout recognition, ~3 GB
-- pymupdf4llm (light): rule-based, fast, ~50 MB
-"""
+"""PDF download, conversion to markdown, chunking, and embedding."""
 
 import logging
 import os
@@ -11,6 +6,9 @@ import tempfile
 from typing import Sequence
 
 import requests
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -24,35 +22,6 @@ from config import (
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# PDF backend auto-detection
-# ---------------------------------------------------------------------------
-
-_backend: str
-
-try:
-    from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.pipeline_options import PdfPipelineOptions
-    from docling.document_converter import DocumentConverter, PdfFormatOption
-
-    _backend = "precise"
-except ImportError:
-    try:
-        import pymupdf4llm
-
-        _backend = "fast"
-    except ImportError:
-        raise ImportError(
-            "No PDF backend found. Install either 'aas-embedding-service[precise]' "
-            "(docling) or 'aas-embedding-service[fast]' (pymupdf4llm)."
-        )
-
-log.info("PDF backend: %s", _backend)
-
-# ---------------------------------------------------------------------------
-# Embedding model (lazy)
-# ---------------------------------------------------------------------------
-
 _embedding_model = None
 
 
@@ -62,11 +31,6 @@ def _get_embedding_model():
     if _embedding_model is None:
         _embedding_model = get_embedding_model()
     return _embedding_model
-
-
-# ---------------------------------------------------------------------------
-# PDF operations
-# ---------------------------------------------------------------------------
 
 
 def download_pdf(url: str) -> bytes:
@@ -84,36 +48,23 @@ def _clean_text(text: str) -> str:
     return "".join(ch for ch in text if ch.isprintable() or ch in "\n\r\t")
 
 
-def _convert_with_docling(tmp_path: str) -> str:
-    """Convert PDF to markdown using docling (ML-based)."""
-    pipeline_options = PdfPipelineOptions()
-    pipeline_options.do_table_structure = True
-    pipeline_options.do_ocr = False
-    converter = DocumentConverter(
-        format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
-        }
-    )
-    result = converter.convert(tmp_path)
-    return result.document.export_to_markdown()
-
-
-def _convert_with_pymupdf(tmp_path: str) -> str:
-    """Convert PDF to markdown using pymupdf4llm (rule-based)."""
-    return pymupdf4llm.to_markdown(tmp_path)
-
-
 def convert_pdf_to_markdown(pdf_bytes: bytes) -> str:
-    """Convert PDF bytes to markdown using the available backend."""
+    """Convert PDF bytes to markdown using docling."""
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(pdf_bytes)
         tmp_path = tmp.name
 
     try:
-        if _backend == "precise":
-            return _convert_with_docling(tmp_path)
-        else:
-            return _convert_with_pymupdf(tmp_path)
+        pipeline_options = PdfPipelineOptions()
+        pipeline_options.do_table_structure = True
+        pipeline_options.do_ocr = False
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
+        result = converter.convert(tmp_path)
+        return result.document.export_to_markdown()
     finally:
         os.unlink(tmp_path)
 

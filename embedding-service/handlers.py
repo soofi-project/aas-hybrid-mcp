@@ -1,6 +1,7 @@
 """AAS event handlers — process Kafka events for PDF ingestion into Weaviate."""
 
 import base64
+import hashlib
 import logging
 from collections import deque
 
@@ -8,7 +9,7 @@ import requests
 
 from config import BASYX_SUBMODEL_REPO
 from pdf import chunk_text, compute_embeddings, convert_pdf_to_markdown, download_pdf
-from vectorstore import delete_documents, insert_chunks
+from vectorstore import delete_documents, has_chunks, insert_chunks
 
 log = logging.getLogger(__name__)
 
@@ -113,6 +114,12 @@ def _ingest_pdf(
 ) -> None:
     """Download a PDF, convert, chunk, embed, and store in Weaviate.
 
+    Idempotent: if chunks with the same content hash already exist for
+    (submodel_id, sm_element_path), the ingest is skipped after the
+    download + hash step, avoiding the expensive PDF conversion and
+    embedding work. Stale chunks from a previous version of the element
+    are removed before the fresh ingest.
+
     Raises:
         PermanentProcessingError: PDF cannot be processed (corrupt, 404, no text).
             Will not succeed on retry.
@@ -135,6 +142,19 @@ def _ingest_pdf(
                 f"PDF not found at {resolved_url} (HTTP {exc.response.status_code})"
             ) from exc
         raise  # other HTTP errors (5xx, 429) are transient
+
+    content_hash = hashlib.sha256(pdf_bytes).hexdigest()
+
+    if has_chunks(submodel_id, sm_element_path, content_hash):
+        log.info(
+            "Skipping ingest for idShort=%s submodel=%s — content unchanged (hash=%s)",
+            id_short, submodel_id, content_hash[:12],
+        )
+        return
+
+    # Content is new or changed — remove any stale chunks from the previous
+    # version of this element before writing the fresh ones.
+    delete_documents(submodel_id, sm_element_path)
 
     try:
         markdown = convert_pdf_to_markdown(pdf_bytes)
@@ -159,6 +179,7 @@ def _ingest_pdf(
         submodel_id=submodel_id,
         sm_element_path=sm_element_path,
         id_short=id_short,
+        content_hash=content_hash,
     )
 
 
@@ -218,15 +239,20 @@ def handle_create(event: dict) -> None:
 
 
 def handle_update(event: dict) -> None:
-    """Handle UPDATED events — delete old chunks, then re-ingest."""
+    """Handle UPDATED events.
+
+    Per-element updates delegate to ``_ingest_pdf``, which is itself
+    idempotent on the content hash and replaces stale chunks only when
+    the bytes actually differ. Whole-submodel updates still bulk-delete
+    first, because a removed PDF element would otherwise leave orphaned
+    chunks that no subsequent ``_ingest_pdf`` call would touch.
+    """
     submodel_id = event.get("id", "")
 
     if "smElement" in event:
         el = event["smElement"]
         if _is_pdf(el):
             id_short = el.get("idShort", "")
-            sm_element_path = event.get("smElementPath")
-            delete_documents(submodel_id, sm_element_path)
             path = AasPathBuilder(base_id_short_path=id_short)
             _ingest_pdf(
                 url=el.get("value", ""),

@@ -145,12 +145,27 @@ services:
       BASYX_SUBMODELREPOSITORY_FEATURE_REGISTRYINTEGRATION: http://submodel-registry:8080
       BASYX_AASREPOSITORY_FEATURE_AASXUPLOAD_ENABLED: "true"
       BASYX_CORS_ALLOWED_ORIGINS: "*"
-      BASYX_ENVIRONMENT: file:/application/files/aasx/
       BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      BASYX_ENVIRONMENT: file:/application/files/aasx/
       BASYX_EXTERNALURL: http://localhost:8081,http://aas-environment:8081,http://host.docker.internal:8081
       SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_REQUEST_SIZE: 10485760
     volumes:
-      - ./aasx/:/application/files/aasx/
+#      - ./aasx/:/application/files/aasx/
+      - ./aasx/vocabulary.aasx:/application/files/aasx/vocabulary.aasx
+      - ./aasx/Hall3.aasx:/application/files/aasx/Hall3.aasx
+      - ./aasx/Hall4.aasx:/application/files/aasx/Hall4.aasx
+      - ./aasx/MiR100_Type.aasx:/application/files/aasx/MiR100_Type.aasx
+      - ./aasx/MiR100_001.aasx:/application/files/aasx/MiR100_001.aasx
+      - ./aasx/MiR250_Type.aasx:/application/files/aasx/MiR250_Type.aasx
+      - ./aasx/MiR250_001.aasx:/application/files/aasx/MiR250_001.aasx
+      - ./aasx/UR3e_Type.aasx:/application/files/aasx/UR3e_Type.aasx
+      - ./aasx/UR3e_001.aasx:/application/files/aasx/UR3e_001.aasx
+      - ./aasx/UR3e_002.aasx:/application/files/aasx/UR3e_002.aasx
+      - ./aasx/UR20_Type.aasx:/application/files/aasx/UR20_Type.aasx
+      - ./aasx/UR20_001.aasx:/application/files/aasx/UR20_001.aasx
+      - ./aasx/CRX10iA_Type.aasx:/application/files/aasx/CRX10iA_Type.aasx
+      - ./aasx/CRX10iA_001.aasx:/application/files/aasx/CRX10iA_001.aasx
+
     depends_on:
       kafka:
         condition: service_healthy
@@ -361,8 +376,6 @@ services:
   embedding-service:
     build:
       context: ./embedding-service
-      args:
-        VARIANT: ${EMBEDDING_VARIANT}
     container_name: embedding-service
     restart: unless-stopped
     ports:
@@ -410,6 +423,46 @@ services:
         condition: service_healthy
       submodel-templates-sync:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8110"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - aas-network
+
+  ########### AAS Agent (LangGraph + OpenAI-compatible API) ################################
+
+  aas-agent:
+    build:
+      context: ./aas-agent
+    container_name: aas-agent
+    restart: unless-stopped
+    ports:
+      - "8120:8120"
+    env_file:
+      - ${SECRETS_PATH}
+    environment:
+      MCP_SERVER_URL: http://aas-hybrid-mcp:8110/mcp/
+      LLM_BASE_URL: https://api.openai.com/v1
+      LLM_MODEL: gpt-4o
+      LLM_API_KEY: ${OPENAI_API_KEY}
+      AGENT_SYSTEM_PROMPT_FILE: /app/system-prompt.md
+      OTEL_SERVICE_NAME: aas-agent
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://langfuse:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+    volumes:
+      - ./open-webui/system-prompt.md:/app/system-prompt.md:ro
+    depends_on:
+      aas-hybrid-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8120/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - aas-network
 
@@ -432,18 +485,18 @@ services:
       OFFLINE_MODE: "true"
       RAG_EMBEDDING_MODEL_AUTO_UPDATE: "false"
       RAG_RERANKING_MODEL_AUTO_UPDATE: "false"
-      #OLLAMA_BASE_URL: http://host.docker.internal:11434
       ENABLE_OLLAMA_API: "false"
       ENABLE_OPENAI_API: "true"
+      OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://aas-agent:8120/v1"
+      OPENAI_API_KEYS: "${OPENAI_API_KEY};no-key"
       DEFAULT_MODELS: "aas-assistant"
-    #  OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://10.2.10.33:8000/v1"
-    #  OPENAI_API_KEYS: "${OPENAI_API_KEY};no-key"
+      # Direct MCP still available for tools; agent adds resource access
       TOOL_SERVER_CONNECTIONS: '[{"url":"http://aas-hybrid-mcp:8110/mcp/","type":"mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"aas-hybrid-mcp","name":"AAS Hybrid MCP","description":"Neo4j graph queries, Weaviate document search, and IDTA template search for Asset Administration Shells"}}]'
     volumes:
       - open_webui_data:/app/backend/data
     depends_on:
-      aas-hybrid-mcp:
-        condition: service_started
+      aas-agent:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl --silent --fail http://localhost:8080/health | jq -e '.status == true'"]
       interval: 15s

@@ -53,6 +53,7 @@ def _ensure_collection(client: weaviate.WeaviateClient) -> None:
                 wvc.Property(name="submodelId", data_type=wvc.DataType.TEXT),
                 wvc.Property(name="smElementPath", data_type=wvc.DataType.TEXT),
                 wvc.Property(name="idShort", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="contentHash", data_type=wvc.DataType.TEXT),
             ],
         )
 
@@ -64,8 +65,14 @@ def insert_chunks(
     submodel_id: str,
     sm_element_path: str | None,
     id_short: str,
+    content_hash: str,
 ) -> None:
-    """Insert text chunks with pre-computed vectors into Weaviate."""
+    """Insert text chunks with pre-computed vectors into Weaviate.
+
+    All chunks from the same source document share the same ``content_hash``,
+    so ``has_chunks`` can answer *"is this exact document already ingested?"*
+    before the caller pays for PDF conversion and embedding.
+    """
     client = _get_client()
     _ensure_collection(client)
 
@@ -78,6 +85,7 @@ def insert_chunks(
                 "submodelId": submodel_id,
                 "smElementPath": sm_element_path or "",
                 "idShort": id_short,
+                "contentHash": content_hash,
             },
             vector=v,
         )
@@ -85,9 +93,35 @@ def insert_chunks(
     ]
     collection.data.insert_many(data_objects)
     log.info(
-        "Inserted %d chunks for submodel=%s idShort=%s",
-        len(data_objects), submodel_id, id_short,
+        "Inserted %d chunks for submodel=%s idShort=%s hash=%s",
+        len(data_objects), submodel_id, id_short, content_hash[:12],
     )
+
+
+def has_chunks(
+    submodel_id: str,
+    sm_element_path: str | None,
+    content_hash: str,
+) -> bool:
+    """Return True if chunks for this exact (element, content_hash) already exist.
+
+    Used to skip re-ingestion when an UPDATE event arrives but the document
+    bytes have not actually changed.
+    """
+    client = _get_client()
+
+    if not client.collections.exists(WEAVIATE_COLLECTION):
+        return False
+
+    collection = client.collections.get(WEAVIATE_COLLECTION)
+    where_filter = (
+        wvf.Filter.by_property("submodelId").equal(submodel_id)
+        & wvf.Filter.by_property("smElementPath").equal(sm_element_path or "")
+        & wvf.Filter.by_property("contentHash").equal(content_hash)
+    )
+
+    result = collection.query.fetch_objects(filters=where_filter, limit=1)
+    return len(result.objects) > 0
 
 
 def delete_documents(submodel_id: str, sm_element_path: str | None = None) -> None:
