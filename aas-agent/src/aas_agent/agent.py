@@ -2,6 +2,7 @@
 
 import json
 import logging
+from datetime import datetime, timezone
 from typing import AsyncIterator
 
 _TOOL_OUTPUT_CHARS = 500
@@ -127,8 +128,18 @@ class AgentRunner:
         return self._agent_thinking_on if thinking else self._agent_thinking_off
 
     def _to_langchain_messages(self, messages: list[dict]) -> list:
-        """Convert OpenAI-format messages to LangChain message objects."""
-        lc_messages = []
+        """Convert OpenAI-format messages to LangChain message objects.
+
+        Prepends a fresh ``SystemMessage`` with the current UTC time at every
+        invocation so the agent has a deterministic, sub-second-precise
+        timestamp for any AAS field that requires one (incident logs,
+        Service Request Notification ``StartOfFault``, …) without spending
+        a tool call to ask for it.
+        """
+        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        lc_messages: list = [
+            SystemMessage(content=f"Current UTC time: {now}")
+        ]
         for msg in messages:
             role = msg.get("role", "user")
             content = msg.get("content", "")

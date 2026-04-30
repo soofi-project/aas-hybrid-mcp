@@ -81,7 +81,7 @@ Keep the two evaluations cleanly separated to avoid misleading scale claims:
   - **CREATE-event buffering** (`MAX_BUFFER_BYTES = 40 MB`, `SAFETY_NODE_LIMIT = 20 000`) — many small events become one atomic transaction; UPDATE/DELETE still processed immediately for correctness
   - **Async ParameterModel building** in single-thread executor — `put()` returns without waiting; `flush()` synchronizes via `waitForModelBuilder()` before commit
   - **Chunked Cypher inserts** within a single transaction: `NODE_CHUNK_SIZE = 10 000`, `RELATION_CHUNK_SIZE = 50 000` — keeps individual statements within Neo4j parser limits while preserving atomicity via `executeWriteWithoutResult`
-  - **Full AAS metamodel coverage** — all 35 relationship types from `RelationLabel` enum; ETFA 2025 covered only a subset
+  - **Full AAS metamodel coverage** — all 34 relationship types from `RelationLabel` enum (down from 35 after Entity-statement consolidation under `HAS_ELEMENT`); ETFA 2025 covered only a subset
 - **Scale delta:** 50× jump (1k → 50k shells) is enabled by the architectural changes above, not by hardware; same commodity Neo4j instance
 - **Optional micro-benchmark:** old HTTP-Sink variant vs. new Bolt+buffered variant on the same 1k-shell workload — quantifies the per-event speedup directly (if the v1 image remains reproducible)
 
@@ -233,6 +233,7 @@ Current `aasx/` contains only two MiR100 shells (`mir100_0_aas`, `mir100_type_aa
 - **Kafka-Connect plugin extension required** — current plugin (`dfkibasys/aas-neo4j-kafka-connect-plugin`) does **not** ingest ConceptDescription nodes. Adding a `ConceptDescription` label + relations (`HAS_PREFERRED_NAME`, `HAS_DEFINITION`, `HAS_DATA_SPEC`, …) is the prerequisite for the lookup tool. Owned in the sibling repo `aas-repository-neo4j-kafka-plugin`.
 - **eCl@ss bulk import deferred** — eCl@ss BAP alone is ~50k properties. Pragmatic alternative: walk Neo4j, collect all distinct `semanticId` values currently referenced across the project's AAS, fetch CDs only for those (scales with the project, not with the standard). Bulk import only if a real query motivates it.
 - **Paper relevance:** strong follow-up-paper hook — orthogonal to Benchmark C (write-path eval) but thematically adjacent. Could form a single journal-length follow-up covering both write-eval and semantic-layer eval. For ETFA 2026 itself: scoped as future work in the outlook section.
+- **Sibling axis — instance-value indexing (MLP-RAG):** Phase 12 above indexes the *schema vocabulary* (CDs explain what an IRDI means). A complementary surface indexes the *instance values* — embed the contents of MultiLanguageProperty / Property elements (e.g. „Maximale Nutzlast 100 kg" on the MiR100 Nameplate) into a separate Weaviate collection, each chunk carrying `submodel_id` + `idShortPath` metadata. Answers questions like „Wieviel kann der Roboter tragen?" via direct vector hit on the submodel value instead of full PDF-RAG — faster, more precise, and the path metadata makes the source field XAI-traceable. Distinct surfaces: CD-search tells the agent *which property to look at*; MLP-RAG tells the agent *what value sits in that property*. Both can coexist as independent Weaviate collections, both Kafka-driven.
 
 ### Phase 11 (Future/Research): Multimodal AAS Media Search
 - **Goal:** Bilder und Schulungsvideos aus der Verwaltungsschale in Weaviate aufnehmen und multimodal durchsuchbar machen
@@ -301,7 +302,7 @@ The graph is created by the Kafka Connect plugin (`dfkibasys/aas-neo4j-kafka-con
 
 **SubmodelElement types:** Property, File, Blob, Range, MultiLanguageProperty, SubmodelElementCollection, SubmodelElementList, ReferenceElement, RelationshipElement, AnnotatedRelationshipElement, Entity, Operation, BasicEventElement, Capability
 
-**All 35 relationship types** defined in RelationLabel enum — see `aas://schema/graph` resource for complete documentation.
+**All 34 relationship types** defined in RelationLabel enum — see `aas://schema/graph` resource for complete documentation. Entity-nested statements use `HAS_ELEMENT` like all other containment slots; slot-specific labels are reserved for relations carrying semantic role beyond containment (`HAS_ANNOTATION`, Operation variables, `HAS_FIRST`/`HAS_SECOND`).
 
 ## Project Structure
 

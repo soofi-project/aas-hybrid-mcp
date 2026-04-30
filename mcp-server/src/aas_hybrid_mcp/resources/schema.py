@@ -115,10 +115,12 @@ RelationshipElement with additional annotations.
   - `-[:HAS_ANNOTATION]->(:SubmodelElement)`
 
 ### Entity
-An entity with statements and optional asset representation.
+An entity with statements and optional asset representation. Statements
+are exposed as standard `HAS_ELEMENT` children (same as SMC/SML contents),
+so transitive `[:HAS_ELEMENT*]` traversal descends through Entity trees
+without special-casing.
 - Additional Properties: `entityType`
 - Additional Relationships:
-  - `-[:HAS_STATEMENT]->(:SubmodelElement)`
   - `-[:REPRESENTS_ASSET]->(:Asset)`
   - `-[:HAS_SPECIFIC_ASSET_ID]->(:SpecificAssetId)`
 
@@ -212,13 +214,74 @@ Assets: `HAS_SPECIFIC_ASSET_ID`, `REPRESENTS_ASSET`, `HAS_EXTERNAL_SUBJECT_ID`
 Relationships: `HAS_FIRST`, `HAS_SECOND`, `HAS_ANNOTATION`
 Operations: `HAS_INPUT_VARIABLE`, `HAS_OUTPUT_VARIABLE`, `HAS_INOUTPUT_VARIABLE`
 Events: `OBSERVES`, `USES_MESSAGE_BROKER`
-Entities: `HAS_STATEMENT`
 Data specs: `HAS_EMBEDDED_DATA_SPECIFICATION`, `HAS_DATA_SPECIFICATION`, `HAS_DEFINITION`, `HAS_PREFERRED_NAME`, `HAS_SHORT_NAME`, `HAS_ALLOWED_VALUE`
 Other: `DEPLOYED_IN`, `CREATED_BY`, `REFERS_TO`
 
 ## Traversal Tips
 
-Use `[:HAS_ELEMENT*]` for transitive traversal of nested SubmodelElement hierarchies.
+`[:HAS_ELEMENT*]` covers all generic containment — Submodel contents,
+SubmodelElementCollection / SubmodelElementList children, and Entity
+statements. A single transitive walk descends through every nesting
+pattern without slot-specific edge knowledge.
+
+The following relations look like containment but use their own edge
+labels because the slot carries semantic role information beyond plain
+containment:
+
+- `HAS_ANNOTATION` — AnnotatedRelationshipElement annotations
+  (DataElement-only, not arbitrary SubmodelElements)
+- `HAS_INPUT_VARIABLE` / `HAS_OUTPUT_VARIABLE` / `HAS_INOUTPUT_VARIABLE` —
+  Operation parameter slots, direction-typed
+- `HAS_FIRST` / `HAS_SECOND` — RelationshipElement endpoints (references,
+  not containment)
+
+## Common Anti-Patterns
+
+The following Cypher mistakes look reasonable but silently return zero rows.
+Read this section before writing queries.
+
+**1. `Repository` is AAS-storage, not a physical location.**
+The `(:Repository)-[:DEPLOYED_IN]` edge points to the *AAS environment* where
+a shell is stored (e.g. a BaSyx server URL). It is not a hall, room, or
+factory section. Never filter on `Repository.url` to find assets at a
+physical location — that information lives in the shell's submodels (e.g.
+in submodels conforming to IDTA `HierarchicalStructures` or other
+location-bearing templates, surfaced via `HAS_SEMANTIC_ID`).
+
+```cypher
+// WRONG — Repository is not a location
+MATCH (aas)-[:DEPLOYED_IN]->(:Repository {url: 'hall-4'}) ...
+
+// RIGHT — query the location-bearing submodel by its IDTA semanticId
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $semanticId})
+MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm) ...
+```
+
+**2. `semanticId` is a relation, not a property.**
+Submodels and SubmodelElements do not carry a `semanticId` *property*.
+The semantic-id is a relation `-[:HAS_SEMANTIC_ID]->(:SemanticConcept)`.
+
+```cypher
+// WRONG — silently returns 0 rows
+MATCH (sm:Submodel {semanticId: 'https://...'}) ...
+
+// RIGHT
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) ...
+```
+
+**3. Use IDTA semanticIds verbatim — do not enrich them.**
+IDTA template URIs are published in a specific form (see the
+`aas://templates/index` resource). Do not append `/Submodel` or other
+suffixes. For example, `HierarchicalStructures` is
+`https://admin-shell.io/idta/HierarchicalStructures/1/1` — *not*
+`.../1/1/Submodel`.
+
+**4. `assetType` and `assetKind` are optional and often null.**
+They are not reliable filters. Type vs. instance is encoded structurally
+via `(:AssetAdministrationShell)-[:DERIVED_FROM]->(:AssetAdministrationShell)`;
+domain classification (transport robot, welding cell, …) lives in
+submodels conforming to capability- or technical-data templates, not in
+`assetType`.
 
 ## Example Queries
 
@@ -272,6 +335,28 @@ Traverse relationships between elements:
 MATCH (rel:RelationshipElement)-[:HAS_FIRST]->(first)
 MATCH (rel)-[:HAS_SECOND]->(second)
 RETURN rel.idShort, labels(first), labels(second)
+```
+
+Walk from an instance shell to its type shell:
+```cypher
+MATCH (instance:AssetAdministrationShell {id: $instanceId})
+      -[:DERIVED_FROM]->(type:AssetAdministrationShell)
+RETURN type.id, type.idShort
+```
+
+Find all submodels conforming to a given IDTA template, across all shells:
+```cypher
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $templateSemanticId})
+MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm)
+RETURN aas.idShort, aas.id, sm.idShort, sm.id
+```
+
+List the submodels of a shell with their template's semanticId
+(useful to identify what kind of shell you're looking at):
+```cypher
+MATCH (aas:AssetAdministrationShell {id: $aasId})-[:HAS_SUBMODEL]->(sm:Submodel)
+OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+RETURN sm.idShort, sm.id, sc.id AS templateSemanticId
 ```
 """
 
