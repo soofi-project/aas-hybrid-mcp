@@ -81,6 +81,11 @@ async def lifespan(app: FastAPI):
         "1", "true", "yes", "on",
     )
 
+    log_dir_env = os.environ.get("AGENT_LOG_DIR", "")
+    log_dir = Path(log_dir_env) if log_dir_env else None
+    if log_dir:
+        log.info("Conversation logging enabled → %s", log_dir)
+
     prompt_file = os.environ.get("AGENT_SYSTEM_PROMPT_FILE", "")
     if prompt_file and Path(prompt_file).is_file():
         system_prompt = Path(prompt_file).read_text(encoding="utf-8")
@@ -97,6 +102,7 @@ async def lifespan(app: FastAPI):
         llm_api_key,
         system_prompt,
         default_thinking=default_thinking,
+        log_dir=log_dir,
     )
     await _runner.initialize()
 
@@ -159,7 +165,7 @@ async def chat_completions(request: ChatCompletionRequest):
             media_type="text/event-stream",
         )
 
-    text = await _runner.invoke(messages, reasoning_effort=effort)
+    text = await _runner.invoke(messages, reasoning_effort=effort, conversation_id=completion_id)
     return {
         "id": completion_id,
         "object": "chat.completion",
@@ -191,7 +197,7 @@ async def _stream_sse(
     ``TransferEncodingError``.
     """
     try:
-        async for token in _runner.stream(messages, reasoning_effort=reasoning_effort):
+        async for token in _runner.stream(messages, reasoning_effort=reasoning_effort, conversation_id=completion_id):
             if not isinstance(token, str):
                 token = str(token)
             chunk = {

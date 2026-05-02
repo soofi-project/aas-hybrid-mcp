@@ -3,6 +3,7 @@
 import json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import AsyncIterator
 
 _TOOL_OUTPUT_CHARS = 500
@@ -13,6 +14,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
 from aas_agent.mcp_client import MCPClientManager
+from aas_agent.trace import ConversationLogger
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +55,7 @@ class AgentRunner:
         llm_api_key: str,
         system_prompt: str,
         default_thinking: bool = False,
+        log_dir: Path | None = None,
     ) -> None:
         self._mcp = mcp_client
         self._llm_base_url = llm_base_url
@@ -60,6 +63,7 @@ class AgentRunner:
         self._llm_api_key = llm_api_key
         self._system_prompt = system_prompt
         self._default_thinking = default_thinking
+        self._log_dir = log_dir
         self._agent_thinking_off = None
         self._agent_thinking_on = None
         self._full_system_message: str = ""
@@ -155,6 +159,7 @@ class AgentRunner:
         self,
         messages: list[dict],
         reasoning_effort: str | None = None,
+        conversation_id: str = "",
     ) -> AsyncIterator[str]:
         """Stream LLM token deltas from the agent.
 
@@ -167,6 +172,8 @@ class AgentRunner:
             raise RuntimeError("Agent not initialized")
 
         lc_messages = self._to_langchain_messages(messages)
+        trace = ConversationLogger(self._log_dir, conversation_id or "unknown")
+        trace.write_header(messages, self._llm_model)
 
         in_tool_block = False
         try:
@@ -179,27 +186,36 @@ class AgentRunner:
                         chunk = event.get("data", {}).get("chunk")
                         content = getattr(chunk, "content", None) if chunk else None
                         if isinstance(content, str) and content:
+                            trace.append(content)
                             yield content
                     elif kind == "on_tool_start":
                         in_tool_block = True
-                        yield _format_tool_start(event)
+                        token = _format_tool_start(event)
+                        trace.append(token)
+                        yield token
                     elif kind == "on_tool_end":
-                        yield _format_tool_end(event)
+                        token = _format_tool_end(event)
+                        trace.append(token)
+                        yield token
                         in_tool_block = False
                 except Exception:
                     # Never let a bad event kill the whole stream.
                     log.exception("Error handling stream event kind=%s", event.get("event"))
         except Exception:
             log.exception("Fatal error in astream_events loop")
-            yield "\n\n[stream error — see server logs]\n"
+            err = "\n\n[stream error — see server logs]\n"
+            trace.append(err)
+            yield err
         finally:
             if in_tool_block:
                 yield "\n</think>\n\n"
+            trace.flush()
 
     async def invoke(
         self,
         messages: list[dict],
         reasoning_effort: str | None = None,
+        conversation_id: str = "",
     ) -> str:
         """Non-streaming invocation — returns full response text."""
         agent = self._select_agent(reasoning_effort)
@@ -210,10 +226,17 @@ class AgentRunner:
         result = await agent.ainvoke({"messages": lc_messages})
 
         # Last AI message contains the response
+        response = ""
         for msg in reversed(result.get("messages", [])):
             if hasattr(msg, "content") and msg.content:
-                return msg.content
-        return ""
+                response = msg.content
+                break
+
+        trace = ConversationLogger(self._log_dir, conversation_id or "unknown")
+        trace.write_header(messages, self._llm_model)
+        trace.append(response)
+        trace.flush()
+        return response
 
 
 def _format_tool_start(event: dict) -> str:
