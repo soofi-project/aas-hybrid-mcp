@@ -36,15 +36,15 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 REPO_URL = "https://github.com/admin-shell-io/submodel-templates.git"
-WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", "weaviate")
-WEAVIATE_HTTP_PORT = int(os.getenv("WEAVIATE_PORT", "8080"))
-WEAVIATE_GRPC_PORT = int(os.getenv("WEAVIATE_GRPC_PORT", "50051"))
-TEMPLATES_OUTPUT_DIR = Path(os.getenv("TEMPLATES_OUTPUT_DIR", "/data/templates"))
+WEAVIATE_HOST = os.environ["WEAVIATE_HOST"]
+WEAVIATE_HTTP_PORT = int(os.environ["WEAVIATE_PORT"])
+WEAVIATE_GRPC_PORT = int(os.environ["WEAVIATE_GRPC_PORT"])
+TEMPLATES_OUTPUT_DIR = Path(os.environ["TEMPLATES_OUTPUT_DIR"])
 IDTA_COLLECTION = "IdtaTemplateSpec"
 
-CHUNK_SIZE = 800
-CHUNK_OVERLAP = 150
-EMBEDDING_BATCH_SIZE = 100
+CHUNK_SIZE = int(os.environ["CHUNK_SIZE"])
+CHUNK_OVERLAP = int(os.environ["CHUNK_OVERLAP"])
+EMBEDDING_BATCH_SIZE = int(os.environ["EMBEDDING_BATCH_SIZE"])
 
 WEAVIATE_RETRY_INTERVAL = 5
 WEAVIATE_TIMEOUT = 120
@@ -206,29 +206,51 @@ def discover_templates(published_dir: Path) -> list[dict]:
 def _find_json(template_dir: Path) -> Path | None:
     """Find the best AAS JSON in a template version directory.
 
-    Prefers V3.1 metamodel JSON if available.
+    Prefers V3.1 metamodel JSON for metadata extraction (richer content).
     """
     jsons = list(template_dir.glob("*.json"))
     if not jsons:
-        # Check subdirectories
         jsons = list(template_dir.rglob("*.json"))
     if not jsons:
         return None
 
-    # Prefer V3.1 metamodel
     for j in jsons:
         if "forAASMetamodelV3.1" in j.name or "MetamodelV3.1" in j.name:
             return j
-    # Then V3.0
     for j in jsons:
         if "forAASMetamodelV3.0" in j.name or "MetamodelV3.0" in j.name:
             return j
-    # Then any AAS metamodel JSON
     for j in jsons:
         if "MetamodelV" in j.name or "Metamodel_V" in j.name:
             return j
-    # Fallback to first JSON
     return jsons[0]
+
+
+def _find_json_v3_0(template_dir: Path) -> Path | None:
+    """Find a V3.0 metamodel JSON suitable for the basyx-python-sdk code generator.
+
+    The SDK and aas-submodel-to-py only support AAS V3.0 namespace.
+    V3.1 files use a different XML namespace and cannot be parsed.
+    """
+    jsons = list(template_dir.glob("*.json"))
+    if not jsons:
+        jsons = list(template_dir.rglob("*.json"))
+    if not jsons:
+        return None
+
+    # Prefer explicit V3.0 label — guaranteed to parse with basyx-python-sdk 2.x.
+    for j in jsons:
+        if "forAASMetamodelV3.0" in j.name or "MetamodelV3.0" in j.name:
+            return j
+    # Accept any non-V3.1 AAS metamodel JSON as a fallback.
+    for j in jsons:
+        if ("MetamodelV" in j.name or "Metamodel_V" in j.name) and "3.1" not in j.name:
+            return j
+    # Last resort: any JSON that is not explicitly tagged V3.1.
+    for j in jsons:
+        if "3.1" not in j.name:
+            return j
+    return None
 
 
 def extract_metadata(json_path: Path) -> dict | None:
@@ -459,11 +481,100 @@ def wait_for_weaviate() -> weaviate.WeaviateClient:
 SYNC_HASH_COLLECTION = "SyncMetadata"
 
 
+def generate_classes(templates: list[dict]) -> int:
+    """Generate typed Python classes from IDTA submodel templates.
+
+    Uses aas-submodel-to-py to produce one .py file per template from its
+    V3.0 AAS JSON.  Files land in TEMPLATES_OUTPUT_DIR/generated/ and are
+    loaded at runtime by the MCP server's template_validator module.
+
+    Some published IDTA templates set id_short on SubmodelElementList items,
+    violating AASd-120.  The generator uses failsafe=True internally, so it
+    skips non-parseable elements and produces a partial class.  We suppress
+    the SDK's per-element ERROR logs during generation (they are expected noise
+    for non-conformant templates) and emit a single WARNING per affected file.
+
+    Returns the number of successfully generated files.
+    """
+    import logging as _logging
+    from aas_submodel_to_py.generator import SubmodelCodegen
+
+    generated_dir = TEMPLATES_OUTPUT_DIR / "generated"
+    generated_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write an __init__.py so the directory is importable as a package.
+    (generated_dir / "__init__.py").write_text("", encoding="utf-8")
+
+    codegen = SubmodelCodegen()
+    count = 0
+
+    # Silence the basyx deserialization logger during generation: its ERROR
+    # lines for AASd-120 / AASd-131 violations in template JSON are expected
+    # and handled gracefully by the generator's failsafe mode.  We restore the
+    # level afterwards so normal operation is unaffected.
+    basyx_deser_log = _logging.getLogger("basyx.aas.adapter.json.json_deserialization")
+    _saved_level = basyx_deser_log.level
+    basyx_deser_log.setLevel(_logging.CRITICAL)
+
+    try:
+        for tpl in templates:
+            name = tpl["name"]
+            template_dir = tpl["path"]
+
+            json_path = _find_json_v3_0(template_dir)
+            if json_path is None:
+                log.debug("No V3.0 JSON found for %s — skipping class generation", name)
+                continue
+
+            safe_name = re.sub(r'[<>:"/\\|?*]', "_", name)
+            out_path = generated_dir / f"{safe_name}.py"
+
+            try:
+                codegen.generate_from(json_path, out_path)
+
+                # A generated file with only the import block and no class body
+                # means the parser found no usable Submodel (all elements
+                # failed AASd-120).  Treat as a partial/empty result.
+                content = out_path.read_text(encoding="utf-8") if out_path.exists() else ""
+                if "class " not in content:
+                    log.warning(
+                        "No class generated for %s — template JSON may have "
+                        "AASd-120 violations throughout; falling back to "
+                        "metamodel-only validation for this template.",
+                        name,
+                    )
+                    out_path.unlink(missing_ok=True)
+                    continue
+
+                count += 1
+                log.info("Generated class for %s → %s", name, out_path.name)
+
+            except Exception as exc:
+                # Non-fatal: templates without a parseable V3.0 JSON simply
+                # have no generated class; metamodel-only validation applies.
+                log.warning("Class generation failed for %s: %s", name, exc)
+                out_path.unlink(missing_ok=True)
+    finally:
+        basyx_deser_log.setLevel(_saved_level)
+
+    log.info("Class generation complete: %d / %d templates", count, len(templates))
+    return count
+
+
 def is_up_to_date(client: weaviate.WeaviateClient, repo_hash: str) -> bool:
-    """Check if the IdtaTemplateSpec collection was already built from this repo hash."""
+    """Check if both the Weaviate collection and generated classes are current.
+
+    Returns False if the generated/ directory is absent or empty, so a fresh
+    stack start always produces classes even when the repo hash is unchanged.
+    """
     if not client.collections.exists(SYNC_HASH_COLLECTION):
         return False
     if not client.collections.exists(IDTA_COLLECTION):
+        return False
+
+    # Regenerate classes if the output directory is missing or empty.
+    generated_dir = TEMPLATES_OUTPUT_DIR / "generated"
+    if not generated_dir.exists() or not any(generated_dir.glob("*.py")):
         return False
 
     collection = client.collections.get(SYNC_HASH_COLLECTION)
@@ -635,11 +746,14 @@ def main():
             # 4. Extract JSON metadata and element structures
             index_entries = process_json_templates(templates)
 
-            # 5. Ingest PDFs into Weaviate
+            # 5. Generate typed Python classes from V3.0 template JSONs
+            generate_classes(templates)
+
+            # 6. Ingest PDFs into Weaviate
             setup_collection(client)
             ingest_pdfs(client, templates, index_entries)
 
-            # 6. Store sync hash on success
+            # 7. Store sync hash on success
             store_sync_hash(client, repo_hash)
 
         finally:

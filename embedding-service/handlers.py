@@ -45,36 +45,34 @@ class AasPathBuilder:
             self._stack.pop()
 
     def get_path(self) -> str:
-        """Return the current full idShort path."""
-        parts: list[str] = []
-        prev_is_list = False
+        """Return the full idShortPath for the current element stack.
 
-        it = iter(self._stack)
-        first = next(it, None)
-        if first is None:
+        SubmodelElementCollection children are addressed by idShort (dots).
+        SubmodelElementList children are addressed by 0-based index ([n]).
+        All other containers (Submodel root, Entity) use idShort.
+        """
+        stack = list(self._stack)
+        if not stack:
             return self._base or ""
 
-        # First element in stack is the top-level SME — check if it's a list container
-        prev_is_list = (
-            isinstance(first.get("value"), list) if isinstance(first, dict) else False
-        )
-
-        for el in it:
-            if prev_is_list:
-                # Inside a SubmodelElementList — emit index
-                parent_value = self._stack[len(parts)]  # approximate parent
+        parts: list[str] = []
+        for i, el in enumerate(stack):
+            if not isinstance(el, dict):
+                continue
+            parent = stack[i - 1] if i > 0 else None
+            if parent and parent.get("modelType") == "SubmodelElementList":
+                # Parent is a list — children have no idShort, use index instead.
+                siblings = parent.get("value", [])
                 try:
-                    idx = list(parent_value.get("value", [])).index(el)
+                    idx = siblings.index(el)
                     parts.append(f"[{idx}]")
-                except (ValueError, AttributeError):
-                    pass
+                except ValueError:
+                    parts.append("[?]")
             else:
-                id_short = el.get("idShort", "") if isinstance(el, dict) else ""
+                id_short = el.get("idShort", "")
                 if parts and not parts[-1].startswith("["):
                     parts.append(".")
                 parts.append(id_short)
-
-            prev_is_list = isinstance(el.get("value"), list) if isinstance(el, dict) else False
 
         stack_path = "".join(parts)
         if self._base:
@@ -189,19 +187,31 @@ def _ingest_pdf(
 
 
 def _process_element(path: AasPathBuilder, element: dict, submodel_id: str) -> None:
-    """Recursively walk SubmodelElements and ingest any PDF files found."""
+    """Recursively walk SubmodelElements and ingest any PDF files found.
+
+    Children of SubmodelElementCollection and SubmodelElementList live under
+    the "value" key (a list), not "submodelElements" — both are checked.
+    Entity statements use "statements".
+    """
     path.push(element)
     try:
         if _is_pdf(element):
             sm_element_path = path.get_path()
             _ingest_pdf(
                 url=element.get("value", ""),
-                id_short=element.get("idShort", ""),
+                # Use the full dotted idShortPath for the BaSyx attachment URL,
+                # not just the leaf idShort (which produces a 404).
+                id_short=sm_element_path,
                 submodel_id=submodel_id,
                 sm_element_path=sm_element_path,
             )
-        for child in element.get("submodelElements", []):
-            _process_element(path, child, submodel_id)
+        # Walk all child slots: submodel root, SMC/SML contents, Entity statements.
+        for key in ("submodelElements", "value", "statements"):
+            children = element.get(key)
+            if isinstance(children, list):
+                for child in children:
+                    if isinstance(child, dict) and "modelType" in child:
+                        _process_element(path, child, submodel_id)
     except Exception:
         log.exception(
             "Error processing element idShort=%s in submodel=%s",

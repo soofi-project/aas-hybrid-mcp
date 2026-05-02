@@ -6,28 +6,27 @@ import logging
 log = logging.getLogger(__name__)
 
 # Weaviate
-WEAVIATE_HOST: str = os.getenv("WEAVIATE_HOST", "weaviate")
-WEAVIATE_HTTP_PORT: int = int(os.getenv("WEAVIATE_PORT", "8080"))
-WEAVIATE_GRPC_PORT: int = int(os.getenv("WEAVIATE_GRPC_PORT", "50051"))
-WEAVIATE_COLLECTION: str = os.getenv("WEAVIATE_COLLECTION", "aas_documents")
+WEAVIATE_HOST: str = os.environ["WEAVIATE_HOST"]
+WEAVIATE_HTTP_PORT: int = int(os.environ["WEAVIATE_PORT"])
+WEAVIATE_GRPC_PORT: int = int(os.environ["WEAVIATE_GRPC_PORT"])
+WEAVIATE_COLLECTION: str = os.environ["WEAVIATE_COLLECTION"]
 
 # BaSyx
-BASYX_SUBMODEL_REPO: str = os.getenv("BASYX_SUBMODEL_REPO", "http://aas-environment:8081")
+BASYX_SUBMODEL_REPO: str = os.environ["BASYX_SUBMODEL_REPO"]
 
 # PDF processing
-CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "800"))
-CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "150"))
-EMBEDDING_BATCH_SIZE: int = int(os.getenv("EMBEDDING_BATCH_SIZE", "100"))
-DOWNLOAD_TIMEOUT: int = int(os.getenv("DOWNLOAD_TIMEOUT", "30"))
+CHUNK_SIZE: int = int(os.environ["CHUNK_SIZE"])
+CHUNK_OVERLAP: int = int(os.environ["CHUNK_OVERLAP"])
+EMBEDDING_BATCH_SIZE: int = int(os.environ["EMBEDDING_BATCH_SIZE"])
+DOWNLOAD_TIMEOUT: int = int(os.environ["DOWNLOAD_TIMEOUT"])
 
-# Error handling: "abort" = retry all failures, "skip" = log permanent errors and continue
-ON_PROCESSING_ERROR: str = os.getenv("ON_PROCESSING_ERROR", "abort")
+# Error handling: "abort" = fail task on error, "skip" = log and continue
+ON_PROCESSING_ERROR: str = os.environ["ON_PROCESSING_ERROR"]
 
-# Flask
-FLASK_PORT: int = int(os.getenv("FLASK_PORT", "8000"))
+# Flask — port is fixed, not configurable
+FLASK_PORT: int = 8000
 
-
-OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://host.docker.internal:11434")
+OLLAMA_HOST: str = os.environ["OLLAMA_HOST"]
 
 
 def get_embedding_model():
@@ -40,9 +39,7 @@ def get_embedding_model():
         google_genai:text-embedding-004
         voyageai:voyage-3
     """
-    embedding_config = os.getenv("EMBEDDING_MODEL")
-    if not embedding_config:
-        raise ValueError("EMBEDDING_MODEL not set (expected format: provider:model)")
+    embedding_config = os.environ["EMBEDDING_MODEL"]
 
     if ":" not in embedding_config:
         raise ValueError(
