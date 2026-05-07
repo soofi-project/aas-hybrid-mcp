@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 
@@ -173,7 +173,7 @@ async def list_models():
 
 
 @app.post("/v1/chat/completions")
-async def chat_completions(request: ChatCompletionRequest):
+async def chat_completions(request: ChatCompletionRequest, http_request: Request):
     if _runner is None:
         return {"error": "Agent not initialized"}, 503
 
@@ -181,13 +181,20 @@ async def chat_completions(request: ChatCompletionRequest):
     completion_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
     created = int(time.time())
 
-    # Session ID handling — prioritize client-provided ID, fallback to header, then generate
-    client_id = _extract_client_id(request)
-    
-    # Log all non-standard fields Open WebUI sends — helps discover the session ID field.
+    headers = {k.lower(): v for k, v in http_request.headers.items()}
+    client_id = _extract_client_id(request, headers)
+
+    # Log non-standard body fields and custom headers — helps discover whether
+    # Open WebUI (or a Pipelines extension) is sending a chat ID.
     extra = request.model_extra or {}
     if extra:
-        log.info("Extra request fields from client: %s", extra)
+        log.info("Extra body fields from client: %s", extra)
+    custom_headers = {
+        k: v for k, v in headers.items()
+        if k.startswith("x-") and not k.startswith("x-forwarded")
+    }
+    if custom_headers:
+        log.info("Custom headers from client: %s", custom_headers)
 
     model = request.model or MODEL_ID_NO_THINK
     effort = _effort_for_model(model) or request.reasoning_effort
@@ -228,19 +235,31 @@ async def chat_completions(request: ChatCompletionRequest):
     }
 
 
-def _extract_client_id(request: ChatCompletionRequest) -> str:
-    """Extract client session ID from request.
+def _extract_client_id(
+    request: ChatCompletionRequest,
+    headers: dict[str, str] | None = None,
+) -> str | None:
+    """Extract a stable session ID from the request, or ``None`` if none is sent.
 
     Priority order:
-    1. ``chat_id`` from request body (Open WebUI non-standard field)
-    2. ``client_id`` from extra fields (Open WebUI internal)
-    3. Generate new UUID if nothing found
+    1. ``chat_id`` from request body (Open WebUI Pipelines / custom backend).
+    2. ``client_id`` from extra body fields.
+    3. Custom headers some Open WebUI versions set
+       (``x-openwebui-chat-id``, ``x-chat-id``).
+
+    Returns ``None`` when nothing is found — the logger then falls back to a
+    fingerprint of the first user message, which is stable because Open
+    WebUI sends the full conversation history on every turn.
     """
     if request.chat_id:
         return request.chat_id
     if "client_id" in (request.model_extra or {}):
         return str(request.model_extra["client_id"])
-    return f"client-{uuid.uuid4().hex[:12]}"
+    if headers:
+        for h in ("x-openwebui-chat-id", "x-chat-id"):
+            if h in headers:
+                return headers[h]
+    return None
 
 
 async def _stream_sse(
@@ -249,7 +268,7 @@ async def _stream_sse(
     model: str,
     messages: list[dict],
     reasoning_effort: str | None,
-    client_id: str,
+    client_id: str | None,
     extra: dict | None = None,
 ):
     """Yield OpenAI-compatible SSE chunks.
