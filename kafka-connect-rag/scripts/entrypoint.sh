@@ -1,9 +1,14 @@
 #!/bin/bash
 
 /etc/confluent/docker/run &
+CONNECT_PID=$!
 
 echo "Waiting for Kafka Connect to start..."
 until curl -sf http://localhost:8083/connectors > /dev/null; do
+  if ! kill -0 $CONNECT_PID 2>/dev/null; then
+    echo "Kafka Connect process died during startup, exiting."
+    exit 1
+  fi
   echo "Kafka Connect not ready yet, waiting..."
   sleep 3
 done
@@ -14,7 +19,6 @@ CONNECTOR_NAME="AasEventsHttpStreamSink"
 CONNECTOR_CONFIG_PATH="/etc/kafka-connect/config/http-sink-connector.json"
 CONNECTOR_URL="http://localhost:8083/connectors/$CONNECTOR_NAME/config"
 
-# Extract just the config part for CREATE (Kafka Connect REST API quirk)
 CONFIG_ONLY=$(cat "$CONNECTOR_CONFIG_PATH" | jq '.config')
 
 if curl -s -o /dev/null -w "%{http_code}" "$CONNECTOR_URL" | grep -q "200"; then
@@ -22,7 +26,6 @@ if curl -s -o /dev/null -w "%{http_code}" "$CONNECTOR_URL" | grep -q "200"; then
   RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "Content-Type: application/json" -d "$CONFIG_ONLY" "$CONNECTOR_URL")
 else
   echo "Creating new connector: $CONNECTOR_NAME"
-  # For CREATE, send the whole object with name + config
   RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d @"$CONNECTOR_CONFIG_PATH" http://localhost:8083/connectors)
 fi
 
@@ -33,7 +36,6 @@ fi
 
 echo "Connector deployed successfully. Waiting for connector to start..."
 
-# Poll connector status
 MAX_STATUS_CHECKS=15
 for i in $(seq 1 $MAX_STATUS_CHECKS); do
   sleep 2
@@ -54,12 +56,10 @@ for i in $(seq 1 $MAX_STATUS_CHECKS); do
 
   if [ $i -eq $MAX_STATUS_CHECKS ]; then
     echo "Connector did not reach RUNNING state after ${MAX_STATUS_CHECKS} checks."
-    echo "Current status: $CONNECTOR_STATE"
-    echo "Full status response:"
-    echo "$STATUS_RESPONSE"
     exit 1
   fi
 done
 
-# Keep kafka-connect process running
-wait
+# Keep running — exit when kafka-connect exits so Docker restarts this container.
+wait $CONNECT_PID
+exit $?

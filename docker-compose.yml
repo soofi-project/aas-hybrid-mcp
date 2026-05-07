@@ -165,6 +165,8 @@ services:
       - ./aasx/UR20_001.aasx:/application/files/aasx/UR20_001.aasx
       - ./aasx/CRX10iA_Type.aasx:/application/files/aasx/CRX10iA_Type.aasx
       - ./aasx/CRX10iA_001.aasx:/application/files/aasx/CRX10iA_001.aasx
+      - ./aasx/MiR250_001.aasx:/application/files/aasx/MiR250_001.aasx
+      - ./aasx/MiR250_002.aasx:/application/files/aasx/MiR250_002.aasx
 
     depends_on:
       kafka:
@@ -231,6 +233,8 @@ services:
 
   kafka-connect-neo4j:
     image: dfkibasys/aas-neo4j-kafka-connect-plugin:${NEO4J_KAFKA_CONNECT_VERSION}
+    build:
+      context: ../../hackathon/mcp-playground/aas-repository-neo4j-kafka-plugin/kafka-connect
     container_name: kafka-connect-neo4j
     restart: unless-stopped
     ports:
@@ -358,7 +362,7 @@ services:
     container_name: submodel-templates-sync
     restart: "no"
     env_file:
-      - .env.embedding
+      - .env
       - ${SECRETS_PATH}
     environment:
       WEAVIATE_HOST: weaviate
@@ -383,7 +387,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env.embedding
+      - .env
       - ${SECRETS_PATH}
     environment:
       - WEAVIATE_HOST=weaviate
@@ -412,7 +416,7 @@ services:
     ports:
       - "8110:8110"
     env_file:
-      - .env.embedding
+      - .env
       - ${SECRETS_PATH}
     environment:
       NEO4J_URI: bolt://neo4j:7687
@@ -423,6 +427,9 @@ services:
       SUBMODEL_REPO_URL: http://aas-environment:8081
     volumes:
       - template_data:/data/templates:ro
+      # Bind-mount tool descriptions over the packaged copies so edits take
+      # effect on container restart without rebuilding the image.
+      - ./mcp-server/src/aas_hybrid_mcp/tool_descriptions:/usr/local/lib/python3.11/site-packages/aas_hybrid_mcp/tool_descriptions:ro
     depends_on:
       neo4j:
         condition: service_healthy
@@ -447,24 +454,24 @@ services:
     build:
       context: ./aas-agent
     container_name: aas-agent
+    user: "0"
     restart: unless-stopped
     ports:
       - "8120:8120"
     env_file:
+      - .env
       - ${SECRETS_PATH}
     environment:
       MCP_SERVER_URL: http://aas-hybrid-mcp:8110/mcp/
-      LLM_BASE_URL: https://api.openai.com/v1
-      LLM_MODEL: gpt-4o
-      LLM_API_KEY: ${OPENAI_API_KEY}
-      AGENT_SYSTEM_PROMPT_FILE: /app/system-prompt.md
       AGENT_LOG_DIR: /logs
       OTEL_SERVICE_NAME: aas-agent
       OTEL_EXPORTER_OTLP_ENDPOINT: http://langfuse:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     volumes:
-      - ./open-webui/system-prompt.md:/app/system-prompt.md:ro
-      - ./interaction-protokol:/logs
+      # Bind-mount the prompt over the packaged copy so edits take effect on
+      # restart without rebuilding the image.
+      - ./aas-agent/src/aas_agent/system-prompt.md:/usr/local/lib/python3.11/site-packages/aas_agent/system-prompt.md:ro
+      - ./interaction-protocol:/logs
     depends_on:
       aas-hybrid-mcp:
         condition: service_healthy
@@ -501,6 +508,7 @@ services:
       OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://aas-agent:8120/v1"
       OPENAI_API_KEYS: "${OPENAI_API_KEY};no-key"
       DEFAULT_MODELS: "aas-assistant"
+      TASK_MODEL_EXTERNAL: "gpt-4o-mini"
       # Direct MCP still available for tools; agent adds resource access
       TOOL_SERVER_CONNECTIONS: '[{"url":"http://aas-hybrid-mcp:8110/mcp/","type":"mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"aas-hybrid-mcp","name":"AAS Hybrid MCP","description":"Neo4j graph queries, Weaviate document search, and IDTA template search for Asset Administration Shells"}}]'
     volumes:

@@ -5,8 +5,15 @@ import logging
 import uvicorn
 from fastmcp import FastMCP
 
-from aas_hybrid_mcp.resources import schema, templates
-from aas_hybrid_mcp.tools import cypher_query, document_search, template_search, write_tools
+from aas_hybrid_mcp.tools import (
+    cypher_query,
+    document_search,
+    manual,
+    schema,
+    template_search,
+    templates,
+    write_tools,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,6 +28,7 @@ template_search.register(mcp)
 write_tools.register(mcp)
 schema.register(mcp)
 templates.register(mcp)
+manual.register(mcp)
 
 
 def main():

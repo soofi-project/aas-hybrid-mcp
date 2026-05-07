@@ -115,24 +115,40 @@ def _get_client() -> weaviate.WeaviateClient:
 # ---------------------------------------------------------------------------
 
 
+def _count_chunks_for_submodel(submodel_id: str) -> int:
+    """Cheap presence check: how many chunks are stored under this submodel_id."""
+    client = _get_client()
+    if not client.collections.exists(WEAVIATE_COLLECTION):
+        return 0
+    collection = client.collections.get(WEAVIATE_COLLECTION)
+    result = collection.aggregate.over_all(
+        filters=wvq.Filter.by_property("submodelId").equal(submodel_id),
+        total_count=True,
+    )
+    return result.total_count or 0
+
+
 def _search_sync(
     query: str,
     *,
     submodel_id: str | None = None,
     limit: int = 10,
-) -> list[dict]:
-    """Compute query embedding and run a near_vector search in Weaviate."""
+) -> dict:
+    """Compute query embedding and run a near_vector search in Weaviate.
+
+    Returns a dict with `results` and an optional `diagnostic` describing why
+    a scoped query came back empty (chunks missing vs. semantic miss).
+    """
     client = _get_client()
 
     if not client.collections.exists(WEAVIATE_COLLECTION):
-        return []
+        return {"results": [], "diagnostic": "collection_missing"}
 
     model = _get_embedding_model()
     vector = model.embed_query(query)
 
     collection = client.collections.get(WEAVIATE_COLLECTION)
 
-    # Build optional filter
     filters = None
     if submodel_id:
         filters = wvq.Filter.by_property("submodelId").equal(submodel_id)
@@ -144,7 +160,7 @@ def _search_sync(
         return_metadata=wvq.MetadataQuery(distance=True),
     )
 
-    return [
+    results = [
         {
             "text": obj.properties.get("text", ""),
             "source": obj.properties.get("source", ""),
@@ -156,13 +172,20 @@ def _search_sync(
         for obj in response.objects
     ]
 
+    out: dict = {"results": results}
+    if not results and submodel_id:
+        chunk_count = _count_chunks_for_submodel(submodel_id)
+        out["chunk_count"] = chunk_count
+        out["diagnostic"] = "not_indexed" if chunk_count == 0 else "no_match"
+    return out
+
 
 async def search(
     query: str,
     *,
     submodel_id: str | None = None,
     limit: int = 10,
-) -> list[dict]:
+) -> dict:
     """Async wrapper — runs the sync Weaviate search in a thread pool."""
     return await asyncio.to_thread(
         _search_sync,

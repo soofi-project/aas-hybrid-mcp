@@ -7,95 +7,9 @@ import logging
 from fastmcp import FastMCP
 
 from aas_hybrid_mcp import basyx_client, template_validator
+from aas_hybrid_mcp.tool_descriptions import load as load_description
 
 log = logging.getLogger(__name__)
-
-_PUT_AAS_DESC = """\
-Create or replace an AssetAdministrationShell in the BaSyx environment.
-Idempotent: if the shell already exists it is fully replaced; otherwise it
-is created. The graph and vector store sync automatically via Kafka after the
-write — no manual re-ingestion required.
-
-INPUT: `aas_json` — the complete AssetAdministrationShell serialised as a
-JSON **string** (call `json.dumps` if you constructed a dict). Required
-fields: `modelType` ("AssetAdministrationShell"), `id` (URI), `assetInformation`.
-The SDK validates the full structure before any HTTP call; validation errors
-are returned as `{"error": "…"}` for self-correction — nothing is written.
-
-OUTPUT: `{"status": "ok", "id": "<aas-id>"}` on success, or
-`{"error": "…"}` on validation or HTTP failure.\
-"""
-
-_DELETE_AAS_DESC = """\
-Delete an AssetAdministrationShell from the BaSyx environment by its id.
-
-INPUT: `aas_id` — the full AAS id URI (non-empty string).
-
-OUTPUT: `{"status": "ok", "id": "…"}` on success, or `{"error": "…"}` on
-failure (including 404 if the shell does not exist).\
-"""
-
-_PUT_SUBMODEL_DESC = """\
-Create or replace a Submodel on a given AAS. Idempotent: creates the submodel
-in the repository if absent, replaces it if present, and ensures the AAS
-carries a reference to it. Kafka propagates the change to Neo4j and Weaviate
-automatically.
-
-Before calling: read `aas://template/{name}` for the target template's
-element structure so the submodel conforms to the expected idShort hierarchy
-and semanticIds.
-
-INPUT:
-- `aas_id` — the parent AAS id URI (non-empty string)
-- `submodel_json` — complete Submodel object as a JSON **string**. Required
-  fields: `modelType` ("Submodel"), `id` (URI). Include `semanticId` for
-  template-conformant submodels. The SDK validates before any HTTP call.
-
-OUTPUT: `{"status": "ok", "id": "<submodel-id>"}` or `{"error": "…"}`.\
-"""
-
-_DELETE_SUBMODEL_DESC = """\
-Remove a Submodel from a given AAS and delete it from the repository.
-Both the AAS reference and the submodel object are removed.
-
-INPUT:
-- `aas_id` — the parent AAS id URI (non-empty string)
-- `submodel_id` — the Submodel id URI (non-empty string)
-
-OUTPUT: `{"status": "ok", "id": "…"}` or `{"error": "…"}`.\
-"""
-
-_PUT_ELEMENT_DESC = """\
-Create or replace a SubmodelElement at an idShortPath within a Submodel.
-Idempotent: replaces the element if the path exists, creates it otherwise.
-
-Covers all SubmodelElement subtypes — Property, MultiLanguageProperty, File,
-Blob, Range, SubmodelElementCollection, SubmodelElementList, ReferenceElement,
-RelationshipElement, Entity, Operation, BasicEventElement, Capability — via
-the `modelType` field. The SDK validates the element structure by wrapping it
-in a temporary Submodel envelope before any HTTP call.
-
-INPUT:
-- `submodel_id` — the Submodel id URI (non-empty string)
-- `id_short_path` — dot-separated path to the element, e.g. `"Documents"`
-  for a root element or `"Documents.Section1.File1"` for a nested element.
-  Every segment except the last must be an existing parent's idShort.
-- `element_json` — the SubmodelElement as a JSON **string**. Required fields:
-  `modelType` (e.g. "Property", "SubmodelElementCollection") and `idShort`.
-
-OUTPUT: `{"status": "ok", "idShortPath": "…"}` or `{"error": "…"}`.\
-"""
-
-_DELETE_ELEMENT_DESC = """\
-Delete a SubmodelElement at an idShortPath within a Submodel.
-
-INPUT:
-- `submodel_id` — the Submodel id URI (non-empty string)
-- `id_short_path` — dot-separated path, e.g. `"Documents.Section1.File1"`
-  (non-empty string)
-
-OUTPUT: `{"status": "ok", "idShortPath": "…"}` or `{"error": "…"}`.\
-"""
 
 # ---------------------------------------------------------------------------
 # Validation helpers
@@ -204,7 +118,7 @@ def _validate_element(element_dict: dict) -> str | None:
 def register(mcp: FastMCP) -> None:
     """Register AAS write tools on the MCP server."""
 
-    @mcp.tool(description=_PUT_AAS_DESC)
+    @mcp.tool(description=load_description("put_aas"))
     async def put_aas(aas_json: str) -> dict:
         err = _check_nonempty(aas_json=aas_json)
         if err:
@@ -221,14 +135,14 @@ def register(mcp: FastMCP) -> None:
 
         return await basyx_client.put_aas(aas_dict)
 
-    @mcp.tool(description=_DELETE_AAS_DESC)
+    @mcp.tool(description=load_description("delete_aas"))
     async def delete_aas(aas_id: str) -> dict:
         err = _check_nonempty(aas_id=aas_id)
         if err:
             raise ValueError(err)
         return await basyx_client.delete_aas(aas_id)
 
-    @mcp.tool(description=_PUT_SUBMODEL_DESC)
+    @mcp.tool(description=load_description("put_submodel"))
     async def put_submodel(aas_id: str, submodel_json: str) -> dict:
         err = _check_nonempty(aas_id=aas_id, submodel_json=submodel_json)
         if err:
@@ -252,14 +166,14 @@ def register(mcp: FastMCP) -> None:
 
         return await basyx_client.put_submodel(aas_id, submodel_dict)
 
-    @mcp.tool(description=_DELETE_SUBMODEL_DESC)
+    @mcp.tool(description=load_description("delete_submodel"))
     async def delete_submodel(aas_id: str, submodel_id: str) -> dict:
         err = _check_nonempty(aas_id=aas_id, submodel_id=submodel_id)
         if err:
             raise ValueError(err)
         return await basyx_client.delete_submodel(aas_id, submodel_id)
 
-    @mcp.tool(description=_PUT_ELEMENT_DESC)
+    @mcp.tool(description=load_description("put_submodel_element"))
     async def put_submodel_element(
         submodel_id: str, id_short_path: str, element_json: str
     ) -> dict:
@@ -282,7 +196,7 @@ def register(mcp: FastMCP) -> None:
             submodel_id, id_short_path, element_dict
         )
 
-    @mcp.tool(description=_DELETE_ELEMENT_DESC)
+    @mcp.tool(description=load_description("delete_submodel_element"))
     async def delete_submodel_element(submodel_id: str, id_short_path: str) -> dict:
         err = _check_nonempty(submodel_id=submodel_id, id_short_path=id_short_path)
         if err:

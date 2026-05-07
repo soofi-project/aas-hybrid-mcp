@@ -60,12 +60,27 @@ cp .env.secrets.example ~/.env.secrets
 # 3. First time: build images
 ./up.sh --build
 
-# 4. Stop
+# 4. Stop — wipes ephemeral state (mongo/kafka/neo4j), keeps Weaviate embeddings
 ./down.sh
 
-# 5. Stop and wipe all data (volumes)
+# 5. Stop and keep everything (just stop containers)
+./down.sh --keep-all
+
+# 6. Stop and wipe ALL data including Weaviate embeddings
 ./down.sh --clean
 ```
+
+### What `./down.sh` keeps and what it wipes
+
+Weaviate embeddings (PDF chunks via docling) are expensive to compute, so they live in a **named volume** (`weaviate_content`) along with the IDTA template index and Open WebUI state. mongo/kafka/neo4j only have anonymous volumes and are cheap to repopulate: BaSyx redeploys all `aasx/` files into MongoDB on startup, BaSyx emits Kafka events, and the Neo4j Connect plugin replays them into the graph.
+
+| Mode | mongo / kafka / neo4j | weaviate / templates / open-webui |
+|---|---|---|
+| `./down.sh` (default) | wiped | kept |
+| `./down.sh --keep-all` | kept | kept |
+| `./down.sh --clean` | wiped | wiped |
+
+**Use the default `./down.sh` whenever you change AASX files** — that guarantees BaSyx re-ingests them cleanly. Without the wipe, mongo still holds the previous IDs and BaSyx logs `Uploading shell ... was not successful` (409 conflict) on the second start, so changes silently never reach the graph.
 
 ## Services
 

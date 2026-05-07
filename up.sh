@@ -16,24 +16,36 @@ echo ""
 # Load environment variables
 source .env 2>/dev/null || true
 
-# Parse args
+# Parse args (any order, both supported)
 BUILD_FLAG=""
-if [ "$1" == "--build" ]; then
-    BUILD_FLAG="--build"
-fi
+COMPOSE_FILES=(-f docker-compose.yml)
+for arg in "$@"; do
+    case "$arg" in
+        --build)
+            BUILD_FLAG="--build"
+            ;;
+        --vllm)
+            COMPOSE_FILES+=(-f docker-compose.vllm.yml)
+            echo "[INFO] vllm backend activated"
+            ;;
+        *)
+            echo "[WARN] Unknown arg: $arg"
+            ;;
+    esac
+done
 
-# Start containers (build only if --build passed)
 if [ -n "$BUILD_FLAG" ]; then
     echo "[INFO] Building and starting containers..."
 else
     echo "[INFO] Starting containers..."
 fi
-docker compose up -d --wait $BUILD_FLAG
+
+docker compose "${COMPOSE_FILES[@]}" up -d --wait $BUILD_FLAG
 
 # Check container status
 echo ""
 echo "[INFO] Container Status:"
-docker compose ps
+docker compose "${COMPOSE_FILES[@]}" ps
 
 # Print URLs
 echo ""
@@ -54,6 +66,7 @@ echo "  Open WebUI:      http://localhost:8090 (${OPEN_WEBUI_EMAIL} | ${OPEN_WEB
 echo ""
 echo "========================================"
 echo ""
-echo "To stop the stack, run:  ./down.sh"
-echo "To stop and wipe data:  ./down.sh --clean"
+echo "To stop and wipe ephemeral data (mongo/kafka/neo4j), keep weaviate:  ./down.sh"
+echo "To stop and wipe everything (incl. weaviate embeddings):           ./down.sh --clean"
+echo "To stop and keep all volumes:                                      ./down.sh --keep-all"
 echo ""

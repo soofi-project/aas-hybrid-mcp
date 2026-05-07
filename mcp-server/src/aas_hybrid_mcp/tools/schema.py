@@ -1,6 +1,8 @@
-"""MCP resource: AAS graph schema documentation."""
+"""MCP tool: AAS graph schema documentation."""
 
 from fastmcp import FastMCP
+
+from aas_hybrid_mcp.tool_descriptions import load as load_description
 
 _GRAPH_SCHEMA = """\
 # AAS Neo4j Graph Schema
@@ -271,7 +273,7 @@ MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) .
 
 **3. Use IDTA semanticIds verbatim — do not enrich them.**
 IDTA template URIs are published in a specific form (see the
-`aas://templates/index` resource). Do not append `/Submodel` or other
+`get_templates_index()` tool). Do not append `/Submodel` or other
 suffixes. For example, `HierarchicalStructures` is
 `https://admin-shell.io/idta/HierarchicalStructures/1/1` — *not*
 `.../1/1/Submodel`.
@@ -282,6 +284,21 @@ via `(:AssetAdministrationShell)-[:DERIVED_FROM]->(:AssetAdministrationShell)`;
 domain classification (transport robot, welding cell, …) lives in
 submodels conforming to capability- or technical-data templates, not in
 `assetType`.
+
+**5. Never match by `idShort` — always reason via `semanticId`.**
+`idShort` is a free-form local label chosen by the shell author; it is
+not a stable semantic identifier and must not be used for domain
+classification or capability matching. The semantic meaning of a shell,
+submodel, or element is expressed exclusively through
+`-[:HAS_SEMANTIC_ID]->(:SemanticConcept)` and
+`-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(:SemanticConcept)`.
+To find what semanticIds exist in the graph, list them:
+```cypher
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+RETURN DISTINCT sc.id ORDER BY sc.id
+```
+Then match the correct id against the templates index (`get_templates_index()`)
+to identify the template — never guess a semanticId from training memory.
 
 ## Example Queries
 
@@ -344,6 +361,22 @@ MATCH (instance:AssetAdministrationShell {id: $instanceId})
 RETURN type.id, type.idShort
 ```
 
+Find all instance shells derived from a type (reverse of DERIVED_FROM):
+```cypher
+MATCH (instance:AssetAdministrationShell)-[:DERIVED_FROM]->
+      (type:AssetAdministrationShell {idShort: $typeIdShort})
+RETURN instance.idShort, instance.id
+```
+
+Traverse ReferenceElement containment — a container AAS owns the submodel,
+contained assets appear as ReferenceElement values inside it:
+```cypher
+MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
+      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
+MATCH (sm)-[:HAS_ELEMENT*]->(ref:ReferenceElement)-[:HAS_VALUE]->(contained)
+RETURN container.idShort, contained.idShort, labels(contained) AS containedType
+```
+
 Find all submodels conforming to a given IDTA template, across all shells:
 ```cypher
 MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $templateSemanticId})
@@ -362,9 +395,9 @@ RETURN sm.idShort, sm.id, sc.id AS templateSemanticId
 
 
 def register(mcp: FastMCP) -> None:
-    """Register AAS schema resource."""
+    """Register the AAS schema tool."""
 
-    @mcp.resource("aas://schema/graph")
+    @mcp.tool(description=load_description("get_graph_schema"))
     def get_graph_schema() -> str:
         """AAS Neo4j graph schema: all node labels, relationships, properties, and example Cypher queries."""
         return _GRAPH_SCHEMA
