@@ -369,10 +369,13 @@ services:
       WEAVIATE_PORT: 8080
       WEAVIATE_GRPC_PORT: 50051
       TEMPLATES_OUTPUT_DIR: /data/templates
+      CD_REPO_URL: http://aas-environment:8081
     volumes:
       - template_data:/data/templates
     depends_on:
       weaviate:
+        condition: service_healthy
+      aas-environment:
         condition: service_healthy
     networks:
       - aas-network
@@ -425,11 +428,13 @@ services:
       TEMPLATES_DIR: /data/templates
       AAS_REPO_URL: http://aas-environment:8081
       SUBMODEL_REPO_URL: http://aas-environment:8081
+      CD_REPO_URL: http://aas-environment:8081
     volumes:
       - template_data:/data/templates:ro
-      # Bind-mount tool descriptions over the packaged copies so edits take
-      # effect on container restart without rebuilding the image.
+      # Bind-mount tool descriptions and manual pages over the packaged copies so
+      # edits take effect on container restart without rebuilding the image.
       - ./mcp-server/src/aas_hybrid_mcp/tool_descriptions:/usr/local/lib/python3.11/site-packages/aas_hybrid_mcp/tool_descriptions:ro
+      - ./mcp-server/src/aas_hybrid_mcp/manual_pages:/usr/local/lib/python3.11/site-packages/aas_hybrid_mcp/manual_pages:ro
     depends_on:
       neo4j:
         condition: service_healthy
@@ -464,13 +469,15 @@ services:
     environment:
       MCP_SERVER_URL: http://aas-hybrid-mcp:8110/mcp/
       AGENT_LOG_DIR: /logs
+      AGENT_VARIANT: ${AGENT_VARIANT:-react}
       OTEL_SERVICE_NAME: aas-agent
       OTEL_EXPORTER_OTLP_ENDPOINT: http://langfuse:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     volumes:
-      # Bind-mount the prompt over the packaged copy so edits take effect on
+      # Bind-mount prompts over the packaged copies so edits take effect on
       # restart without rebuilding the image.
       - ./aas-agent/src/aas_agent/system-prompt.md:/usr/local/lib/python3.11/site-packages/aas_agent/system-prompt.md:ro
+      - ./aas-agent/src/aas_agent/agent_plan_prompts:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan_prompts:ro
       - ./interaction-protocol:/logs
     depends_on:
       aas-hybrid-mcp:

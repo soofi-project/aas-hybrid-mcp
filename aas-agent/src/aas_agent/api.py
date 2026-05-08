@@ -13,7 +13,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 
-from aas_agent.agent import AgentRunner
 from aas_agent.mcp_client import MCPClientManager
 
 logging.basicConfig(
@@ -81,7 +80,7 @@ def _is_utility_request(messages: list[dict]) -> bool:
 # Lifespan — startup / shutdown
 # ---------------------------------------------------------------------------
 
-_runner: AgentRunner | None = None
+_runner = None  # type: Any  — concrete class chosen at startup via AGENT_VARIANT
 
 
 @asynccontextmanager
@@ -123,7 +122,16 @@ async def lifespan(app: FastAPI):
         "Auto-injected resources: manual=%s, schema=%s",
         inject_manual, inject_schema,
     )
-    _runner = AgentRunner(
+
+    variant = os.environ.get("AGENT_VARIANT", "react").lower()
+    if variant == "plan_reflect":
+        from aas_agent.agent_plan import PlanReflectAgentRunner as RunnerCls
+        log.info("AGENT_VARIANT=plan_reflect — using PlanReflectAgentRunner")
+    else:
+        from aas_agent.agent import AgentRunner as RunnerCls
+        log.info("AGENT_VARIANT=%s → using react AgentRunner (default)", variant)
+
+    _runner = RunnerCls(
         mcp,
         llm_base_url,
         llm_model,

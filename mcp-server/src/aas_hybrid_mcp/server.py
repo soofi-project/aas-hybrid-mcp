@@ -6,6 +6,7 @@ import uvicorn
 from fastmcp import FastMCP
 
 from aas_hybrid_mcp.tools import (
+    concept_lookup,
     cypher_query,
     document_search,
     manual,
@@ -25,6 +26,7 @@ mcp = FastMCP("AAS Hybrid MCP")
 cypher_query.register(mcp)
 document_search.register(mcp)
 template_search.register(mcp)
+concept_lookup.register(mcp)
 write_tools.register(mcp)
 schema.register(mcp)
 templates.register(mcp)

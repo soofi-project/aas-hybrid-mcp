@@ -115,8 +115,12 @@ class AgentRunner:
             len(tools), self._default_thinking,
         )
 
-    def _build_llm(self, enable_thinking: bool, with_tools: bool = True) -> ChatOpenAI:
+    def _build_llm(self, enable_thinking: bool, with_tools: bool = True, extra_body: dict | None = None) -> ChatOpenAI:
         """Construct the LLM with optional vLLM thinking support.
+
+        For vLLM (Qwen) thinking is disabled by default because the chat
+        template ignores system prompts when thinking is enabled, causing
+        the model to fall back to generic greetings.
 
         ``with_tools=False`` omits ``parallel_tool_calls`` — OpenAI rejects
         that parameter when no tools are bound to the request.
@@ -126,14 +130,30 @@ class AgentRunner:
         if with_tools:
             model_kwargs["parallel_tool_calls"] = False
 
-        # Only enable Qwen thinking when NOT using OpenAI
         if self._llm_base_url and "openai.com" not in self._llm_base_url:
-            model_kwargs["extra_body"] = {
-                "chat_template_kwargs": {
-                    "enable_thinking": enable_thinking
-                }
+            # vLLM: respect _default_thinking from AGENT_DEFAULT_THINKING env var.
+            # When False, force thinking off regardless of enable_thinking.
+            if not self._default_thinking:
+                use_thinking = False
+            else:
+                use_thinking = enable_thinking
+            log.info(
+                "LLM backend: %s (vLLM, thinking=%s [default_thinking=%s])",
+                self._llm_base_url, use_thinking, self._default_thinking,
+            )
+        else:
+            use_thinking = enable_thinking
+            log.info(
+                "LLM backend: %s (OpenAI-compatible, thinking=%s)",
+                self._llm_base_url, enable_thinking,
+            )
+
+        if self._llm_base_url and "openai.com" not in self._llm_base_url:
+            extra_body = {
+                "chat_template_kwargs": {"enable_thinking": use_thinking}
             }
-        log.info("LLM backend: %s", self._llm_base_url)
+        else:
+            extra_body = None
         # api_key intentionally omitted — ChatOpenAI reads OPENAI_API_KEY from
         # the container env (loaded via ${SECRETS_PATH} in default mode, or
         # set to "dummy" via .env.vllm in vLLM mode).
@@ -142,6 +162,7 @@ class AgentRunner:
             model=self._llm_model,
             streaming=True,
             model_kwargs=model_kwargs,
+            extra_body=extra_body,
         )
 
     def _select_agent(self, reasoning_effort: str | None):
@@ -149,14 +170,20 @@ class AgentRunner:
         return self._agent_thinking_on if thinking else self._agent_thinking_off
 
     def _to_langchain_messages(self, messages: list[dict]) -> list:
-        """Convert OpenAI-format messages to LangChain message objects."""
+        """Convert OpenAI-format messages to LangChain message objects.
+
+        System messages from the incoming list are intentionally skipped —
+        ``create_react_agent`` injects its own system prompt via the ``prompt``
+        argument, and a second system message can cause models (especially
+        Qwen/vLLM) to ignore the graph's system prompt entirely.
+        """
         lc_messages: list = []
         for msg in messages:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             if role == "system":
-                lc_messages.append(SystemMessage(content=content))
-            elif role == "assistant":
+                continue  # graph's prompt is authoritative, skip incoming system msgs
+            if role == "assistant":
                 lc_messages.append(AIMessageChunk(content=content))
             else:
                 lc_messages.append(HumanMessage(content=content))

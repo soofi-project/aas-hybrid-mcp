@@ -300,6 +300,13 @@ RETURN DISTINCT sc.id ORDER BY sc.id
 Then match the correct id against the templates index (`get_templates_index()`)
 to identify the template — never guess a semanticId from training memory.
 
+For *property-level* semanticIds that are not template ids (e.g. ECLASS
+IRDIs like `0173-1#02-ABL884#002`), call `lookup_semantic_id(id)` to
+resolve the IEC 61360 ConceptDescription content (preferredName,
+definition, dataType, unit). If the lookup returns `resolved=false`, the
+IRDI is a standardised external reference whose dictionary content is
+not available locally — report this transparently.
+
 ## Example Queries
 
 List all AAS with their assets:

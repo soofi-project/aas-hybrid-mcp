@@ -22,9 +22,11 @@ COMPLEMENTS the deterministic tools:
 - This tool is the *fuzzy* surface: use it when you don't know the
   template name in advance and need to retrieve by intent.
 
-TEMPLATE NAMES: pass the name from `get_templates_index()` verbatim
-to `get_template(name)` — CamelCase, no spaces (e.g. `CapabilityDescription`,
-not `Capability Description`).
+USE THE EXACT NAME from the search result for `template_name` and for
+passing to `get_template(name)`. Names often contain spaces and mixed
+capitalisation (e.g. `"Capability Description"`, `"Hierarchical Structures enabling Bills of Material"`).
+**Do not** strip spaces or convert to CamelCase — `get_template()` expects
+the verbatim name.
 
 SCOPE WITH `template_name` (e.g. `Nameplate`) to search only that
 template's specification when you already know which one you mean.

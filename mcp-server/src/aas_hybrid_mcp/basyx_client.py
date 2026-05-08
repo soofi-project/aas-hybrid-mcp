@@ -19,10 +19,12 @@ log = logging.getLogger(__name__)
 
 AAS_REPO_URL = os.environ.get("AAS_REPO_URL", "http://aas-environment:8081")
 SUBMODEL_REPO_URL = os.environ.get("SUBMODEL_REPO_URL", "http://aas-environment:8081")
+CD_REPO_URL = os.environ.get("CD_REPO_URL", "http://aas-environment:8081")
 _TIMEOUT = 30.0
 
 _aas_client: httpx.AsyncClient | None = None
 _sm_client: httpx.AsyncClient | None = None
+_cd_client: httpx.AsyncClient | None = None
 
 
 def _get_aas_client() -> httpx.AsyncClient:
@@ -39,6 +41,14 @@ def _get_sm_client() -> httpx.AsyncClient:
         _sm_client = httpx.AsyncClient(base_url=SUBMODEL_REPO_URL, timeout=_TIMEOUT)
         log.info("BaSyx submodel repo client created for %s", SUBMODEL_REPO_URL)
     return _sm_client
+
+
+def _get_cd_client() -> httpx.AsyncClient:
+    global _cd_client
+    if _cd_client is None:
+        _cd_client = httpx.AsyncClient(base_url=CD_REPO_URL, timeout=_TIMEOUT)
+        log.info("BaSyx CD repo client created for %s", CD_REPO_URL)
+    return _cd_client
 
 
 def _b64url(s: str) -> str:
@@ -152,11 +162,26 @@ async def delete_submodel_element(submodel_id: str, id_short_path: str) -> dict:
     return {"status": "ok", "idShortPath": id_short_path}
 
 
+async def get_concept_description(cd_id: str) -> dict | None:
+    """Fetch a ConceptDescription by id. Returns the raw CD dict, or None on 404."""
+    client = _get_cd_client()
+    r = await client.get(f"/concept-descriptions/{_b64url(cd_id)}")
+    if r.status_code == 404:
+        return None
+    _raise_for_status_with_body(r)
+    return r.json()
+
+
 async def close() -> None:
-    global _aas_client, _sm_client
-    for client, name in ((_aas_client, "AAS repo"), (_sm_client, "submodel repo")):
+    global _aas_client, _sm_client, _cd_client
+    for client, name in (
+        (_aas_client, "AAS repo"),
+        (_sm_client, "submodel repo"),
+        (_cd_client, "CD repo"),
+    ):
         if client is not None:
             await client.aclose()
             log.info("BaSyx %s client closed", name)
     _aas_client = None
     _sm_client = None
+    _cd_client = None

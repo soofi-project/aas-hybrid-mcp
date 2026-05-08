@@ -7,6 +7,7 @@ Init container that runs once on stack start:
 4. Convert spec PDFs to markdown, chunk, embed, insert into Weaviate
 """
 
+import base64
 import json
 import logging
 import os
@@ -17,6 +18,7 @@ import tempfile
 import time
 from pathlib import Path
 
+import httpx
 import pymupdf4llm
 import weaviate
 import weaviate.classes.config as wvc
@@ -45,6 +47,9 @@ IDTA_COLLECTION = "IdtaTemplateSpec"
 CHUNK_SIZE = int(os.environ["CHUNK_SIZE"])
 CHUNK_OVERLAP = int(os.environ["CHUNK_OVERLAP"])
 EMBEDDING_BATCH_SIZE = int(os.environ["EMBEDDING_BATCH_SIZE"])
+
+CD_REPO_URL = os.environ.get("CD_REPO_URL", "http://aas-environment:8081")
+BASYX_TIMEOUT = 30.0
 
 WEAVIATE_RETRY_INTERVAL = 5
 WEAVIATE_TIMEOUT = 120
@@ -703,6 +708,89 @@ def ingest_pdfs(
 
 
 # ---------------------------------------------------------------------------
+# ConceptDescription push to BaSyx CD-Repository
+# ---------------------------------------------------------------------------
+
+
+def _b64url(s: str) -> str:
+    """Base64-URL encode an AAS identifier (no padding, per IDTA Part 2 REST spec)."""
+    return base64.urlsafe_b64encode(s.encode()).decode().rstrip("=")
+
+
+def push_concept_descriptions(templates: list[dict]) -> None:
+    """PUT every ConceptDescription from each template's AAS package JSON
+    into the BaSyx ConceptDescription Repository.
+
+    Idempotent: PUT-by-id replaces existing entries silently. Per-CD failures
+    are logged and do not abort the loop. Templates without CDs are skipped
+    quietly.
+    """
+    pushed_total = 0
+    failed_total = 0
+    skipped_total = 0
+    templates_with_cds = 0
+
+    with httpx.Client(base_url=CD_REPO_URL, timeout=BASYX_TIMEOUT) as client:
+        for tpl in templates:
+            name = tpl["name"]
+            template_dir = tpl["path"]
+
+            json_path = _find_json(template_dir)
+            if json_path is None:
+                continue
+            try:
+                data = json.loads(json_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+
+            cds = data.get("conceptDescriptions") or []
+            if not cds:
+                continue
+
+            templates_with_cds += 1
+            pushed = 0
+            failed = 0
+
+            for cd in cds:
+                cd_id = cd.get("id")
+                if not cd_id:
+                    skipped_total += 1
+                    continue
+
+                try:
+                    r = client.put(
+                        f"/concept-descriptions/{_b64url(cd_id)}",
+                        json=cd,
+                    )
+                    if r.status_code == 404:
+                        # CD not yet present — fall back to POST
+                        r = client.post("/concept-descriptions", json=cd)
+                    if r.status_code in (200, 201, 204, 409):
+                        pushed += 1
+                    else:
+                        failed += 1
+                        log.warning(
+                            "PUT CD %s failed: %d %s",
+                            cd_id, r.status_code, r.text[:200],
+                        )
+                except httpx.HTTPError as e:
+                    failed += 1
+                    log.warning("PUT CD %s exception: %s", cd_id, e)
+
+            pushed_total += pushed
+            failed_total += failed
+            log.info(
+                "Pushed %d/%d CDs for template %s",
+                pushed, len(cds), name,
+            )
+
+    log.info(
+        "CD push complete: %d templates carried CDs, %d pushed, %d failed, %d skipped (no id)",
+        templates_with_cds, pushed_total, failed_total, skipped_total,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -753,7 +841,10 @@ def main():
             setup_collection(client)
             ingest_pdfs(client, templates, index_entries)
 
-            # 7. Store sync hash on success
+            # 7. Push template-defined ConceptDescriptions to BaSyx
+            push_concept_descriptions(templates)
+
+            # 8. Store sync hash on success
             store_sync_hash(client, repo_hash)
 
         finally:
