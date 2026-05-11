@@ -6,11 +6,11 @@ type: project
 
 ## Overview
 
-All variants share a single MCP client connection, tool list, and MCP context at startup. Runners are **lazy-initialized** on first request for their model ID and cached for the process lifetime. Selection via **model name** in the OpenAI-compatible `/v1/chat/completions` request — the user picks their pattern in Open WebUI (or any client). No more global `AGENT_VARIANT` env var.
+All variants share a single MCP client connection, tool list, and MCP context at startup. Runners are **lazy-initialized** on first request for their model ID and cached for the process lifetime. Selection via **model name** in the OpenAI-compatible `/v1/chat/completions` request — the user picks their pattern in Open WebUI (or any client).
 
 Each runner implements the same interface: `initialize`, `_lazy_init`, `stream`, `invoke`, `direct_invoke`.
 
-All tool-bearing variants include `get_current_utc_time` as a built-in tool alongside MCP tools. The `aas-agent:passthrough` model is a **passthrough** — single LLM call, no tools, no LangGraph.
+All tool-bearing variants include `get_current_utc_time` as a built-in tool alongside MCP tools. The `aas-agent:passthrough` model is an internal baseline — single LLM call, no tools, no LangGraph — used for Open WebUI's follow-up question generation.
 
 **Default model** is `aas-agent:react` (set via `AGENT_DEFAULT_MODEL` env var).
 
@@ -19,8 +19,7 @@ All tool-bearing variants include `get_current_utc_time` as a built-in tool alon
 | Model ID | Variant | Tools? | Graph Topology | Status (2026-05-11) |
 |---|---|---|---|---|
 | `aas-agent:react` | `AgentRunner` | ✅ | Single LLM loop with tool calls (`create_react_agent`) | ✅ Stable |
-| `aas-agent:react-valid` | `AgentRunner` | ✅ | Same as react, prompt adds self-validation (Self-Refine) | ✅ Stable |
-| `aas-agent:passthrough` | `PassthroughRunner` | ❌ | Single LLM call, no graph, no tools | ✅ Stable |
+| `aas-agent:passthrough` | `PassthroughRunner` | ❌ | Single LLM call, no graph, no tools (internal baseline) | ✅ Stable |
 | `aas-agent:plan` | `PlanReflectAgentRunner` | ✅ | `planner → executor → reflector → finalizer` | ✅ Stable (since 2026-05-11) |
 | `aas-agent:crag` | `CragAgentRunner` | ✅ | `executor → relevance check → (refine → executor) → synthesizer` | ✅ Stable (since 2026-05-11) |
 | `aas-agent:reflexion` | `ReflexionAgentRunner` | ✅ | `executor → judge → (reflect → executor) → finalizer` | ✅ Stable (since 2026-05-11) |
@@ -155,4 +154,4 @@ The vLLM Qwen model often returns:
 
 Section 3.6 "Agent Orchestration and Variants" (`paper/etfa2026/conference_etfa_2026.tex:113-124`):
 - Evaluated in Bench B: react, plan_reflect, crag, reflexion
-- Reserved: react_validating (Self-Refine, madaan2023self_refine), agent_supervisor (wu2023autogen, du2023multiagent_debate), rewoo (xu2024rewoo)
+- Reserved: agent_supervisor (wu2023autogen, du2023multiagent_debate), rewoo (xu2024rewoo)

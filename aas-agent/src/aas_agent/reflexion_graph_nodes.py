@@ -9,8 +9,9 @@ import os
 from typing import Callable
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
+from langgraph.prebuilt import create_react_agent
 
 from aas_agent.qwen_parser import QwenOutputParser, _normalize_json_from_qwen
 from aas_agent.reflexion_state import (
@@ -29,14 +30,14 @@ log = logging.getLogger(__name__)
 
 _EXECUTOR_PROMPT = """You are an executor for the AAS Maintenance Assistant answering the user's query.
 
-You have access to multiple MCP tools including graph queries (search_graph, get_asset, list_assets),
-manual/document lookups (get_manual_page, get_manual_index), and template discovery (search_idt_templates).
+You have access to MCP tools for graph queries, document search, template discovery,
+and manual lookups.
 
 Your job: produce a complete, accurate answer to the user's query.
 - Use tools to retrieve relevant information before answering.
-- Cross-reference evidence between graph, manual, and template sources.
+- Cross-reference evidence between sources.
 - Be thorough and precise. Never fabricate content.
-- When you're confident you have enough information, provide a clear, direct answer.
+- After gathering enough information, STOP calling tools and provide a direct answer.
 - Structure your answer to address ALL parts of the user's query.
 """
 
@@ -70,41 +71,21 @@ async def _run_executor_subloop(
     user_request: str,
     max_iterations: int = 5,
 ) -> tuple[list, str]:
-    """Bounded ReAct loop — produces messages and final answer text."""
-    messages = [
-        SystemMessage(content=prompt_text),
-        HumanMessage(content=user_request),
-    ]
-    tool_map = {t.name: t for t in tools}
-    tool_calls = 0
+    """ReAct loop via LangGraph's create_react_agent for robust tool calling."""
+    react_agent = create_react_agent(
+        model=llm,
+        tools=tools,
+        prompt=prompt_text,
+    )
 
-    for _ in range(max_iterations):
-        response = await llm.ainvoke(messages)
-        if not isinstance(response, AIMessage) or not response.tool_calls:
-            messages.append(response)
-            break
+    result = await react_agent.ainvoke(
+        {"messages": [HumanMessage(content=user_request)]},
+        config={"recursion_limit": max_iterations * 6},
+    )
 
-        messages.append(response)
-        for tc in response.tool_calls:
-            tool_calls += 1
-            tool = tool_map.get(tc["name"])
-            if tool is None:
-                messages.append(ToolMessage(
-                    content=f"Unknown tool: {tc['name']}", name=tc["name"], tool_call_id=tc["id"]
-                ))
-                continue
-            try:
-                result = await tool.ainvoke(tc["args"])
-                result_text = getattr(result, "content", str(result))
-                messages.append(ToolMessage(
-                    content=result_text, name=tc["name"], tool_call_id=tc["id"]
-                ))
-            except Exception as exc:
-                messages.append(ToolMessage(
-                    content=f"Tool error: {exc}", name=tc["name"], tool_call_id=tc["id"]
-                ))
+    messages = result.get("messages", [])
 
-    # Extract answer from last non-tool-call message
+    # Extract answer from last non-tool-call AIMessage
     answer = ""
     for msg in reversed(messages):
         if isinstance(msg, AIMessage) and msg.tool_calls:
@@ -126,7 +107,7 @@ def make_executor_node(
     async def executor_node(state: ReflexionState) -> dict:
         user_request = _last_human_text(state)
 
-        # Build prompt with accumulated feedback
+        # Build prompt: executor instructions + system prompt + MCP context + feedback
         prompt_parts = [_EXECUTOR_PROMPT, "\n\n---\n\n", base_system]
 
         feedback_history = state.get("feedback_history", [])
@@ -239,14 +220,14 @@ def _parse_judgment(content: str) -> Judgment | None:
         parser = QwenOutputParser(pydantic_model=Judgment)
         return parser.parse(content)
     except Exception:
-        pass
+        log.debug("Failed to parse judgment via QwenOutputParser")
 
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "score" in normalized:
         try:
             return Judgment.model_validate(normalized)
         except Exception:
-            pass
+            log.debug("Failed to validate normalized judgment via pydantic")
 
     try:
         parsed = json.loads(content.strip())
@@ -256,7 +237,7 @@ def _parse_judgment(content: str) -> Judgment | None:
                 parsed["missing"] = [parsed["missing"]] if parsed["missing"] else []
             return Judgment.model_validate(parsed)
     except (json.JSONDecodeError, Exception):
-        pass
+        log.debug("Failed to parse judgment via raw JSON")
 
     return None
 
@@ -338,14 +319,14 @@ def _parse_reflection(content: str) -> ReflectionFeedback | None:
         parser = QwenOutputParser(pydantic_model=ReflectionFeedback)
         return parser.parse(content)
     except Exception:
-        pass
+        log.debug("Failed to parse reflection via QwenOutputParser")
 
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "strategy_hint" in normalized:
         try:
             return ReflectionFeedback.model_validate(normalized)
         except Exception:
-            pass
+            log.debug("Failed to validate normalized reflection via pydantic")
 
     try:
         parsed = json.loads(content.strip())
@@ -354,7 +335,7 @@ def _parse_reflection(content: str) -> ReflectionFeedback | None:
                 parsed["common_pitfalls"] = [parsed["common_pitfalls"]] if parsed["common_pitfalls"] else []
             return ReflectionFeedback.model_validate(parsed)
     except json.JSONDecodeError:
-        pass
+        log.debug("Failed to parse reflection via raw JSON")
 
     return None
 
@@ -449,7 +430,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
         parser = QwenOutputParser(pydantic_model=FinalAnswer)
         return parser.parse(content)
     except Exception:
-        pass
+        log.debug("Failed to parse final answer via QwenOutputParser")
 
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "answer" in normalized and "confidence" in normalized:
@@ -457,15 +438,15 @@ def _parse_final_answer(content: str) -> FinalAnswer:
             _coerce_final_answer(normalized)
             return FinalAnswer.model_validate(normalized)
         except Exception:
-            pass
+            log.debug("Failed to validate normalized final answer via pydantic")
 
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "answer" in parsed and "confidence" in parsed:
             _coerce_final_answer(parsed)
             return FinalAnswer.model_validate(parsed)
-    except json.JSONDecodeError:
-        pass
+    except (json.JSONDecodeError, Exception):
+        log.debug("Failed to parse final answer via raw JSON")
 
     return FinalAnswer(
         answer=content.strip()[:2000] if content.strip() else "No results from Reflexion pipeline.",

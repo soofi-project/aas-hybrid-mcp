@@ -77,9 +77,14 @@ class ConversationLogger:
         turn_num = sum(1 for m in messages if m.get("role") == "user")
         self._path = self._resolve_path(messages, turn_num, now)
 
-        meta = f"*{ts} — model: {model} — {self._completion_id}"
-        if extra:
-            meta += f" — {extra}"
+        variant = (extra or {}).get("variant", "")
+        is_verbose = (extra or {}).get("verbose", False)
+        meta = f"*{ts} — model: {model}"
+        if variant:
+            meta += f" — variant: {variant}"
+        if is_verbose:
+            meta += " — verbose"
+        meta += f" — {self._completion_id}"
         meta += "*"
 
         self._parts.append(f"# Turn {turn_num}\n{meta}\n\n")

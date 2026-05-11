@@ -13,6 +13,7 @@ from typing import Callable
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
+from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel
 
 from aas_agent.crag_state import AgentState, FinalAnswer, RetrieverStep, RelevanceScore
@@ -40,7 +41,13 @@ Your job: retrieve the BEST possible information to answer the user's query.
 """
 
 _RELEVANCE_PROMPT = """You are a relevance evaluator. Judge how well the retrieved evidence
-answers a user query. Rate relevance 0.0-1.0 and explain your scoring.
+answers a user query. Rate relevance 0.0-1.0 and decide on an action.
+
+Decide on an action:
+    - correct: evidence sufficiently answers the query → synthesize immediately
+    - incorrect: evidence is totally irrelevant or wrong → discard and retry from scratch
+    - ambiguous: partial evidence, some useful info but incomplete → keep and supplement
+
 State whether refinement is needed (with a concrete hint) or not.
 """
 
@@ -56,7 +63,7 @@ Output ONLY a JSON object with keys: answer, confidence, unresolved (list).
 
 
 # ---------------------------------------------------------------------------
-# Executor node — bounded ReAct sub-loop (like plan_reflect's executor)
+# Executor node — bounded ReAct sub-loop via create_react_agent
 # ---------------------------------------------------------------------------
 
 
@@ -67,41 +74,28 @@ async def _run_executor_subloop(
     user_request: str,
     max_iterations: int = 5,
 ) -> tuple[list[BaseMessage], int]:
-    """Bounded ReAct loop — same pattern as plan_reflect's executor."""
-    messages = [
-        SystemMessage(content=prompt_text),
-        HumanMessage(content=user_request),
-    ]
-    tool_map = {t.name: t for t in tools}
-    tool_calls = 0
+    """Bounded ReAct via create_react_agent (Qwen+vLLM compatible)."""
+    agent = create_react_agent(
+        model=llm,
+        tools=tools,
+        prompt=prompt_text,
+    )
 
-    for _ in range(max_iterations):
-        response = await llm.ainvoke(messages)
-        if not isinstance(response, AIMessage) or not response.tool_calls:
-            messages.append(response)
-            break
+    result = await agent.ainvoke(
+        {
+            "messages": [
+                HumanMessage(content=user_request),
+            ]
+        },
+        config={"recursion_limit": max_iterations * 6},
+    )
 
-        messages.append(response)
-        for tc in response.tool_calls:
-            tool_calls += 1
-            tool = tool_map.get(tc["name"])
-            if tool is None:
-                messages.append(ToolMessage(
-                    content=f"Unknown tool: {tc['name']}", name=tc["name"], tool_call_id=tc["id"]
-                ))
-                continue
-            try:
-                result = await tool.ainvoke(tc["args"])
-                result_text = getattr(result, "content", str(result))
-                messages.append(ToolMessage(
-                    content=result_text, name=tc["name"], tool_call_id=tc["id"]
-                ))
-            except Exception as exc:
-                messages.append(ToolMessage(
-                    content=f"Tool error: {exc}", name=tc["name"], tool_call_id=tc["id"]
-                ))
-
-    return messages, tool_calls
+    produced = result.get("messages", [])
+    tool_calls = sum(
+        1 for m in produced
+        if isinstance(m, AIMessage) and getattr(m, "tool_calls", None)
+    )
+    return produced, tool_calls
 
 
 def make_executor_node(
@@ -118,12 +112,13 @@ def make_executor_node(
 
         # Determine if refinement was requested
         refinement = state.get("_refinement")
+        discarding = state.get("_discard", False)
+
         if refinement:
             # Apply refinement hint
             query_text = refinement.get("new_query", refinement.get("query", user_request))
             instruction = (
-                f"Previous retrieval attempts failed.\n"
-                f"{refinement.get('refinement_note', refinement.get('suggestion', 'Try a different approach.'))}\n\n"
+                f"{refinement.get('refinement_note', 'Try a different approach.')}\n\n"
                 f"Please try this query:\n{query_text}"
             )
         else:
@@ -200,19 +195,23 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
                 )
             }
 
-        # Combine evidence for evaluation
+        # Combine evidence for evaluation (truncate to avoid context window blowup)
         evidence_parts = []
         for i, ev in enumerate(evidence):
             content = ev.get("content", "") if isinstance(ev, dict) else str(ev)
-            evidence_parts.append(f"--- Evidence {i+1} ---\n{content[:1200]}")
+            evidence_parts.append(f"--- Evidence {i+1} ---\n{content[:600]}")
 
-        combined = "\n\n".join(evidence_parts)
+        combined = "\n\n".join(evidence_parts)[:6000]
 
+        upper = state.get("relevance_threshold", 0.7)
+        lower = state.get("relevance_threshold_low", 0.3)
         ctx = (
             f"User query:\n{user_request}\n\n"
             f"Retrieved evidence:\n{combined}\n\n"
-            f"Rate relevance 0.0-1.0 and explain. Include needs_refinement and refinement_hint.\n"
-            f"Output ONLY a JSON object with keys: relevance_score, reason, needs_refinement, refinement_hint."
+            f"Rate relevance 0.0-1.0 and decide on an action.\n"
+            f"Thresholds — correct >= {upper}, incorrect <= {lower}, else ambiguous.\n\n"
+            f"Output ONLY a JSON object with keys: "
+            f"relevance_score, reason, needs_refinement, refinement_hint, action."
         )
 
         msgs = [
@@ -234,8 +233,31 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
                 refinement_hint="Try alternative retrieval strategy.",
             )
 
+        # Enforce numeric thresholds — never trust the LLM's action string alone.
+        # (Paper §4.3: deterministic 3-way action trigger.)
+        score = relevance.relevance_score
+        if score >= upper:
+            relevance.action = "correct"
+        elif score <= lower:
+            relevance.action = "incorrect"
+        else:
+            relevance.action = "ambiguous"
+
+        log.info(
+            "relevance: score=%.2f action=%s (thresholds: <=%.2f incorrect, >=%.2f correct)",
+            score, relevance.action, lower, upper,
+        )
+
         # Propagate the relevance score back into the evidence entries so the
         # synthesizer can filter HIGH vs PARTIAL findings.
+        # After "incorrect" action, evidence was already discarded → start fresh.
+        if relevance.action == "incorrect":
+            return {
+                "last_relevance": relevance,
+                "refinement_count": state.get("refinement_count", 0) + 1,
+                "_discard": True,
+            }
+
         updated = list(state.get("evidence", []))
         for ev in updated:
             if isinstance(ev, dict):
@@ -244,6 +266,7 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
         return {
             "last_relevance": relevance,
             "evidence": updated,
+            "refinement_count": state.get("refinement_count", 0) + 1,
         }
 
     return relevance_node
@@ -275,12 +298,12 @@ def _parse_relevance(content: str) -> RelevanceScore | None:
 
 
 # ---------------------------------------------------------------------------
-# Refine node
+# Refine node — used for "ambiguous" action (keep evidence, supplement)
 # ---------------------------------------------------------------------------
 
 
 def make_refine_node(llm: BaseChatModel) -> Callable:
-    """Generates a new query based on low relevance feedback."""
+    """Generates a supplementary query to expand partial evidence."""
 
     async def refine_node(state: AgentState) -> dict:
         user_request = _last_human_text(state)
@@ -328,18 +351,109 @@ def make_refine_node(llm: BaseChatModel) -> Callable:
 
         refinement = {
             "new_query": new_query,
-            "refinement_note": f"Query refinement: {suggestion}",
+            "refinement_note": f"Supplementary retrieval: {suggestion}",
         }
 
         log.info(
-            "refine: attempt %d, new_query=%s",
+            "refine(ambiguous): attempt %d, new_query=%s",
             state.get("refinement_count", 0) + 1,
             new_query[:100],
         )
 
-        return {"_refinement": refinement}
+        return {
+            "_refinement": refinement,
+            "_discard": False,  # clear discard flag for next executor run
+        }
 
     return refine_node
+
+
+# ---------------------------------------------------------------------------
+# Uncorrect node — used for "incorrect" action (discard & retry from scratch)
+# ---------------------------------------------------------------------------
+
+
+def make_uncorrect_node(llm: BaseChatModel) -> Callable:
+    """Generates a completely fresh query when previous evidence was discarded."""
+
+    async def uncorrect_node(state: AgentState) -> dict:
+        user_request = _last_human_text(state)
+        relevance = state.get("last_relevance")
+        prior_steps = state.get("retriever_steps", [])
+
+        # Build context from failed attempts
+        failures = []
+        for i, step in enumerate(prior_steps):
+            failures.append(
+                f"Attempt {i+1}: '{step.get('query', '?')[:100]}' → Score: {step.get('relevance_score', 0):.1f}"
+            )
+        context = "\n".join(failures) if failures else ""
+
+        hint = relevance.refinement_hint if relevance else "Try a completely different approach."
+
+        ctx = (
+            f"User query:\n{user_request}\n\n"
+            f"Previous retrieval attempts all failed:\n{context}\n\n"
+            f"Refinement hint: {hint}\n\n"
+            f"All previous evidence has been discarded. Generate a FRESH query "
+            f"using a completely different retrieval strategy.\n"
+            f"Output ONLY a JSON object with keys: query, suggestion."
+        )
+
+        msgs = [
+            SystemMessage(content=_REFINE_PROMPT),
+            HumanMessage(content=ctx),
+        ]
+
+        response = await llm.ainvoke(msgs)
+        content = response.content
+        if isinstance(content, list):
+            content = content[0].text if content else ""
+
+        # Parse query + suggestion
+        try:
+            parsed = json.loads(content.strip())
+            new_query = parsed.get("query", user_request) if isinstance(parsed, dict) else user_request
+            suggestion = parsed.get("suggestion", hint) if isinstance(parsed, dict) else hint
+        except json.JSONDecodeError:
+            new_query = user_request
+            suggestion = hint
+
+        refinement = {
+            "new_query": new_query,
+            "refinement_note": f"Retrieval restart (all previous evidence was discarded): {suggestion}",
+        }
+
+        log.info(
+            "uncorrect(incorrect): attempt %d, new_query=%s",
+            state.get("refinement_count", 0) + 1,
+            new_query[:100],
+        )
+
+        return {
+            "_refinement": refinement,
+            "_discard": False,  # already discarded, clear for next executor run
+        }
+
+    return uncorrect_node
+
+
+# ---------------------------------------------------------------------------
+# Discard node — clears evidence after "incorrect" action
+# ---------------------------------------------------------------------------
+
+
+def make_discard_node() -> Callable:
+    """Resets evidence list when previous retrieval was totally irrelevant."""
+
+    def discard_node(state: AgentState) -> dict:
+        old_count = len(state.get("evidence", []))
+        log.info("discard: cleared %d stale evidence entries", old_count)
+        return {
+            "evidence": [],
+        }
+
+    return discard_node
 
 
 # ---------------------------------------------------------------------------
@@ -445,11 +559,14 @@ def make_synthesizer_node(llm: BaseChatModel) -> Callable:
             }.get(final.confidence, 0.5),
             result_summary=final.answer[:200],
         )
-        updated_steps = list(steps) + [step]
+        updated_steps = list(state.get("retriever_steps", [])) + [step]
 
+        # Clear transient flags
         return {
             "messages": [AIMessage(content=rendered)],
             "retriever_steps": updated_steps,
+            "_refinement": None,
+            "_discard": False,
         }
 
     return synthesizer_node
@@ -503,25 +620,31 @@ def _parse_final_answer(content: str) -> FinalAnswer:
 
 
 def route_after_relevance(state: AgentState) -> str:
-    """Conditional edge after relevance evaluation."""
+    """Conditional edge after relevance evaluation — 3-way action trigger (Paper §4.3).
+
+    correct → synthesize
+    incorrect → discard_evidence → uncorrect → executor
+    ambiguous → refine → executor
+    """
     relevance = state.get("last_relevance")
     if relevance is None:
         return "synthesize"
 
     max_refinements = state.get("max_refinements", 3)
-    threshold = state.get("relevance_threshold", 0.7)
-
-    if relevance.relevance_score >= threshold:
-        return "synthesize"
 
     if state.get("refinement_count", 0) >= max_refinements:
         log.info("CRAG: max refinements (%d) reached → synthesize", max_refinements)
         return "synthesize"
 
-    if relevance.needs_refinement:
+    action = getattr(relevance, "action", "correct")
+    if action == "correct":
+        return "synthesize"
+    elif action == "incorrect":
+        log.info("CRAG: action=incorrect → discard & uncorrect")
+        return "discard"
+    else:  # ambiguous
+        log.info("CRAG: action=ambiguous → refine & supplement")
         return "refine"
-
-    return "synthesize"
 
 
 # ---------------------------------------------------------------------------

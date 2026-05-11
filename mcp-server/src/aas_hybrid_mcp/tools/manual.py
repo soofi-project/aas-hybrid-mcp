@@ -25,8 +25,10 @@ BaSyx AAS environment. This page indexes the rest of the manual.
   **Call before the first write.**
 - `troubleshooting` — what to do when a query returns zero rows.
   **Call after any 0-row result.**
-- `recipes` — worked end-to-end examples (hall → assets, instance → type
-  → docs, capability lookup, diagnostic listing).
+- `recipes` — worked end-to-end examples (container traversal, instance → type
+   → docs, capability lookup, diagnostic listing).
+- `mapping` — AASX field → Neo4j graph mapping. **Call when you need to know
+   how an AAS type (Entity, SMC, etc.) maps to Neo4j relationships.**
 
 ## Four rules that catch the most failures
 
@@ -40,8 +42,11 @@ BaSyx AAS environment. This page indexes the rest of the manual.
    suffix, no version normalisation, no recall from training memory. The graph
    may also carry non-IDTA semanticIds (e.g. ZVEI Nameplate); discover them
    with `MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc) RETURN DISTINCT sc.id`.
-4. Never match assets by `idShort` for domain reasoning. `idShort` is a
-   free-form local label; semantic meaning lives only in
+4. Never use `idShort` for **domain reasoning** or **capability matching**.
+   `idShort` is a free-form local label. Using it to identify a shell the
+   user named (e.g. "Hall 4") is acceptable as a starting point — but
+   always verify what the shell actually contains by listing its submodels
+   and their template semanticIds. Semantic meaning lives only in
    `HAS_SEMANTIC_ID` / `HAS_SUPPLEMENTAL_SEMANTIC_ID`.
 
 ## Tools — call on demand
@@ -69,9 +74,10 @@ semanticIds are the largest single source of zero-row results.
 **1. `Repository` is AAS-storage, not a physical location.**
 The `(:AssetAdministrationShell)-[:DEPLOYED_IN]->(:Repository)` edge
 points to the BaSyx server URL where the shell lives. It is not a hall,
-room, or factory section. Locations live in submodels conforming to
-`HierarchicalStructures` (or another location-bearing template),
-discovered via `HAS_SEMANTIC_ID`.
+room, or factory section. Physical location and containment hierarchy
+live in submodels whose template describes such concepts (discovered
+via `HAS_SEMANTIC_ID`). Check `get_templates_index()` for templates
+whose description mentions location, hierarchy, or containment.
 
 **2. `semanticId` is a relation, not a property.**
 ```cypher
@@ -82,21 +88,25 @@ MATCH (sm:Submodel {semanticId: 'https://...'}) ...
 MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) ...
 ```
 
-**3. Use IDTA semanticIds verbatim — do not enrich them.**
-For example, `HierarchicalStructures` is
-`https://admin-shell.io/idta/HierarchicalStructures/1/1` — *not*
-`.../1/1/Submodel`. The exact strings come from
-`get_templates_index()`.
+**3. Use semanticIds verbatim — do not enrich them.**
+The exact strings come from `get_templates_index()` or the graph's
+discovery query. Do not append `/Submodel`, change version numbers,
+or recall URIs from training memory. For example, if the index says
+`https://example.com/template/1/0`, match that exact string — not
+`.../1/0/Submodel` or `.../2/0`.
 
 **4. `assetType` and `assetKind` are optional and often null.**
 Use `(:AssetAdministrationShell)-[:DERIVED_FROM]->` for type vs.
 instance distinction; use submodel semanticIds for domain
 classification.
 
-**5. Never match by `idShort` — always reason via `semanticId`.**
+**5. Never use `idShort` for domain reasoning.**
 `idShort` is a free-form local label chosen by the shell author.
-Domain classification (transport robot, welding cell, …) and template
-conformance must be expressed via `HAS_SEMANTIC_ID` /
+Using it to locate a shell the user explicitly named is acceptable as an
+entry point — but do not derive its purpose, capabilities, or containment
+structure from `idShort` alone. Verify by listing the shell's submodels
+and their template semanticIds. Domain classification, capability matching,
+and template conformance must be expressed via `HAS_SEMANTIC_ID` /
 `HAS_SUPPLEMENTAL_SEMANTIC_ID`.
 
 ## Useful traversal recipes
@@ -131,14 +141,14 @@ MATCH (instance:AssetAdministrationShell {id: $instanceId})
 RETURN type.id, type.idShort
 ```
 
-Container traversal — a Hall AAS owns a HierarchicalStructures
-submodel; contained assets appear as ReferenceElement values inside
-its Entity tree:
+Container traversal — a container AAS (hall, cell, ...) owns a submodel
+whose template carries an Entity tree for contained assets:
 ```cypher
 MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
       -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
-MATCH (sm)-[:HAS_ELEMENT*]->(ref:ReferenceElement)-[:HAS_VALUE]->(contained)
-RETURN container.idShort, contained.idShort, labels(contained) AS containedType
+MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
+MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
+RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId
 ```
 
 For the full label/relation catalogue and 10+ further example queries,
@@ -156,9 +166,9 @@ _TEMPLATES = """\
 User questions almost always map to a domain concept — location,
 containment, capability, contact information, maintenance schedule,
 certificates, technical data, … The answer lives in a submodel that
-conforms to a specific IDTA template. Your job is to translate user
-intent → template → semanticId → graph traversal. Don't invent ad-hoc
-Cypher patterns and don't recall semanticIds from training memory.
+conforms to a template. Your job is to translate user intent → template
+→ semanticId → graph traversal. Don't invent ad-hoc Cypher patterns and
+don't recall semanticIds from training memory.
 
 ## Three-step lookup
 
@@ -178,11 +188,9 @@ Cypher patterns and don't recall semanticIds from training memory.
 
 Several legacy templates use ZVEI URIs even when IDTA has published an
 equivalent template. The most common case is Nameplate: the IDTA
-templates index lists
-`https://admin-shell.io/idta/nameplate/3/0/Nameplate`, but a graph
-populated from older AASX files may carry
-`https://admin-shell.io/zvei/nameplate/2/0/Nameplate` instead. Filtering
-on the IDTA-3.0 ID returns zero rows.
+templates index lists one version, but a graph populated from older AASX
+files may carry a ZVEI or older variant instead. Filtering on the
+current IDTA ID returns zero rows.
 
 When this happens, do NOT conclude the data is absent. Run the
 discovery query and use whatever semanticId the graph actually carries:
@@ -333,36 +341,42 @@ End-to-end examples for the most common question shapes. Each recipe
 assumes you have already read `get_manual_page("cypher")` and (for steps
 involving templates) `get_templates_index()`.
 
-## Recipe A — "What's in hall 4?" (container traversal)
+## Recipe A — "What's in X?" (container traversal)
 
-The Hall AAS is the container. It owns a `HierarchicalStructures`
-submodel that lists contained assets as `ReferenceElement` nodes.
-Traverse from the Hall outward — assets do NOT reference back to their
-hall.
+A container AAS (hall, cell, production line, …) typically has a submodel
+whose template describes a containment hierarchy of `Entity` nodes, each
+linked to `:Asset` via `REPRESENTS_ASSET`.
 
+1. Find the container AAS — identify it from the user's question.
+2. Discover which of its submodels carry containment data:
+   ```cypher
+   MATCH (aas:AssetAdministrationShell {idShort: $containerIdShort})-[:HAS_SUBMODEL]->(sm:Submodel)
+   OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+   RETURN sm.idShort, sc.id AS templateSemanticId
+   ```
+3. Pick the submodel whose template describes containment (check
+   `get_templates_index()` or `get_template(name)`), then traverse:
+   ```cypher
+   MATCH (container:AssetAdministrationShell {idShort: $containerIdShort})
+         -[:HAS_SUBMODEL]->(sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: $templateId})
+   MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
+   MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
+   RETURN parent.idShort, child.idShort, asset.globalAssetId
+   ```
+
+If step 3 returns zero rows, the nesting may be flat (no parent/child
+Entity tree). Try:
 ```cypher
-// 1. Find Hall AAS by name (idShort acceptable here — purely identification)
-MATCH (hall:AssetAdministrationShell)
-WHERE hall.idShort CONTAINS 'Hall'
-RETURN hall.idShort, hall.id
-
-// 2. From the Hall's HierarchicalStructures submodel, walk to contained assets
-MATCH (hall:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(:SemanticConcept
-        {id: 'https://admin-shell.io/idta/HierarchicalStructures/1/1'})
-MATCH (sm)-[:HAS_ELEMENT*]->(ref:ReferenceElement)-[:HAS_VALUE]->(contained)
-RETURN contained.idShort, labels(contained)
+MATCH (sm)-[:HAS_ELEMENT*]->(e:Entity)-[:REPRESENTS_ASSET]->(a:Asset)
+RETURN e.idShort, a.globalAssetId
 ```
 
-If the second query returns zero rows, list which semanticIds Hall4's
-submodels actually carry — the HierarchicalStructures URI in this graph
-may differ.
+## Recipe B — "Where's the documentation for this asset?" (instance → type → docs)
 
-## Recipe B — "Where's the manual for this MiR100?" (instance → type → docs)
-
-Per VDI 2770, product-level documentation lives on the *type* AAS, not
-the instance. Walk `DERIVED_FROM`, then call `search_aas_documents`
-scoped by the type's HandoverDocumentation submodel.
+In many deployments, product-level documentation lives on the *type*
+AAS while instance-specific data lives on the *instance*. Walk
+`DERIVED_FROM`, then call `search_aas_documents` scoped by the relevant
+type submodel.
 
 ```cypher
 // 1. instance → type
@@ -370,16 +384,16 @@ MATCH (instance:AssetAdministrationShell {id: $instanceId})
       -[:DERIVED_FROM]->(type:AssetAdministrationShell)
 RETURN type.id
 
-// 2. type → HandoverDocumentation submodel
+// 2. type → relevant documentation submodel
 MATCH (type:AssetAdministrationShell {id: $typeId})-[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $handoverDocSemanticId})
+      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $docSemanticId})
 RETURN sm.id
 ```
 
 Then: `search_aas_documents(query=..., submodel_id=<sm.id from step 2>)`.
 
-The `$handoverDocSemanticId` comes verbatim from
-`get_templates_index()` — do not type it from memory.
+The `$docSemanticId` comes verbatim from `get_templates_index()` — do not
+type it from memory.
 
 ## Recipe E — Reading name / designation fields (MultiLanguageProperty)
 
@@ -407,7 +421,7 @@ class, not a physical unit.
 
 ```cypher
 // WRONG — searching type shell
-MATCH (type:AssetAdministrationShell {id: 'urn:aas:mir100:type'})
+MATCH (type:AssetAdministrationShell {id: 'urn:example:aas:MyProduct:type'})
       -[:HAS_SUBMODEL]->(sm)-[:HAS_ELEMENT*]->(el)
 WHERE el.idShort = 'SerialNumber'   // will always be empty
 
@@ -418,14 +432,13 @@ MATCH (sm)-[:HAS_ELEMENT*]->(el {idShort: 'SerialNumber'})
 RETURN el.value
 ```
 
-## Recipe C — "Which asset is the transport robot in hall 4?"
-(domain classification via capability)
+## Recipe C — Category classification via capability
 
-User vocabulary ("transport robot") never matches `idShort`. Functional
+User vocabulary (e.g. "transport robot", "welding station") never matches `idShort`. Functional
 categories live on `Capability` elements with a project- or
 IDTA-supplied semanticId.
 
-1. From recipe A, get the assets in hall 4.
+1. From recipe A, get the contained assets.
 2. For each, list capabilities:
    ```cypher
    MATCH (aas:AssetAdministrationShell {id: $assetAasId})
@@ -434,10 +447,10 @@ IDTA-supplied semanticId.
    OPTIONAL MATCH (c)-[:HAS_SEMANTIC_ID]->(sem:SemanticConcept)
    RETURN aas.idShort, c.idShort, sem.id, collect(sup.id)
    ```
-3. Match capabilities whose semanticId carries `Transport`
-   (project namespace
-   `https://aas-hybrid-mcp.dfki.de/capability/Transport`) — these are
-   the transport robots.
+3. Match capabilities whose semanticId or the SemanticConcept's
+   preferredName (via `lookup_semantic_id`) contains the domain term
+   the user mentioned. The exact URI prefix is project-specific —
+   discover it from the graph, don't assume it.
 
 ## Recipe D — "I have no idea what's on this shell"
 (diagnostic listing)
@@ -462,12 +475,150 @@ returned zero rows.
 """
 
 
+_MAPPING = """\
+# AASX field → Neo4j graph mapping
+
+Shows how the Kafka Connect plugin (aas-repository-neo4j-kafka-plugin)
+maps each AAS4J type's fields to Neo4j node labels and relationship types.
+Derived from the `*Node` mapping classes in the plugin's source code.
+
+## Common labels
+
+Every node carries `:GraphNode`. Referable nodes add `:Referable`,
+`:Referenceable`. Identifiable nodes add `:Identifiable` on top.
+
+Every SubmodelElement gets `:SubmodelElement` plus its concrete type label
+(e.g. `:Property`, `:Entity`, `:Operation`).
+
+## Top-level nodes
+
+| AAS Type | JSON/Java field | Neo4j relationship | Target |
+|---|---|---|---|
+| AssetAdministrationShell | `assetInformation` | `MANAGES_ASSET` | `:Asset` |
+| | `submodels` | `HAS_SUBMODEL` | `:Submodel` |
+| | `derivedFrom` | `DERIVED_FROM` | `:AssetAdministrationShell` |
+| | `administration` | `HAS_ADMIN_INFO` | `:AdminInfo` |
+
+## SubmodelElements — containment slots
+
+These are the source of the most traversal bugs. Read the **Key insight**
+below carefully.
+
+| AAS Type | JSON/Java field | Neo4j relationship | Notes |
+|---|---|---|---|
+| Submodel | `submodelElements` | `HAS_ELEMENT` | Direct children only |
+| SubmodelElementCollection | `value` | `HAS_ELEMENT` | Nested child elements |
+| SubmodelElementList | `value` | `HAS_ELEMENT` | List items |
+| SubmodelElementList | `semanticIdListElement` | `HAS_SEMANTIC_ID_LIST_ELEMENT` | Per-item semantic ref |
+| **Entity** | **`statements`** | **`HAS_ELEMENT`** | **Child entities — see Key insight** |
+| Entity | `globalAssetId` | `REPRESENTS_ASSET` | `:Asset` (from the ID string) |
+| Entity | `specificAssetIds` | `HAS_SPECIFIC_ASSET_ID` | `:SpecificAssetId` |
+| ReferenceElement | `value` | `HAS_VALUE` | Cross-reference to target node |
+
+### Key insight — Entity.statements is HAS_ELEMENT
+
+Entity.statements is mapped to the **same relationship label** as
+SubmodelElementCollection children and SubmodelElementList items:
+`HAS_ELEMENT`. This means that `[:HAS_ELEMENT*]` descends through
+nested Entity trees seamlessly. There is no separate relationship for
+Entity containment.
+
+**Example — container AAS with an Entity tree (generic):**
+
+Any container-style submodel that contains entities for contained assets.
+First, discover which submodel template carries the containment structure
+via `get_templates_index()` and `get_template(name)`, then determine the
+Entity idShorts from `get_template(name)` — they vary by template:
+
+```cypher
+// Identify the container template semanticId via get_templates_index()
+// Determine entity nesting from get_template(name)
+MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
+      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
+MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)
+MATCH (parent)-[:HAS_ELEMENT]->(child:Entity)
+MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
+RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId
+```
+
+If the submodel contains only top-level entities (no parent/child nesting),
+skip the intermediate `parent:Entity` step:
+
+```cypher
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
+MATCH (sm)-[:HAS_ELEMENT*]->(e:Entity)
+MATCH (e)-[:REPRESENTS_ASSET]->(a:Asset)
+RETURN e.idShort, a.globalAssetId
+```
+
+## Value-bearing elements
+
+| AAS Type | JSON/Java field | Neo4j | Details |
+|---|---|---|---|
+| Property | `value` | `.value` (property) | Scalar string on the node |
+| Property | `valueType` | `.valueType` (property) | |
+| Property | `valueId` | `HAS_VALUE_ID` | Reference target |
+| MultiLanguageProperty | `value` (LangString[]) | `HAS_VALUE` | `:LangString` (.language, .text) |
+| MultiLanguageProperty | `valueId` | `HAS_VALUE_ID` | Reference target |
+| File | `value` | `.value` (property) | URL path |
+| File | `contentType` | `.contentType` (property) | MIME type |
+| Blob | `value` | `.value` (property) | Base64-encoded |
+| Range | `min`, `max` | `.min`, `.max` (property) | |
+
+## Relationship-bearing elements
+
+| AAS Type | JSON/Java field | Neo4j relationship |
+|---|---|---|
+| RelationshipElement | `first`, `second` | `HAS_FIRST`, `HAS_SECOND` |
+| AnnotatedRelationshipElement | `first`, `second` | `HAS_FIRST`, `HAS_SECOND` |
+| AnnotatedRelationshipElement | `annotations` | `HAS_ANNOTATION` |
+| Operation | `inputVariables` | `HAS_INPUT_VARIABLE` |
+| Operation | `outputVariables` | `HAS_OUTPUT_VARIABLE` |
+| Operation | `inoutputVariables` | `HAS_INOUTPUT_VARIABLE` |
+| BasicEventElement | `observed` | `OBSERVES` |
+| BasicEventElement | `messageBroker` | `USES_MESSAGE_BROKER` |
+
+**Note:** Operation variables are wrapped in `OperationVariable` — the
+plugin extracts `.value` from each, so the `HAS_*_VARIABLE` edges point
+directly to the contained SubmodelElement.
+
+## Shared metadata (every SubmodelElement)
+
+Applied automatically by `AbstractSmeNode` — inherited by all SME types:
+
+| JSON/Java field | Neo4j relationship |
+|---|---|
+| `semanticId` | `HAS_SEMANTIC_ID` |
+| `supplementalSemanticIds` | `HAS_SUPPLEMENTAL_SEMANTIC_ID` |
+| `qualifiers` | `HAS_QUALIFIER` |
+| `description` | `HAS_DESCRIPTION` |
+| `displayName` | `HAS_DISPLAY_NAME` |
+| `extensions` | `HAS_EXTENSION` |
+| `embeddedDataSpecifications` | `HAS_EMBEDDED_DATA_SPECIFICATION` |
+
+## Auxiliary nodes
+
+| AAS Type | JSON field | Neo4j relationship |
+|---|---|---|
+| AssetInformation | `specificAssetIds` | `HAS_SPECIFIC_ASSET_ID` |
+| AdministrativeInformation | `embeddedDataSpecifications` | `HAS_EMBEDDED_DATA_SPECIFICATION` |
+| AdministrativeInformation | `creator` | `CREATED_BY` |
+| SpecificAssetId | `externalSubjectId` | `HAS_EXTERNAL_SUBJECT_ID` |
+| SpecificAssetId | `semanticId` | `HAS_SEMANTIC_ID` |
+| SpecificAssetId | `supplementalSemanticIds` | `HAS_SUPPLEMENTAL_SEMANTIC_ID` |
+
+**Next:** `get_manual_page("cypher")` for traversal patterns and anti-patterns;
+`get_graph_schema()` for the complete node/relationship catalogue.
+"""
+
+
 _PAGES = {
     "cypher": _CYPHER,
     "templates": _TEMPLATES,
     "writing": _WRITING,
     "troubleshooting": _TROUBLESHOOTING,
     "recipes": _RECIPES,
+    "mapping": _MAPPING,
 }
 
 

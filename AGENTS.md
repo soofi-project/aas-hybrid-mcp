@@ -17,6 +17,8 @@ cp .env.secrets.example ~/.env.secrets   # edit with your API key(s)
 
 BaSyx loads `.aasx` files from `aasx/` → publishes Kafka events. Two Kafka Connect pipelines consume them: `kafka-connect-neo4j` builds a Neo4j graph (structure), `kafka-connect-rag` → `embedding-service` → extracts PDFs → chunks → embeds → stores in Weaviate (vectors). The MCP server (port 8110) queries both. A LangGraph agent (port 8120) calls MCP tools and serves an OpenAI-compatible API for Open WebUI (port 8090). All services on single bridge network `aas-network`.
 
+**Detailed architecture + diagrams: `memory/architecture.md`**
+
 ## Service ports (the ones you need)
 
 | Port | Service |
@@ -76,6 +78,8 @@ Six generic write tools: `put_aas`, `put_submodel`, `put_submodel_element`, `del
 ## Agent variants
 
 Variants are selectable **per-conversation** via OpenAI model name (`aas`, `aas:plan`, `aas:crag`, etc.). `api.py` lazily initializes each runner on first request. Shared MCP client, tools, and context loaded once at startup. `AGENT_VARIANT` env var is deprecated. **Full details in `memory/agent_variants.md`** — model ID → variant routing, graph topology, budget env vars, and paper mapping. Keep that file in sync when adding/changing variants or budget parameters. `AGENT_INJECT_MANUAL` and `AGENT_INJECT_SCHEMA` control whether system prompt gets manual/schema injected at startup vs. agent fetching on demand.
+
+**Variants must be comparable:** every runner must combine `system-prompt.md` + `mcp_context` as its `base_system`. The variant-specific prompt layer adds topology/strategy instructions (plan, judge, reflect, supervisor, etc.), but the core directives ("Act, don't ask permission", idShort anti-pattern, two entry points, output style) must never be dropped. If one variant deviates, the others will fail silently on the same queries. See `reflexion.py`, `crag.py`, `agent_plan.py`, `rewoo.py`, `agent_supervisor.py`, `agent.py`.
 
 ## Bind-mounted-over-pacakaged files
 

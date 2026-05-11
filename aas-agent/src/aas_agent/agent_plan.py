@@ -30,6 +30,7 @@ from langchain_openai import ChatOpenAI
 
 from aas_agent.agent import _format_tool_end, _format_tool_start, _thinking_from_effort
 from aas_agent.agent_plan_graph import build_plan_reflect_graph
+from aas_agent.http_client import _build_http_client
 from aas_agent.agent_plan_state import Plan, Reflection
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
@@ -104,7 +105,7 @@ class PlanReflectAgentRunner:
         self._mcp = mcp_client
         self._llm_base_url = llm_base_url
         self._llm_model = llm_model
-        self._legacy_system_prompt = system_prompt
+        self._system_prompt = system_prompt
         self._default_thinking = default_thinking
         self._log_dir = log_dir
         self._graph_thinking_off = None
@@ -127,7 +128,10 @@ class PlanReflectAgentRunner:
 
     async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
         """Build both graphs using pre-loaded shared resources."""
-        self._base_system = mcp_context
+        base_system = mcp_context
+        if self._system_prompt:
+            base_system = f"{self._system_prompt}\n\n---\n\n{mcp_context}"
+        self._base_system = base_system
         log.info(
             "Plan/reflect base system context: %d chars (manual + schema)",
             len(self._base_system),
@@ -220,9 +224,11 @@ class PlanReflectAgentRunner:
             extra_body = {
                 "chat_template_kwargs": {"enable_thinking": use_thinking}
             }
+            llm_kwargs = {"http_client": _build_http_client()}
         else:
             use_thinking = enable_thinking
             extra_body = extra_body  # use caller-provided or None
+            llm_kwargs = {}
 
         return ChatOpenAI(
             base_url=self._llm_base_url,
@@ -230,6 +236,7 @@ class PlanReflectAgentRunner:
             streaming=streaming,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
+            **llm_kwargs,
         )
 
     def _select_graph(self, reasoning_effort: str | None):

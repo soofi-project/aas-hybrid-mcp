@@ -19,7 +19,13 @@ from typing_extensions import TypedDict
 
 
 class RelevanceScore(BaseModel):
-    """Evaluation of how relevant a set of retrieved results is for the user query."""
+    """Evaluation of how relevant a set of retrieved results is for the user query.
+
+    The `action` field encodes a 3-way decision (Paper §4.3):
+    - correct: sufficient evidence, move to synthesis
+    - incorrect: evidence is useless, discard and retry from scratch  
+    - ambiguous: partial evidence, keep and try to supplement
+    """
 
     relevance_score: float = Field(
         ge=0.0,
@@ -35,6 +41,14 @@ class RelevanceScore(BaseModel):
     refinement_hint: str = Field(
         default="",
         description="If needs_refinement: concrete advice on what to change. Empty if not needed."
+    )
+    action: Literal["correct", "incorrect", "ambiguous"] = Field(
+        default="correct",
+        description=(
+            "correct = evidence is sufficient, synthesize immediately. "
+            "incorrect = evidence is totally irrelevant, discard it and retry from scratch. "
+            "ambiguous = partial evidence, keep it and try to supplement with another retrieval."
+        ),
     )
 
 
@@ -70,5 +84,8 @@ class AgentState(TypedDict):
     refinement_count: int
     max_refinements: int
     relevance_threshold: float
+    relevance_threshold_low: float
     last_relevance: RelevanceScore | None
+    _discard: bool  # true when action==incorrect — discard evidence before retry
+    _refinement: dict | None  # refinement hint from refine or uncorrect node
     remaining_steps: RemainingSteps

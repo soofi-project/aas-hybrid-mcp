@@ -20,8 +20,10 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
+from aas_agent.http_client import _build_http_client
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
+from aas_agent.agent import _format_tool_end, _format_tool_start
 from aas_agent.rewoo_graph import build_rewoo_graph
 from aas_agent.rewoo_state import RewooState
 
@@ -81,6 +83,9 @@ class RewooAgentRunner:
     async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
         """Build ReWOO graph using pre-loaded shared resources."""
         self._mcp_context = mcp_context
+        base_system = mcp_context
+        if self._system_prompt:
+            base_system = f"{self._system_prompt}\n\n---\n\n{mcp_context}"
         tools = list(all_tools) + [get_current_utc_time]
 
         plan_llm = self._build_llm(enable_thinking=False, with_tools=False, streaming=False)
@@ -91,7 +96,7 @@ class RewooAgentRunner:
             plan_llm=plan_llm,
             synthesize_llm=synthesize_llm,
             tool_map=tool_map,
-            base_system=mcp_context,
+            base_system=base_system,
             max_thoughts=self._max_thoughts,
             parallel_batch_size=self._parallel_batch_size,
         )
@@ -123,9 +128,11 @@ class RewooAgentRunner:
         if self._llm_base_url and "openai.com" not in self._llm_base_url:
             use_thinking = self._default_thinking and enable_thinking
             extra_body = {"chat_template_kwargs": {"enable_thinking": use_thinking}}
+            llm_kwargs = {"http_client": _build_http_client()}
         else:
             use_thinking = enable_thinking
             extra_body = None
+            llm_kwargs = {}
 
         return ChatOpenAI(
             base_url=self._llm_base_url,
@@ -133,6 +140,7 @@ class RewooAgentRunner:
             streaming=streaming,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
+            **llm_kwargs,
         )
 
     def _select_graph(self, reasoning_effort: str | None) -> Any:
@@ -185,14 +193,19 @@ class RewooAgentRunner:
         trace.write_header(messages, self._llm_model, extra=extra)
 
         try:
-            config = {"recursion_limit": int(self._recursion_limit)}
-            result = await graph.ainvoke(initial_state, config=config)
-            for msg in reversed(result.get("messages", [])):
-                if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
-                    text = msg.content.strip()
-                    yield text
-                    trace.append(text)
-                    break
+            if (extra or {}).get("verbose", False):
+                config = {"recursion_limit": int(self._recursion_limit)}
+                async for token in _stream_rewoo_verbose(graph, initial_state, config, trace):
+                    yield token
+            else:
+                config = {"recursion_limit": int(self._recursion_limit)}
+                result = await graph.ainvoke(initial_state, config=config)
+                for msg in reversed(result.get("messages", [])):
+                    if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
+                        text = msg.content.strip()
+                        yield text
+                        trace.append(text)
+                        break
         except Exception:
             log.exception("Fatal error in ReWOO stream")
             err = "\n\n[stream error — see server logs]\n"
@@ -237,3 +250,68 @@ class RewooAgentRunner:
 
 
 __all__ = ["RewooAgentRunner"]
+
+
+async def _stream_rewoo_verbose(
+    graph, initial_state: dict, config: dict, trace
+) -> AsyncIterator[str]:
+    """Verbose stream for ReWOO — events as antml:thinking blocks."""
+    in_tool_block = False
+    try:
+        async for event in graph.astream_events(initial_state, config=config, version="v2"):
+            try:
+                kind = event.get("event")
+                name = event.get("name", "")
+                metadata = event.get("metadata") or {}
+                node = metadata.get("langgraph_node", "")
+
+                if kind == "on_tool_start":
+                    in_tool_block = True
+                    token = _format_tool_start(event)
+                    trace.append(token, strip_leading_newlines=True)
+                    yield token
+                    continue
+                if kind == "on_tool_end":
+                    token = _format_tool_end(event)
+                    trace.append(token)
+                    yield token
+                    in_tool_block = False
+                    continue
+
+                if kind == "on_chain_end":
+                    if name in ("plan", "execute", "synthesize"):
+                        output = event.get("data", {}).get("output") or {}
+                        if name == "plan" and "plan" in output:
+                            p = output["plan"]
+                            if hasattr(p, "thoughts"):
+                                lines = ["**Plan**"]
+                                for t in p.thoughts:
+                                    plan_text = getattr(t, "plan", "")[:100]
+                                    tool_name = getattr(t, "tool_name", "?")
+                                    ref_id = getattr(t, "ref_id", "?")
+                                    lines.append(f"- _{plan_text}_ → `{tool_name}` → `{ref_id}`")
+                                if hasattr(p, "synthesis_hint") and p.synthesis_hint:
+                                    lines.append(f"_Hint: {p.synthesis_hint[:200]}_")
+                                body = "\n".join(lines)
+                                token = f"\n\n<think>\n{body}\n</think>\n\n"
+                                trace.append(token)
+                                yield token
+                        elif name == "synthesize":
+                            msgs = output.get("messages", [])
+                            for m in msgs:
+                                if isinstance(m, AIMessage) and isinstance(getattr(m, "content", None), str):
+                                    text = m.content.strip()
+                                    if text:
+                                        yield text
+                                        trace.append(text)
+            except Exception:
+                log.exception("Error handling ReWOO stream event kind=%s", event.get("event"))
+    except Exception:
+        log.exception("Fatal error in ReWOO verbose stream")
+        err = "\n\n[stream error — see server logs]\n"
+        yield err
+        trace.append(err)
+    finally:
+        if in_tool_block:
+            yield "\n</think>\n\n"
+        trace.flush()

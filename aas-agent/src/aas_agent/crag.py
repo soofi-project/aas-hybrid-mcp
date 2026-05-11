@@ -18,9 +18,11 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
+from aas_agent.http_client import _build_http_client
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
 from aas_agent.crag_graph import build_crag_graph
+from aas_agent.agent import _format_tool_end, _format_tool_start
 
 log = logging.getLogger(__name__)
 
@@ -68,6 +70,7 @@ class CragAgentRunner:
         self._recursion_limit = os.environ.get("AGENT_RECURSION_LIMIT", "60")
         self._max_refinements = os.environ.get("CRAG_MAX_REFINEMENTS", "3")
         self._relevance_threshold = float(os.environ.get("CRAG_RELEVANCE_THRESHOLD", "0.7"))
+        self._relevance_threshold_low = float(os.environ.get("CRAG_RELEVANCE_THRESHOLD_LOW", "0.3"))
 
     @property
     def model_name(self) -> str:
@@ -82,15 +85,20 @@ class CragAgentRunner:
             enable_thinking=False, with_tools=False, streaming=False
         )
 
+        base_system = mcp_context
+        if self._system_prompt:
+            base_system = f"{self._system_prompt}\n\n---\n\n{mcp_context}"
+
         self._graph_thinking_off = build_crag_graph(
             exec_llm=exec_llm,
             tools=tools,
-            base_system=mcp_context,
+            base_system=base_system,
             relevance_llm=structure_llm,
             refine_llm=structure_llm,
             synthesize_llm=structure_llm,
             max_refinements=int(self._max_refinements),
             relevance_threshold=self._relevance_threshold,
+            relevance_threshold_low=self._relevance_threshold_low,
         )
         self._graph_thinking_on = self._graph_thinking_off
 
@@ -122,9 +130,11 @@ class CragAgentRunner:
             extra_body = {
                 "chat_template_kwargs": {"enable_thinking": use_thinking}
             }
+            llm_kwargs = {"http_client": _build_http_client()}
         else:
             use_thinking = enable_thinking
             extra_body = None
+            llm_kwargs = {}
 
         return ChatOpenAI(
             base_url=self._llm_base_url,
@@ -132,6 +142,7 @@ class CragAgentRunner:
             streaming=streaming,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
+            **llm_kwargs,
         )
 
     def _select_graph(self, reasoning_effort: str | None) -> Any:
@@ -159,7 +170,10 @@ class CragAgentRunner:
             "refinement_count": 0,
             "max_refinements": int(self._max_refinements),
             "relevance_threshold": self._relevance_threshold,
+            "relevance_threshold_low": self._relevance_threshold_low,
             "last_relevance": None,
+            "_discard": False,
+            "_refinement": None,
         }
 
     async def direct_invoke(self, messages: list[dict]) -> str:
@@ -188,14 +202,19 @@ class CragAgentRunner:
         trace.write_header(messages, self._llm_model, extra=extra)
 
         try:
-            config = {"recursion_limit": int(self._recursion_limit)}
-            result = await graph.ainvoke(initial_state, config=config)
-            for msg in reversed(result.get("messages", [])):
-                if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
-                    text = msg.content.strip()
-                    yield text
-                    trace.append(text)
-                    break
+            if (extra or {}).get("verbose", False):
+                config = {"recursion_limit": int(self._recursion_limit)}
+                async for token in _stream_crag_verbose(graph, initial_state, config, trace):
+                    yield token
+            else:
+                config = {"recursion_limit": int(self._recursion_limit)}
+                result = await graph.ainvoke(initial_state, config=config)
+                for msg in reversed(result.get("messages", [])):
+                    if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
+                        text = msg.content.strip()
+                        yield text
+                        trace.append(text)
+                        break
         except Exception:
             log.exception("Fatal error in CRAG stream")
             err = "\n\n[stream error — see server logs]\n"
@@ -240,3 +259,68 @@ class CragAgentRunner:
 
 
 __all__ = ["CragAgentRunner"]
+
+
+async def _stream_crag_verbose(
+    graph, initial_state: dict, config: dict, trace
+) -> AsyncIterator[str]:
+    """Verbose stream for CRAG — events as antml:thinking blocks."""
+    in_tool_block = False
+    try:
+        async for event in graph.astream_events(initial_state, config=config, version="v2"):
+            try:
+                kind = event.get("event")
+                name = event.get("name", "")
+                metadata = event.get("metadata") or {}
+                node = metadata.get("langgraph_node", "")
+
+                if kind == "on_tool_start":
+                    in_tool_block = True
+                    token = _format_tool_start(event)
+                    trace.append(token, strip_leading_newlines=True)
+                    yield token
+                    continue
+                if kind == "on_tool_end":
+                    token = _format_tool_end(event)
+                    trace.append(token)
+                    yield token
+                    in_tool_block = False
+                    continue
+
+                if kind == "on_chat_model_stream" and node == "executor":
+                    chunk = event.get("data", {}).get("chunk")
+                    content = getattr(chunk, "content", None) if chunk else None
+                    if isinstance(content, str) and content:
+                        trace.append(content)
+                        yield content
+                    continue
+
+                if kind == "on_chain_end":
+                    if name in ("relevance", "refine", "uncorrect", "discard", "synthesize"):
+                        output = event.get("data", {}).get("output") or {}
+                        if name == "relevance" and "last_relevance" in output:
+                            rel = output["last_relevance"]
+                            score = getattr(rel, "relevance_score", "?")
+                            verdict = getattr(rel, "needs_refinement", "?")
+                            token = f"\n\n<think>\n**Relevance**: score={score}, needs_refinement={verdict}\n</think>\n\n"
+                            trace.append(token)
+                            yield token
+                        elif name == "synthesize":
+                            msgs = output.get("messages", [])
+                            for m in msgs:
+                                if isinstance(m, AIMessage) and isinstance(getattr(m, "content", None), str):
+                                    text = m.content.strip()
+                                    if text:
+                                        yield text
+                                        trace.append(text)
+            except Exception:
+                log.exception("Error handling CRAG stream event kind=%s", event.get("event"))
+    except Exception:
+        log.exception("Fatal error in CRAG verbose stream")
+        err = "\n\n[stream error — see server logs]\n"
+        yield err
+        trace.append(err)
+    finally:
+        if in_tool_block:
+            yield "\n</think>\n\n"
+        trace.flush()

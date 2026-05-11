@@ -15,6 +15,7 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
+from aas_agent.http_client import _build_http_client
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
 
@@ -161,8 +162,10 @@ class AgentRunner:
             extra_body = {
                 "chat_template_kwargs": {"enable_thinking": use_thinking}
             }
+            llm_kwargs = {"http_client": _build_http_client()}
         else:
             extra_body = None
+            llm_kwargs = {}
         # api_key intentionally omitted — ChatOpenAI reads OPENAI_API_KEY from
         # the container env (loaded via ${SECRETS_PATH} in default mode, or
         # set to "dummy" via .env.vllm in vLLM mode).
@@ -172,6 +175,7 @@ class AgentRunner:
             streaming=True,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
+            **llm_kwargs,
         )
 
     def _select_agent(self, reasoning_effort: str | None):
@@ -215,14 +219,16 @@ class AgentRunner:
     ) -> AsyncIterator[str]:
         """Stream LLM token deltas from the agent.
 
-        Tool invocations are wrapped in ``<think>...</think>`` blocks so
-        clients like Open WebUI render them as collapsible reasoning
-        sections alongside any native LLM thinking tokens.
+        When ``extra.get('verbose')`` is true, tool invocations are wrapped
+        in ``<antml:thinking>`` blocks so clients like Open WebUI render them
+        as collapsible reasoning sections.  Otherwise only LLM token deltas
+        are emitted.
         """
         agent = self._select_agent(reasoning_effort)
         if agent is None:
             raise RuntimeError("Agent not initialized")
 
+        verbose = (extra or {}).get("verbose", False)
         lc_messages = self._to_langchain_messages(messages)
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
@@ -242,18 +248,17 @@ class AgentRunner:
                         if isinstance(content, str) and content:
                             trace.append(content)
                             yield content
-                    elif kind == "on_tool_start":
+                    elif verbose and kind == "on_tool_start":
                         in_tool_block = True
                         token = _format_tool_start(event)
                         trace.append(token, strip_leading_newlines=True)
                         yield token
-                    elif kind == "on_tool_end":
+                    elif verbose and kind == "on_tool_end":
                         token = _format_tool_end(event)
                         trace.append(token)
                         yield token
                         in_tool_block = False
                 except Exception:
-                    # Never let a bad event kill the whole stream.
                     log.exception("Error handling stream event kind=%s", event.get("event"))
         except Exception:
             log.exception("Fatal error in astream_events loop")

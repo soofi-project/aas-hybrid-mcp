@@ -50,7 +50,7 @@ for, and offer the closest matches.
 
 The `get_templates_index()` tool returns **IDTA** templates only. Your
 graph may also contain **custom templates** with project-specific
-semanticIds (e.g. `urn:custom:dfki:facility-information:1/0`).
+semanticIds (e.g. `urn:custom:...` or a private HTTP namespace).
 
 To discover all templates (IDTA + custom) in your graph:
 

@@ -1,5 +1,5 @@
 Return the operator manual index — a routing page that lists every
-sub-page (`cypher`, `templates`, `writing`, `troubleshooting`, `recipes`)
+sub-page (`cypher`, `templates`, `writing`, `troubleshooting`, `recipes`, `mapping`)
 together with the four rules that catch the most failures.
 
 Call this once per session to learn what the manual covers, then fetch

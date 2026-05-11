@@ -299,7 +299,10 @@ async def _run_worker(
 ) -> dict:
     """Run a single worker sub-graph and return {finding, details, confidence}."""
     try:
-        result = await agent.ainvoke({"messages": lc_messages}, recursion_limit=8)
+        result = await agent.ainvoke(
+            {"messages": lc_messages},
+            config={"recursion_limit": 50},
+        )
     except Exception as e:
         raise e
 

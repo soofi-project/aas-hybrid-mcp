@@ -23,9 +23,11 @@ from langchain_core.tools import BaseTool, tool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
+from aas_agent.http_client import _build_http_client
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
 from aas_agent.agent_supervisor_graph import build_supervisor_graph
+from aas_agent.agent import _format_tool_end, _format_tool_start
 
 log = logging.getLogger(__name__)
 
@@ -128,9 +130,11 @@ class SupervisorAgentRunner:
 
         system_prompt = _worker_prompts[worker_name]
 
-        # Add MCP context for better grounding
-        if getattr(self, '_mcp_context', None):
-            system_prompt = f"{system_prompt}\n\n---\n\n{self._mcp_context}"
+        # Combine system-prompt.md + mcp_context for agent layer grounding
+        base_context = self._mcp_context
+        if self._system_prompt:
+            base_context = f"{self._system_prompt}\n\n---\n\n{self._mcp_context}"
+        system_prompt = f"{system_prompt}\n\n---\n\n{base_context}"
 
         return create_react_agent(model=llm, tools=worker_tools, prompt=SystemMessage(content=system_prompt))
 
@@ -153,9 +157,11 @@ class SupervisorAgentRunner:
             extra_body = {
                 "chat_template_kwargs": {"enable_thinking": use_thinking}
             }
+            llm_kwargs = {"http_client": _build_http_client()}
         else:
             use_thinking = enable_thinking
             extra_body = None
+            llm_kwargs = {}
 
         return ChatOpenAI(
             base_url=self._llm_base_url,
@@ -163,6 +169,7 @@ class SupervisorAgentRunner:
             streaming=streaming,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
+            **llm_kwargs,
         )
 
     def _select_graph(self, reasoning_effort: str | None) -> Any:
@@ -206,26 +213,34 @@ class SupervisorAgentRunner:
         chat_id: str | None = None,
         extra: dict | None = None,
     ) -> AsyncIterator[str]:
-        """Stream the synthesized answer."""
+        """Stream tokens from supervisor, workers, and synthesized answer.
+
+        When ``extra.get('verbose')`` is true, intermediate events are
+        streamed as ``<antml:thinking>`` blocks.  Otherwise only the final
+        synthesized answer is emitted.
+        """
         graph = self._select_graph(reasoning_effort)
         if graph is None:
             raise RuntimeError("Supervisor agent not initialized")
 
+        verbose = (extra or {}).get("verbose", False)
         lc = self._to_lc_messages(messages)
         initial_state = self._initial_state(lc)
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
 
         try:
-            result = await graph.ainvoke(initial_state)
-
-            # Yield the final answer from the synthesize node
-            for msg in reversed(result.get("messages", [])):
-                if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
-                    text = msg.content.strip()
-                    yield text
-                    trace.append(text)
-                    break
+            if verbose:
+                async for token in _stream_supervisor_verbose(graph, initial_state, trace):
+                    yield token
+            else:
+                result = await graph.ainvoke(initial_state)
+                for msg in reversed(result.get("messages", [])):
+                    if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
+                        text = msg.content.strip()
+                        yield text
+                        trace.append(text)
+                        break
         except Exception:
             log.exception("Fatal error in supervisor stream")
             err = "\n\n[stream error — see server logs]\n"
@@ -270,4 +285,96 @@ class SupervisorAgentRunner:
 
 
 __all__ = ["SupervisorAgentRunner"]
+
+
+async def _stream_supervisor_verbose(
+    graph, initial_state: dict, trace
+) -> AsyncIterator[str]:
+    """Verbose stream for supervisor agent — events as antml:thinking blocks.
+
+    Streams worker tasks, tool calls, and node summaries as collapsible reasoning
+    sections, plus the final synthesized answer."""
+    in_tool_block = False
+    try:
+        async for event in graph.astream_events(initial_state, version="v2"):
+            try:
+                kind = event.get("event")
+                name = event.get("name", "")
+                metadata = event.get("metadata") or {}
+                node = metadata.get("langgraph_node", "")
+
+                # Tool calls from workers
+                if kind == "on_tool_start":
+                    in_tool_block = True
+                    token = _format_tool_start(event)
+                    trace.append(token, strip_leading_newlines=True)
+                    yield token
+                    continue
+                if kind == "on_tool_end":
+                    token = _format_tool_end(event)
+                    trace.append(token)
+                    yield token
+                    in_tool_block = False
+                    continue
+
+                # Worker LLM tokens (inside worker sub-graphs)
+                if kind == "on_chat_model_stream" and node.startswith("work_"):
+                    chunk = event.get("data", {}).get("chunk")
+                    content = getattr(chunk, "content", None) if chunk else None
+                    if isinstance(content, str) and content:
+                        trace.append(content)
+                        yield content
+                    continue
+
+                # Supervisor/orchestrator/synthesize node summaries
+                if kind == "on_chain_end":
+                    if name == "supervisor":
+                        output = event.get("data", {}).get("output") or {}
+                        plan = output.get("plan")
+                        if plan is not None:
+                            tasks = getattr(plan, "tasks", None) or []
+                            task_summaries = [f"{t.worker}: {t.instruction[:80]}" if hasattr(t, "worker") else str(t) for t in tasks]
+                            decision = "; ".join(task_summaries) if task_summaries else str(plan)
+                            token = f"\n\n<think>\n**Supervisor decision**: {decision}\n</think>\n\n"
+                            trace.append(token)
+                            yield token
+                        continue
+                    if name == "orchestrator":
+                        output = event.get("data", {}).get("output") or {}
+                        results = output.get("worker_results", [])
+                        if results:
+                            lines = ["**Worker Results**"]
+                            for r in results:
+                                if isinstance(r, dict):
+                                    lines.append(f"- {r.get('worker', '?')}: {str(r.get('finding', r.get('result', '')))[:200]}")
+                                elif hasattr(r, "worker"):
+                                    lines.append(f"- {r.worker}: {str(r.finding)[:200]}")
+                                else:
+                                    lines.append(f"- {str(r)[:200]}")
+                            body = "\n".join(lines)
+                            token = f"\n\n<think>\n{body}\n</think>\n\n"
+                            trace.append(token)
+                            yield token
+                        continue
+                    if name == "synthesize":
+                        output = event.get("data", {}).get("output") or {}
+                        msgs = output.get("messages", [])
+                        for m in msgs:
+                            if isinstance(m, AIMessage) and isinstance(getattr(m, "content", None), str):
+                                text = m.content.strip()
+                                if text:
+                                    yield text
+                                    trace.append(text)
+                        continue
+            except Exception:
+                log.exception("Error handling supervisor stream event kind=%s", event.get("event"))
+    except Exception:
+        log.exception("Fatal error in supervisor verbose stream")
+        err = "\n\n[stream error — see server logs]\n"
+        yield err
+        trace.append(err)
+    finally:
+        if in_tool_block:
+            yield "\n</think>\n\n"
+        trace.flush()
 

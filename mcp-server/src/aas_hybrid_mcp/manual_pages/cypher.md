@@ -11,9 +11,10 @@ semanticIds are the largest single source of zero-row results.
 **1. `Repository` is AAS-storage, not a physical location.**
 The `(:AssetAdministrationShell)-[:DEPLOYED_IN]->(:Repository)` edge
 points to the BaSyx server URL where the shell lives. It is not a hall,
-room, or factory section. Locations live in submodels conforming to
-`HierarchicalStructures` (or another location-bearing template),
-discovered via `HAS_SEMANTIC_ID`.
+room, or factory section. Physical location and containment hierarchy
+live in submodels whose template describes such concepts (discovered
+via `HAS_SEMANTIC_ID`). Check `get_templates_index()` for templates
+whose description mentions location, hierarchy, or containment.
 
 **2. `semanticId` is a relation, not a property.**
 ```cypher
@@ -24,21 +25,25 @@ MATCH (sm:Submodel {semanticId: 'https://...'}) ...
 MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) ...
 ```
 
-**3. Use IDTA semanticIds verbatim — do not enrich them.**
-For example, `HierarchicalStructures` is
-`https://admin-shell.io/idta/HierarchicalStructures/1/1` — *not*
-`.../1/1/Submodel`. The exact strings come from
-`get_templates_index()`.
+**3. Use semanticIds verbatim — do not enrich them.**
+The exact strings come from `get_templates_index()` or the graph's
+discovery query. Do not append `/Submodel`, change version numbers,
+or recall URIs from training memory. For example, if the index says
+`https://example.com/template/1/0`, match that exact string — not
+`.../1/0/Submodel` or `.../2/0`.
 
 **4. `assetType` and `assetKind` are optional and often null.**
 Use `(:AssetAdministrationShell)-[:DERIVED_FROM]->` for type vs.
 instance distinction; use submodel semanticIds for domain
 classification.
 
-**5. Never match by `idShort` — always reason via `semanticId`.**
+**5. Never use `idShort` for domain reasoning.**
 `idShort` is a free-form local label chosen by the shell author.
-Domain classification (transport robot, welding cell, …) and template
-conformance must be expressed via `HAS_SEMANTIC_ID` /
+Using it to locate a shell the user explicitly named is acceptable as an
+entry point — but do not derive its purpose, capabilities, or containment
+structure from `idShort` alone. Verify by listing the shell's submodels
+and their template semanticIds. Domain classification, capability matching,
+and template conformance must be expressed via `HAS_SEMANTIC_ID` /
 `HAS_SUPPLEMENTAL_SEMANTIC_ID`.
 
 When a traversal returns a `:SemanticConcept.id` you do not recognise
@@ -81,14 +86,14 @@ MATCH (instance:AssetAdministrationShell {id: $instanceId})
 RETURN type.id, type.idShort
 ```
 
-Container traversal — a Hall AAS owns a HierarchicalStructures
-submodel; contained assets appear as ReferenceElement values inside
-its Entity tree:
+Container traversal — a container AAS (hall, cell, ...) owns a submodel
+whose template carries an Entity tree for contained assets:
 ```cypher
 MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
       -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
-MATCH (sm)-[:HAS_ELEMENT*]->(ref:ReferenceElement)-[:HAS_VALUE]->(contained)
-RETURN container.idShort, contained.idShort, labels(contained) AS containedType
+MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
+MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
+RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId
 ```
 
 For the full label/relation catalogue and 10+ further example queries,

@@ -15,6 +15,7 @@ from typing import AsyncIterator
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+from aas_agent.http_client import _build_http_client
 from aas_agent.trace import ConversationLogger
 
 log = logging.getLogger(__name__)
@@ -44,15 +45,18 @@ class PassthroughRunner:
     def _build_llm(self) -> ChatOpenAI:
         """Construct a bare ChatOpenAI (no tools, no streaming for invoke)."""
         extra_body = None
+        llm_kwargs = {}
         if self._llm_base_url and "openai.com" not in self._llm_base_url:
             # vLLM — keep thinking off for baseline parity
             extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+            llm_kwargs = {"http_client": _build_http_client()}
 
         return ChatOpenAI(
             base_url=self._llm_base_url,
             model=self._llm_model,
             streaming=True,
             extra_body=extra_body,
+            **llm_kwargs,
         )
 
     async def initialize(self) -> None:

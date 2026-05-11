@@ -39,9 +39,10 @@ log = logging.getLogger(__name__)
 # _MODEL_INFO maps model_id → (variant, prompt_file_stem, has_mcp_tools).
 # "react" is the baseline ReAct agent (agent.py).
 # "react" with has_tools=False produces the passthrough baseline.
+# Verbose variants (``*-verbose``) are handled automatically — the suffix is
+# stripped and ``extra['verbose']`` is set to ``True`` for stream/invoke.
 _MODEL_INFO: dict[str, tuple[str, str, bool]] = {
     "aas-agent:react":       ("react",            "system-prompt.md",              True),
-    "aas-agent:react-valid": ("react",           "system-prompt-validating.md",   True),
     "aas-agent:passthrough": ("react",            "system-prompt.md",              False),
     "aas-agent:plan":        ("plan_reflect",     "system-prompt.md",              True),
     "aas-agent:crag":        ("crag",             "system-prompt.md",              True),
@@ -49,6 +50,13 @@ _MODEL_INFO: dict[str, tuple[str, str, bool]] = {
     "aas-agent:rewoo":       ("rewoo",            "system-prompt.md",              True),
     "aas-agent:supervisor":  ("agent_supervisor", "system-prompt.md",              True),
 }
+
+# Auto-generate verbose variants for every tool-bearing model
+_BASE_MODELS = {k: v for k, v in _MODEL_INFO.items() if v[2]}  # has_tools=True
+for base_id, info in list(_BASE_MODELS.items()):
+    _MODEL_INFO[base_id + "-verbose"] = info
+
+_DELIMITER = "-verbose"
 
 _PROMPT_DIR = Path(__file__).parent
 
@@ -319,11 +327,22 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
     if custom_headers:
         log.info("Custom headers from client: %s", custom_headers)
 
-    model = request.model or _default_model
+    original_model = request.model or _default_model
+
+    # Strip verbose suffix for runner lookup; inject into extra for stream/invoke
+    verbose = original_model.endswith(_DELIMITER)
+    model = original_model[:-len(_DELIMITER)] if verbose else original_model
+
     try:
         runner = await _get_runner(model)
     except ValueError as e:
         return {"error": str(e)}, 400
+
+    # Inject verbose flag + variant name into extra for trace header
+    extra = dict(extra)
+    if verbose:
+        extra["verbose"] = True
+    extra["variant"] = info[0]
 
     # Utility calls (title gen, tags, follow-up suggestions) from Open WebUI:
     # bypass LangGraph, call LLM directly.

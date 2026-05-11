@@ -32,12 +32,16 @@ _PLAN_PROMPT = """You are a planner for the ReWOO (Reasoning Without Observation
 You plan ALL tool calls upfront before any are executed. The tools will run in parallel and their
 results come back as observations (E#, E#N, etc.). You do NOT adapt based on intermediate results.
 
+CRITICAL CONSTRAINT: Because you CANNOT adapt based on intermediate results, you MUST plan for
+multiple parallel hypotheses. If a query might fail or return nothing, plan an alternative approach
+that runs in parallel so the synthesizer has data to work with.
+
 AVAILABLE MCP TOOLS (and example args):
 """
 
 _PLAN_PROMPT_SUFFIX = """
 INSTRUCTIONS:
-1. Identify everything you need to find in ONE pass.
+1. Identify everything you need to find in ONE pass. You have NO feedback loop.
 2. For each piece of information, create a RewooThought:
    - plan: your reasoning step (what you're doing and why)
    - tool_name: which MCP tool to call
@@ -48,7 +52,17 @@ INSTRUCTIONS:
 5. Reference prior evidence as E1, E2, etc.
 6. Output ONLY a JSON object with keys: thoughts (list of objects) and synthesis_hint (string).
 
+DISCOVERY-HEAVY QUERIES (e.g. "all assets in containers", "equipment layout"):
+- Use query_aas_graph (Cypher) with BROAD queries that discover structure directly.
+- Plan multiple parallel queries with different strategies so at least one succeeds.
+- Assets may be nested deep inside Entity nodes. Use Entity traversal patterns:
+  MATCH (sm:Submodel)-[:HAS_ELEMENT*]->(e:Entity)-[:REPRESENTS_ASSET]->(a:Asset)
+- If you need to find containers first (halls, lines, zones), query by idShort pattern:
+  MATCH (aas) WHERE aas.idShort CONTAINS 'Halle' OR aas.idShort CONTAINS 'Hall'
+- Never plan dependent chains. Plan independent parallel queries instead.
+
 IMPORTANT: Every tool_name MUST be one of the tools listed above. Every tool_args MUST be valid for that tool.
+IMPORTANT for Cypher: Only ONE RETURN clause per query. Use a single MATCH or chained patterns.
 """
 
 

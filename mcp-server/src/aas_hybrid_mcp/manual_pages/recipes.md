@@ -6,43 +6,43 @@ not prescriptive answers. Adapt the Cypher to your specific data model.
 Each recipe assumes you have already read `get_manual_page("cypher")`
 and (for steps involving templates) `get_templates_index()`.
 
-## Recipe A — Container traversal (e.g. Hall → contained assets)
+## Recipe A — Container traversal (e.g. container AAS → contained assets)
 
-A container AAS (e.g. Hall, Cell) usually has a submodel conforming to
-`HierarchicalStructures` (or a similar template) that lists contained
-assets as `ReferenceElement` nodes.
+A container AAS typically has a submodel whose template describes a
+containment hierarchy of `Entity` nodes, each linked to `:Asset` via
+`REPRESENTS_ASSET`.
 
-First, discover which AAS shells have a `HierarchicalStructures` (or
-similar) submodel. The container template semanticId comes from
-`get_templates_index()`:
+1. Find the container AAS from the user's question.
+2. Discover which of its submodels carry containment data:
 
 ```cypher
-MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
-RETURN aas.idShort, aas.id, sm.idShort, sm.id
+MATCH (aas:AssetAdministrationShell {idShort: $containerIdShort})-[:HAS_SUBMODEL]->(sm:Submodel)
+OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+RETURN sm.idShort, sc.id AS templateSemanticId
 ```
 
-This returns all container AAS that have a submodel of the specified
-type. Pick the `aas.id` of the container you want to inspect.
-
-Then, traverse from that container to its contained assets:
+3. Identify the template (check `get_templates_index()` or `get_template(name)`), then traverse:
 
 ```cypher
-MATCH (container:AssetAdministrationShell {id: $containerId})-[:HAS_SUBMODEL]->(sm:Submodel)
+MATCH (container:AssetAdministrationShell {idShort: $containerIdShort})-[:HAS_SUBMODEL]->(sm:Submodel)
       -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
-MATCH (sm)-[:HAS_ELEMENT*]->(ref:ReferenceElement)-[:HAS_VALUE]->(contained)
-RETURN contained.idShort, labels(contained)
+MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
+MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
+RETURN parent.idShort, child.idShort, asset.globalAssetId
 ```
 
 **Notes:**
-- Never search for containers by `idShort`. Use the template semanticId to find containers of a specific type.
-- The `$containerTemplateSemanticId` must come from `get_templates_index()` — typically something like `https://admin-shell.io/idta/HierarchicalStructures/1/1`.
+- If the traversal returns zero rows, the nesting may be flat (no parent/child). Try:
+  `MATCH (sm)-[:HAS_ELEMENT*]->(e:Entity)-[:REPRESENTS_ASSET]->(a:Asset)`
+- The `$containerTemplateSemanticId` must come from `get_templates_index()`.
+- Never assume `idShort` for domain classification — use the template's semanticId.
 
 ## Recipe A-alt — Custom templates (e.g. FacilityInformation)
 
 Some AAS implementations use **custom templates** for domain-specific
-concepts not yet covered by IDTA standards. These have custom URIs like
-`urn:custom:dfki:facility-information:1/0` instead of an IDTA URI.
+concepts not yet covered by IDTA standards. These have project-specific
+URIs (e.g. `urn:custom:...` or a private HTTP namespace) instead of an
+IDTA `admin-shell.io` URI.
 
 First, list the actual semanticIds present in your graph to discover what
 custom templates exist:
@@ -145,9 +145,8 @@ lookup_semantic_id(id="0173-1#02-ABL884#002")
 → {
     "id": "0173-1#02-ABL884#002",
     "resolved": true,
-    "preferredName": {"en": "maximum reach", "de": "Maximale Reichweite"},
-    "definition":    {"en": "maximum distance from the centre line of
-                             the robot to the end of its tool mounting plate"},
+    "preferredName": {"en": "<label>", "de": "<Label>"},
+    "definition":    {"en": "<technical definition>"},
     "dataType": "REAL_MEASURE",
     "unit": "mm",
     ...

@@ -246,15 +246,15 @@ Read this section before writing queries.
 The `(:Repository)-[:DEPLOYED_IN]` edge points to the *AAS environment* where
 a shell is stored (e.g. a BaSyx server URL). It is not a hall, room, or
 factory section. Never filter on `Repository.url` to find assets at a
-physical location — that information lives in the shell's submodels (e.g.
-in submodels conforming to IDTA `HierarchicalStructures` or other
-location-bearing templates, surfaced via `HAS_SEMANTIC_ID`).
+physical location — that information lives in the shell's submodels
+whose template describes location or containment, surfaced via
+`HAS_SEMANTIC_ID`.
 
 ```cypher
 // WRONG — Repository is not a location
-MATCH (aas)-[:DEPLOYED_IN]->(:Repository {url: 'hall-4'}) ...
+MATCH (aas)-[:DEPLOYED_IN]->(:Repository {url: $physicalLocation}) ...
 
-// RIGHT — query the location-bearing submodel by its IDTA semanticId
+// RIGHT — query the submodel by its template semanticId
 MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $semanticId})
 MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm) ...
 ```
@@ -271,27 +271,25 @@ MATCH (sm:Submodel {semanticId: 'https://...'}) ...
 MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) ...
 ```
 
-**3. Use IDTA semanticIds verbatim — do not enrich them.**
-IDTA template URIs are published in a specific form (see the
-`get_templates_index()` tool). Do not append `/Submodel` or other
-suffixes. For example, `HierarchicalStructures` is
-`https://admin-shell.io/idta/HierarchicalStructures/1/1` — *not*
-`.../1/1/Submodel`.
+**3. Use semanticIds verbatim — do not enrich them.**
+The exact strings come from `get_templates_index()` or the graph's
+discovery query. Do not append `/Submodel`, change version numbers,
+or recall URIs from training memory.
 
 **4. `assetType` and `assetKind` are optional and often null.**
 They are not reliable filters. Type vs. instance is encoded structurally
 via `(:AssetAdministrationShell)-[:DERIVED_FROM]->(:AssetAdministrationShell)`;
-domain classification (transport robot, welding cell, …) lives in
-submodels conforming to capability- or technical-data templates, not in
-`assetType`.
+domain classification lives in submodels conforming to capability-
+or technical-data templates, not in `assetType`.
 
-**5. Never match by `idShort` — always reason via `semanticId`.**
-`idShort` is a free-form local label chosen by the shell author; it is
-not a stable semantic identifier and must not be used for domain
-classification or capability matching. The semantic meaning of a shell,
-submodel, or element is expressed exclusively through
-`-[:HAS_SEMANTIC_ID]->(:SemanticConcept)` and
-`-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(:SemanticConcept)`.
+**5. Never use `idShort` for domain reasoning.**
+`idShort` is a free-form local label chosen by the shell author.
+Using it to locate a specific shell the user named is acceptable as an
+entry point — but do not derive its purpose, capabilities, or structure
+from `idShort` alone. Verify by listing submodels and their template
+semanticIds. The semantic meaning of a shell, submodel, or element is
+expressed exclusively through `-[:HAS_SEMANTIC_ID]->(:SemanticConcept)`
+and `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(:SemanticConcept)`.
 To find what semanticIds exist in the graph, list them:
 ```cypher
 MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
@@ -375,13 +373,15 @@ MATCH (instance:AssetAdministrationShell)-[:DERIVED_FROM]->
 RETURN instance.idShort, instance.id
 ```
 
-Traverse ReferenceElement containment — a container AAS owns the submodel,
-contained assets appear as ReferenceElement values inside it:
+Traverse contained assets in an Entity tree — a container AAS owns a
+submodel whose contents are Entity nodes with REPRESENTS_ASSET links to
+the actual Asset nodes:
 ```cypher
 MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
       -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
-MATCH (sm)-[:HAS_ELEMENT*]->(ref:ReferenceElement)-[:HAS_VALUE]->(contained)
-RETURN container.idShort, contained.idShort, labels(contained) AS containedType
+MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
+MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
+RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId
 ```
 
 Find all submodels conforming to a given IDTA template, across all shells:
