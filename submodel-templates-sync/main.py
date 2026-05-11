@@ -174,7 +174,12 @@ def _collect_version_leaves(template_dir: Path) -> list[tuple[tuple[int, ...], P
 
 
 def discover_templates(published_dir: Path) -> list[dict]:
-    """Find latest version per template. Returns list of template info dicts."""
+    """Find latest version per template from the IDTA git repo.
+
+    Discovers the newest version directory for each published template.
+    Returns a list of {name, version, path} dicts — same format expected
+    by process_json_templates, generate_classes, ingest_pdfs, etc.
+    """
     if not published_dir.is_dir():
         log.warning("Published directory not found: %s", published_dir)
         return []
@@ -199,7 +204,53 @@ def discover_templates(published_dir: Path) -> list[dict]:
             "path": latest_dir,
         })
 
-    log.info("Discovered %d templates", len(results))
+    log.info("Discovered %d IDTA templates", len(results))
+    return results
+
+
+def discover_custom_templates(custom_dir: Path) -> list[dict]:
+    """Discover user-defined templates in a flat directory.
+
+    Scans custom_dir (e.g. /data/user-templates) for JSON files that contain
+    submodels with ``kind == "Template"``.  Each qualifying submodel becomes
+    an entry in the returned list — the same {name, version, path, json_path}
+    shape expected by process_json_templates, generate_classes, ingest_pdfs,
+    and push_concept_descriptions.
+
+    If a single ``.json`` file carries multiple template submodels all will
+    be returned.  Returns an empty list (no-op) when custom_dir is absent or
+    contains no template submodels.
+    """
+    if not custom_dir.is_dir():
+        log.info("Custom templates directory not found: %s — skipping", custom_dir)
+        return []
+
+    results: list[dict] = []
+    for json_path in sorted(custom_dir.glob("*.json")):
+        try:
+            data = json.loads(json_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            log.warning("Skipping unparseable file %s", json_path.name)
+            continue
+        sm = data.get("submodels", [])
+        for submodel in sm:
+            if submodel.get("kind") != "Template":
+                continue
+            # Build entry — reuse the same shape as discover_templates.
+            # ``path`` points to the JSON file's parent (so _find_pdfs can
+            # look for sibling PDFs), and ``json_path`` shortcuts the
+            # _find_json call inside process_json_templates.
+            ad = submodel.get("administration", {})
+            version = ad.get("version", "1")
+            revision = ad.get("revision", "0")
+            results.append({
+                "name": submodel.get("idShort", json_path.stem),
+                "version": f"{version}.{revision}",
+                "path": json_path.parent,
+                "json_path": json_path,
+            })
+
+    log.info("Discovered %d custom templates in %s", len(results), custom_dir)
     return results
 
 
@@ -344,7 +395,11 @@ def process_json_templates(templates: list[dict]) -> list[dict]:
         version = tpl["version"]
         template_dir = tpl["path"]
 
-        json_path = _find_json(template_dir)
+        # Custom templates provide json_path directly; IDTA templates need look-up.
+        if "json_path" in tpl:
+            json_path = Path(tpl["json_path"])
+        else:
+            json_path = _find_json(template_dir)
         if json_path is None:
             log.warning("No JSON found for template %s", name)
             index_entries.append({
@@ -400,6 +455,75 @@ def process_json_templates(templates: list[dict]) -> list[dict]:
     index_path.write_text(json.dumps(index_entries, indent=2, ensure_ascii=False), encoding="utf-8")
     log.info("Wrote index.json with %d templates", len(index_entries))
 
+    return index_entries
+
+
+def _process_json_templates_no_index(templates: list[dict]) -> list[dict]:
+    """Like process_json_templates but does NOT write index.json.
+
+    Used for custom templates so the existing IDTA index.json isn't
+    overwritten before the merge step writes the combined result.
+    """
+    TEMPLATES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    index_entries = []
+    for tpl in templates:
+        name = tpl["name"]
+        version = tpl["version"]
+        template_dir = tpl["path"]
+
+        if "json_path" in tpl:
+            json_path = Path(tpl["json_path"])
+        else:
+            json_path = _find_json(template_dir)
+        if json_path is None:
+            log.warning("No JSON found for template %s", name)
+            index_entries.append({
+                "name": name,
+                "version": version,
+                "idShort": "",
+                "semanticId": "",
+                "description": "",
+            })
+            continue
+
+        metadata = extract_metadata(json_path)
+        if metadata is None:
+            log.warning("Failed to extract metadata for %s", name)
+            index_entries.append({
+                "name": name,
+                "version": version,
+                "idShort": "",
+                "semanticId": "",
+                "description": "",
+            })
+            continue
+
+        entry = {
+            "name": name,
+            "version": version,
+            **metadata,
+        }
+        index_entries.append(entry)
+
+        try:
+            data = json.loads(json_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+
+        submodels = data.get("submodels", [])
+        if submodels:
+            structure = extract_element_structure(submodels[0])
+            template_data = {**entry, "elements": structure}
+        else:
+            template_data = {**entry, "elements": []}
+
+        safe_name = re.sub(r'[<>:"/\\|?*]', "_", name)
+        out_path = TEMPLATES_OUTPUT_DIR / f"{safe_name}.json"
+        out_path.write_text(json.dumps(template_data, indent=2, ensure_ascii=False), encoding="utf-8")
+        log.info("Wrote %s", out_path)
+
+    log.info("Processed %d custom templates (index.json not written)", len(index_entries))
     return index_entries
 
 
@@ -735,11 +859,15 @@ def push_concept_descriptions(templates: list[dict]) -> None:
             name = tpl["name"]
             template_dir = tpl["path"]
 
-            json_path = _find_json(template_dir)
-            if json_path is None:
+            json_path_for_cd = tpl.get("json_path")
+            if json_path_for_cd is not None:
+                json_path_for_cd = Path(json_path_for_cd)
+            else:
+                json_path_for_cd = _find_json(template_dir)
+            if json_path_for_cd is None:
                 continue
             try:
-                data = json.loads(json_path.read_text(encoding="utf-8"))
+                data = json.loads(json_path_for_cd.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, UnicodeDecodeError):
                 continue
 
@@ -791,8 +919,107 @@ def push_concept_descriptions(templates: list[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Custom templates (user-defined, outside the IDTA git repo)
 # ---------------------------------------------------------------------------
+
+
+def sync_custom_templates(
+    client: weaviate.WeaviateClient,
+    custom_dir: Path,
+    idta_index_entries: list[dict],
+) -> None:
+    """Process user-defined templates through the same pipeline as IDTA.
+
+    Discovers templates with ``kind == "Template"``, writes index + per-template
+    JSON, generates typed classes, ingests PDFs (if any), pushes CDs, and
+    rewrites the final merged index.json.
+    """
+    custom_templates = discover_custom_templates(custom_dir)
+    if not custom_templates:
+        return
+
+    # 1. Extract metadata + element structures (custom processing to avoid
+    #    overwriting index.json — the merged index is written at the end).
+    custom_index_entries = _process_json_templates_no_index(custom_templates)
+
+    # 2. Generate typed Python classes
+    generate_custom_classes(custom_templates)
+
+    # 3. Ingest PDFs if Weaviate collection exists (may not if IDTA was skipped
+    #     and this is a fresh run with only custom templates).
+    if client.collections.exists(IDTA_COLLECTION):
+        ingest_pdfs(client, custom_templates, custom_index_entries)
+    else:
+        log.info(
+            "Collection %s does not exist — skipping custom PDF ingestion",
+            IDTA_COLLECTION,
+        )
+
+    # 4. Push ConceptDescriptions
+    push_concept_descriptions(custom_templates)
+
+    # 5. Write merged index (IDTA + custom)
+    merged = idta_index_entries + custom_index_entries
+    index_path = TEMPLATES_OUTPUT_DIR / "index.json"
+    index_path.write_text(json.dumps(merged, indent=2, ensure_ascii=False), encoding="utf-8")
+    log.info("Wrote merged index.json with %d templates (%d IDTA + %d custom)",
+             len(merged), len(idta_index_entries), len(custom_index_entries))
+
+
+def generate_custom_classes(templates: list[dict]) -> int:
+    """Generate typed Python classes from custom template JSON files.
+
+    Mirrors generate_classes() but operates on the ``json_path`` key provided
+    by discover_custom_templates instead of directory-based look-up.
+    """
+    import logging as _logging
+    from aas_submodel_to_py.generator import SubmodelCodegen
+
+    generated_dir = TEMPLATES_OUTPUT_DIR / "generated"
+    generated_dir.mkdir(parents=True, exist_ok=True)
+    (generated_dir / "__init__.py").write_text("", encoding="utf-8")
+
+    codegen = SubmodelCodegen()
+    count = 0
+
+    basyx_deser_log = _logging.getLogger("basyx.aas.adapter.json.json_deserialization")
+    _saved_level = basyx_deser_log.level
+    basyx_deser_log.setLevel(_logging.CRITICAL)
+
+    try:
+        for tpl in templates:
+            name = tpl["name"]
+            json_path: Path | None = tpl.get("json_path")
+            if json_path is None:
+                continue
+
+            safe_name = re.sub(r'["<>:|\\*?/]', "_", name)
+            out_path = generated_dir / f"{safe_name}.py"
+
+            try:
+                codegen.generate_from(json_path, out_path)
+                content = out_path.read_text(encoding="utf-8") if out_path.exists() else ""
+                if "class " not in content:
+                    log.warning(
+                        "No class generated for %s — template JSON may have "
+                        "AASd-120 violations; falling back to metamodel-only "
+                        "validation for this template.",
+                        name,
+                    )
+                    out_path.unlink(missing_ok=True)
+                    continue
+
+                count += 1
+                log.info("Generated custom class for %s → %s", name, out_path.name)
+
+            except Exception as exc:
+                log.warning("Class generation failed for %s: %s", name, exc)
+                out_path.unlink(missing_ok=True)
+    finally:
+        basyx_deser_log.setLevel(_saved_level)
+
+    log.info("Custom class generation complete: %d / %d templates", count, len(templates))
+    return count
 
 
 def main():
@@ -805,47 +1032,58 @@ def main():
         repo_hash = get_repo_hash(clone_dir)
         log.info("Repo HEAD: %s", repo_hash)
 
-        # 2. Idempotency check — skip if already synced from same commit
+        # Custom templates directory (always scanned, independent of IDTA hash).
+        custom_dir = Path("/data/user-templates")
+
+        # 2. Idempotency check — skip IDTA sync if already current from same commit
         client = wait_for_weaviate()
         try:
+            idta_templates = []
+            idta_index_entries = []
+
             if is_up_to_date(client, repo_hash):
                 log.info(
-                    "Collection %s already up-to-date (hash %s), skipping",
+                    "Collection %s already up-to-date (hash %s), skipping IDTA sync",
                     IDTA_COLLECTION, repo_hash,
                 )
-                return
+                # Read existing index so custom templates can merge correctly.
+                existing_index = TEMPLATES_OUTPUT_DIR / "index.json"
+                if existing_index.exists():
+                    idta_index_entries = json.loads(existing_index.read_text(encoding="utf-8"))
+            else:
+                # The published templates are in published/
+                published_dir = clone_dir / "published"
+                if not published_dir.is_dir():
+                    # Try alternative locations
+                    for candidate in ["Published", "submodel-templates", "."]:
+                        alt = clone_dir / candidate
+                        if alt.is_dir() and any(alt.iterdir()):
+                            published_dir = alt
+                            break
 
-            # The published templates are in published/
-            published_dir = clone_dir / "published"
-            if not published_dir.is_dir():
-                # Try alternative locations
-                for candidate in ["Published", "submodel-templates", "."]:
-                    alt = clone_dir / candidate
-                    if alt.is_dir() and any(alt.iterdir()):
-                        published_dir = alt
-                        break
+                # 3. Discover IDTA templates
+                idta_templates = discover_templates(published_dir)
+                if not idta_templates:
+                    log.error("No templates discovered in %s", published_dir)
+                else:
+                    # 4. Extract IDTA JSON metadata and element structures
+                    idta_index_entries = process_json_templates(idta_templates)
 
-            # 3. Discover templates
-            templates = discover_templates(published_dir)
-            if not templates:
-                log.error("No templates discovered in %s", published_dir)
-                return
+                    # 5. Generate typed Python classes from V3.0 IDTA JSONs
+                    generate_classes(idta_templates)
 
-            # 4. Extract JSON metadata and element structures
-            index_entries = process_json_templates(templates)
+                    # 6. Ingest IDTA PDFs into Weaviate
+                    setup_collection(client)
+                    ingest_pdfs(client, idta_templates, idta_index_entries)
 
-            # 5. Generate typed Python classes from V3.0 template JSONs
-            generate_classes(templates)
+                    # 7. Push template-defined ConceptDescriptions to BaSyx
+                    push_concept_descriptions(idta_templates)
 
-            # 6. Ingest PDFs into Weaviate
-            setup_collection(client)
-            ingest_pdfs(client, templates, index_entries)
+                    # 8. Store sync hash on success
+                    store_sync_hash(client, repo_hash)
 
-            # 7. Push template-defined ConceptDescriptions to BaSyx
-            push_concept_descriptions(templates)
-
-            # 8. Store sync hash on success
-            store_sync_hash(client, repo_hash)
+            # 9. Custom templates — ALWAYS run (independent of IDTA hash)
+            sync_custom_templates(client, custom_dir, idta_index_entries)
 
         finally:
             client.close()

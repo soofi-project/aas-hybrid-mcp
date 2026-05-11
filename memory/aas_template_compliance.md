@@ -1,28 +1,35 @@
 ---
-name: AAS template compliance issues
-description: IDTA template semanticId mismatches and structural issues in current AASX files
+name: AAS template compliance
+description: IDTA template compliance status of AASX JSON files in aasx-dev-templates/
 type: feedback
+last_reviewed: "2026-05-11"
 ---
 
-When validating AAS instances against IDTA templates, watch for these specific issues:
+All compliance issues from 2026-05-08 have been resolved.
 
-1. **semanticId URI mismatch** — The IDTA template for "Digital Nameplate v3.0" uses semanticId `https://admin-shell.io/idta/nameplate/3/0/Nameplate`, but the CRX10iA instance uses the same URI — this is correct *if* the instance matches the template structure exactly. However, the CRX10iA_Type.json uses `0173-1#01-AHX837#002` for TechnicalData which *is* the correct eCLASS-based semanticId per the IDTA 02003-2-0 template. Always verify against the actual template JSON.
+## Current template compliance
 
-2. **SubmodelElementCollection vs List confusion** — In CRX10iA_Type.json, `TechnicalPropertyAreas` is modeled as a `SubmodelElementList` with `typeValueListElement="SubmodelElementCollection"`, which is correct per IDTA 02003-2-0. However, the nested `Customer` entry is a `SubmodelElementCollection`, not a list element — this is correct.
+### TechnicalData (IDTA 02003 v2.0)
+- **CRX10iA, UR3e, UR20**: `administration.templateId: "https://admin-shell.io/idta-02003-2-0"`, `semanticId` = ModelReference on `0173-1#01-AHX837#002` (eClass)
+- `TechnicalProperties` is a `SubmodelElementList` with `semanticIdListElement: "0173-1#02-ABL358#002/0173-1#01-AHX773#002"`
+- Properties grouped into `MechanicalProperties`, `EnvironmentalProperties`, `SafetyProperties`
+- Every leaf property has `semanticId` + `description`
+- Custom DFKI semanticIds resolved via ConceptDescriptions (`aas-hybrid-mcp-concept-descriptions.json`, IEC61360)
 
-3. **Missing eCLASS reference in CRX10iA_001.json** — The instance file only has Nameplate submodel but is missing the TechnicalData, HandoverDocumentation, and CapabilityDescription submodels that the type shell defines. The instance should inherit or explicitly reference these.
+### TechnicalData for AGV (IDTA 02047 v1.0)
+- **MiR100, MiR250**: `templateId: "https://admin-shell.io/idta-02047-1-0"`, `semanticId` = ModelReference on `https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0`
+- Structure matches template: `GeneralInformation` → `SpecificDescriptions` → `DataSheet` → `TypeAndApplicationInformation` / `TechnicalParameters`
 
-4. **Template qualifiers missing** — IDTA templates include `TemplateQualifier` entries with cardinality constraints (e.g., `One`, `ZeroToOne`, `OneToMany`). The CRX10iA files do not include these qualifiers, making them less interoperable.
+### Facility Information (DFKI custom)
+- **Hall3, Hall4**: `templateId: "https://admin-shell.io/dfki/facility-information/1/0"`, `semanticId` = ExternalReference
+- Template: `DFKI_Facility_Information_Template.json`
+- Properties: `Area` (m²), `PrimaryUse` (MultiLanguage), `PowerConnection` (kV)
+- ConceptDescriptions: `aas-hybrid-mcp-concept-descriptions.json` (Facility section)
 
-5. ** supplementalSemanticIds should reference eCLASS/VDI standards** — Many properties in CRX10iA files use non-standard URIs (e.g., `https://admin-shell.io/dfki/aas-hybrid-mcp/TechnicalData/MaxTcpSpeed/1/0`). These should either be:
-   - Mapped to official IDTA/eCLASS URIs, or
-   - Defined as ConceptDescriptions in the AAS with proper dataSpecifications
+### Nameplate (IDTA 02006 v3.0), HandoverDocumentation (IDTA 02004 v2.0), CapabilityDescription (IDTA 02020 v1.0), HierarchicalStructures
+All instances use the correct `templateId` and `semanticId` values from their respective IDTA templates.
 
-**Why:** The IDTA templates are mature specifications (v3.0 for nameplate, v2.0 for technical data). Deviating from their exact semanticId URIs and structure reduces interoperability with other AAS implementations, especially AASX Package Explorer and BaSyx.
-
-**How to apply:** Before adding new AAS instances:
-1. Read the corresponding IDTA template JSON (in `idta_templates/`)
-2. Copy the exact `semanticId` values from the template
-3. Include all `qualifiers` with `TemplateQualifier` type
-4. Use only official eCLASS/VDI/IEC semanticIds where specified
-5. Define custom ConceptDescriptions in the AAS if a property lacks a standard URI
+## Design decisions
+- **TemplateQualifier in instances**: Not used. Qualifiers define template cardinality constraints; they are only relevant in the template definition, not in an instance that already satisfies those constraints.
+- **DFKI custom semanticIds**: DFKI-specific properties use `https://admin-shell.io/dfki/aas-hybrid-mcp/{Domain}/{Property}/1/0` URIs with matching IEC61360 ConceptDescriptions. This is the correct pattern for non-standard properties.
+- **Units in idShort**: Units are NOT embedded in `idShort` (e.g., `Reach`, not `Reach_mm`). Units are defined in the ConceptDescription (`modelType: "DataSpecificationIec61360"` → `unit: "mm"`).
