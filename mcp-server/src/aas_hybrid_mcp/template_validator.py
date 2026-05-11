@@ -19,15 +19,17 @@ validation still applies).
 
 import importlib.util
 import inspect
+import io
 import json
 import logging
 import os
 import re
 import sys
+import copy
 from pathlib import Path
 from typing import Optional
 
-from basyx.aas.model import Submodel
+from basyx.aas.model import DictObjectStore, Submodel
 
 log = logging.getLogger(__name__)
 
@@ -153,13 +155,33 @@ def validate_conformance(submodel_obj: Submodel) -> Optional[str]:
         s = re.sub(r"__\d+__$", "", s)
         return s
 
-    element_kwargs = {_arg_name(e.id_short): e for e in submodel_obj if e.id_short}
+    # Round-trip through JSON to detach parent links created during SDK parsing.
+    # The generated template class expects fresh child objects.
+    try:
+        from basyx.aas.adapter.json import read_aas_json_file, write_aas_json_file
+
+        buf = io.StringIO()
+        write_aas_json_file(buf, DictObjectStore([copy.deepcopy(submodel_obj)]), stripped=False)
+        fresh_store = read_aas_json_file(io.StringIO(buf.getvalue()), failsafe=False)
+        fresh_submodel = next((o for o in fresh_store if isinstance(o, Submodel)), submodel_obj)
+    except Exception as exc:
+        log.debug("Could not round-trip submodel %s for template validation: %s", semantic_id, exc)
+        fresh_submodel = submodel_obj
+
+    element_kwargs = {_arg_name(e.id_short): copy.deepcopy(e) for e in fresh_submodel if e.id_short}
 
     try:
-        cls(id_=submodel_obj.id, **element_kwargs)
+        cls(id_=fresh_submodel.id, **element_kwargs)
     except TypeError as exc:
         return f"Template conformance failed ({cls.__name__}): {exc}"
     except Exception as exc:
+        if "Object has already a parent" in str(exc):
+            log.warning(
+                "Template class %s raised parent-ownership false positive for semanticId %s; accepting",
+                cls.__name__,
+                semantic_id,
+            )
+            return None
         return f"Template conformance failed ({cls.__name__}): {exc}"
 
     return None

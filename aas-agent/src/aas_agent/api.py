@@ -1,5 +1,6 @@
 """FastAPI app — OpenAI-compatible chat completions endpoint."""
 
+import asyncio
 import json
 import logging
 import os
@@ -105,11 +106,21 @@ async def lifespan(app: FastAPI):
     if log_dir:
         log.info("Conversation logging enabled → %s", log_dir)
 
-    # By default the prompt ships next to the source as `system-prompt.md`.
-    # AGENT_SYSTEM_PROMPT_FILE overrides the path (e.g. for a bind-mounted
-    # editable copy in docker-compose).
-    default_prompt_file = Path(__file__).parent / "system-prompt.md"
-    prompt_file = Path(os.environ.get("AGENT_SYSTEM_PROMPT_FILE") or default_prompt_file)
+    # Determine which system prompt to load based on agent variant.
+    variant = os.environ.get("AGENT_VARIANT", "react").lower()
+    if variant == "react_validating":
+        # Self-validating prompt: teaches LLM to describe expected structure
+        # → query → validate → refine → repeat. No graph, no planner/reflector.
+        default_prompt_file = Path(__file__).parent / "system-prompt-validating.md"
+        prompt_file = Path(os.environ.get("AGENT_SYSTEM_PROMPT_FILE") or default_prompt_file)
+        log.info("AGENT_VARIANT=react_validating — will use prompt from %s", prompt_file)
+    else:
+        # By default the prompt ships next to the source as `system-prompt.md`.
+        # AGENT_SYSTEM_PROMPT_FILE overrides the path (e.g. for a bind-mounted
+        # editable copy in docker-compose).
+        default_prompt_file = Path(__file__).parent / "system-prompt.md"
+        prompt_file = Path(os.environ.get("AGENT_SYSTEM_PROMPT_FILE") or default_prompt_file)
+
     system_prompt = prompt_file.read_text(encoding="utf-8")
     log.info("Loaded system prompt from %s (%d chars)", prompt_file, len(system_prompt))
 
@@ -127,9 +138,26 @@ async def lifespan(app: FastAPI):
     if variant == "plan_reflect":
         from aas_agent.agent_plan import PlanReflectAgentRunner as RunnerCls
         log.info("AGENT_VARIANT=plan_reflect — using PlanReflectAgentRunner")
+    elif variant == "agent_supervisor":
+        from aas_agent.agent_supervisor import SupervisorAgentRunner as RunnerCls
+        log.info("AGENT_VARIANT=agent_supervisor — using SupervisorAgentRunner")
+    elif variant == "crag":
+        from aas_agent.crag import CragAgentRunner as RunnerCls
+        log.info("AGENT_VARIANT=crag — using CragAgentRunner")
+    elif variant == "rewoo":
+        from aas_agent.rewoo import RewooAgentRunner as RunnerCls
+        log.info("AGENT_VARIANT=rewoo — using RewooAgentRunner")
+    elif variant == "reflexion":
+        from aas_agent.reflexion import ReflexionAgentRunner as RunnerCls
+        log.info("AGENT_VARIANT=reflexion — using ReflexionAgentRunner")
     else:
         from aas_agent.agent import AgentRunner as RunnerCls
-        log.info("AGENT_VARIANT=%s → using react AgentRunner (default)", variant)
+        if variant not in ("react", "react_validating"):
+            log.info("AGENT_VARIANT=%s — using AgentRunner with %s prompt", variant, prompt_file.name)
+        elif variant == "react_validating":
+            log.info("AGENT_VARIANT=%s — using AgentRunner with validating prompt", variant)
+        else:
+            log.info("AGENT_VARIANT=%s → using react AgentRunner (default)", variant)
 
     _runner = RunnerCls(
         mcp,
@@ -139,7 +167,19 @@ async def lifespan(app: FastAPI):
         default_thinking=default_thinking,
         log_dir=log_dir,
     )
-    await _runner.initialize()
+
+    # Retry MCP connect during startup — MCP server may be initializing
+    # after docker compose marks the dependency healthy.
+    for _retry in range(15):
+        try:
+            await _runner.initialize()
+            break
+        except Exception as e:
+            if _retry == 14:
+                log.critical("Agent initialization failed after 15 retries: %s", e)
+                raise
+            log.warning("Agent initialize attempt %d failed, retrying in 3s: %s", _retry + 1, e)
+            await asyncio.sleep(3)
 
     yield
 

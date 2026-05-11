@@ -149,9 +149,10 @@ services:
       BASYX_ENVIRONMENT: file:/application/files/aasx/
       BASYX_EXTERNALURL: http://localhost:8081,http://aas-environment:8081,http://host.docker.internal:8081
       SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_REQUEST_SIZE: 10485760
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 500MB
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 500MB
     volumes:
 #      - ./aasx/:/application/files/aasx/
-      - ./aasx/vocabulary.aasx:/application/files/aasx/vocabulary.aasx
       - ./aasx/Hall3.aasx:/application/files/aasx/Hall3.aasx
       - ./aasx/Hall4.aasx:/application/files/aasx/Hall4.aasx
       - ./aasx/MiR100_Type.aasx:/application/files/aasx/MiR100_Type.aasx
@@ -165,8 +166,8 @@ services:
       - ./aasx/UR20_001.aasx:/application/files/aasx/UR20_001.aasx
       - ./aasx/CRX10iA_Type.aasx:/application/files/aasx/CRX10iA_Type.aasx
       - ./aasx/CRX10iA_001.aasx:/application/files/aasx/CRX10iA_001.aasx
-      - ./aasx/MiR250_001.aasx:/application/files/aasx/MiR250_001.aasx
-      - ./aasx/MiR250_002.aasx:/application/files/aasx/MiR250_002.aasx
+      - ./aasx/aas-hybrid-mcp-concept-descriptions.aasx:/application/files/aasx/aas-hybrid-mcp-concept-descriptions.aasx
+      - ./aasx/vocabulary.aasx:/application/files/aasx/vocabulary.aasx
 
     depends_on:
       kafka:
@@ -477,6 +478,7 @@ services:
       # Bind-mount prompts over the packaged copies so edits take effect on
       # restart without rebuilding the image.
       - ./aas-agent/src/aas_agent/system-prompt.md:/usr/local/lib/python3.11/site-packages/aas_agent/system-prompt.md:ro
+      - ./aas-agent/src/aas_agent/system-prompt-validating.md:/usr/local/lib/python3.11/site-packages/aas_agent/system-prompt-validating.md:ro
       - ./aas-agent/src/aas_agent/agent_plan_prompts:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan_prompts:ro
       - ./interaction-protocol:/logs
     depends_on:

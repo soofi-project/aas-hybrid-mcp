@@ -1,5 +1,6 @@
 """MCP client — connects to AAS Hybrid MCP server and wraps tools."""
 
+import asyncio
 import logging
 from contextlib import AsyncExitStack
 
@@ -27,24 +28,68 @@ class MCPClientManager:
         self._context_cache: str | None = None
         self._inject_manual = inject_manual
         self._inject_schema = inject_schema
+        self._mcp_unavailable = False
 
     async def connect(self) -> None:
-        """Establish MCP session (survives across requests via AsyncExitStack)."""
-        log.info("Connecting to MCP server at %s", self._url)
-        transport = await self._exit_stack.enter_async_context(
-            streamablehttp_client(url=self._url)
-        )
-        read_stream, write_stream = transport[0], transport[1]
-        self._session = await self._exit_stack.enter_async_context(
-            ClientSession(read_stream, write_stream)
-        )
-        await self._session.initialize()
-        tools = await self._session.list_tools()
-        log.info("MCP connected — %d tools available", len(tools.tools))
+        """Establish MCP session (survives across requests via AsyncExitStack).
+
+        Retries up to 30 times with 2s gaps because the MCP server may
+        still be initialising its lifespan when the agent starts.
+        """
+        max_retries = 30
+        for attempt in range(max_retries):
+            exit_stack = AsyncExitStack()
+            try:
+                log.info("Connecting to MCP server at %s (attempt %d)",
+                         self._url, attempt + 1)
+
+                transport = await exit_stack.enter_async_context(
+                    streamablehttp_client(url=self._url)
+                )
+                read_stream, write_stream = transport[0], transport[1]
+                session = await exit_stack.enter_async_context(
+                    ClientSession(read_stream, write_stream)
+                )
+                await session.initialize()
+                tools = await session.list_tools()
+
+                # Success — adopt the exit_stack and session
+                self._exit_stack = exit_stack
+                self._session = session
+                log.info("MCP connected — %d tools available",
+                         len(tools.tools))
+                return
+
+            except Exception as e:
+                is_last = attempt == max_retries - 1
+                log.debug("MCP connect attempt %d failed: %s",
+                          attempt + 1, e)
+                # Best-effort cleanup
+                try:
+                    await exit_stack.aclose()
+                except Exception:
+                    pass
+                if is_last:
+                    log.error(
+                        "MCP connect failed after %d attempts — "
+                        "service starting without MCP", max_retries)
+                    self._mcp_unavailable = True
+                    return
+                await asyncio.sleep(2)
 
     async def disconnect(self) -> None:
         """Close the MCP session."""
-        await self._exit_stack.aclose()
+        try:
+            await self._exit_stack.aclose()
+        except asyncio.CancelledError:
+            # Container was killed — swallow the CancelledError during cleanup
+            pass
+        except Exception:
+            # Suppress: RuntimeError "Attempted to exit cancel scope in a
+            # different task" / BaseExceptionGroup "unhandled errors in a
+            # TaskGroup" — known mcp library bug during event-loop shutdown.
+            log.debug("MCP disconnect cleanup error (safe to ignore)",
+                      exc_info=True)
         self._session = None
         self._context_cache = None
         log.info("MCP session closed")
@@ -52,7 +97,8 @@ class MCPClientManager:
     @property
     def session(self) -> ClientSession:
         if self._session is None:
-            raise RuntimeError("MCP client not connected — call connect() first")
+            raise RuntimeError(
+                "MCP client not connected — call connect() first")
         return self._session
 
     async def _call_tool_text(self, name: str) -> str:
@@ -70,14 +116,20 @@ class MCPClientManager:
         it needs the content — useful for comparing prompted-context vs.
         tool-driven retrieval.
         """
+        if self._mcp_unavailable:
+            log.warning("MCP unavailable — skipping context injection")
+            return ""
+
         if self._context_cache is not None:
             return self._context_cache
 
         sources: list[tuple[str, str]] = []
         if self._inject_manual:
-            sources.append(("get_manual_index", "AAS Hybrid MCP — Manual (auto-injected)"))
+            sources.append(("get_manual_index",
+                            "AAS Hybrid MCP — Manual (auto-injected)"))
         if self._inject_schema:
-            sources.append(("get_graph_schema", "AAS Graph Schema (auto-injected)"))
+            sources.append(("get_graph_schema",
+                            "AAS Graph Schema (auto-injected)"))
 
         parts: list[str] = []
         for tool_name, header in sources:
@@ -85,7 +137,8 @@ class MCPClientManager:
                 content = await self._call_tool_text(tool_name)
                 parts.append(f"## {header}\n\n{content}")
             except Exception:
-                log.warning("Failed to call tool %s", tool_name, exc_info=True)
+                log.warning("Failed to call tool %s", tool_name,
+                            exc_info=True)
 
         self._context_cache = "\n\n---\n\n".join(parts)
         return self._context_cache
@@ -97,6 +150,28 @@ class MCPClientManager:
         on the server side, so load_mcp_tools picks them up automatically.
         No client-side resource wrapper needed.
         """
+        if self._mcp_unavailable or self._session is None:
+            log.warning("MCP unavailable — returning empty tool list")
+            return []
         tools: list[BaseTool] = await load_mcp_tools(self.session)
         log.info("Loaded %d MCP tools via langchain-mcp-adapters", len(tools))
         return tools
+
+    async def reconnect(self) -> bool:
+        """Try to reconnect MCP if it was previously unavailable.
+
+        Returns True if reconnection succeeded.
+        """
+        if not self._mcp_unavailable:
+            return True
+
+        try:
+            await self.connect()
+            self._mcp_unavailable = False
+            # Re-fetch the cached context if it was never set
+            self._context_cache = None
+            await self.load_context()
+            return True
+        except Exception:
+            log.error("MCP reconnection failed — keeping MCP unavailable")
+            return False

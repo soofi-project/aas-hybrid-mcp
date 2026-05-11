@@ -8,6 +8,7 @@ searches. Query embeddings are computed with the same langchain model
 import asyncio
 import logging
 import os
+import re
 
 import weaviate
 import weaviate.classes.query as wvq
@@ -22,7 +23,32 @@ WEAVIATE_HOST: str = os.getenv("WEAVIATE_HOST", "weaviate")
 WEAVIATE_HTTP_PORT: int = int(os.getenv("WEAVIATE_PORT", "8080"))
 WEAVIATE_GRPC_PORT: int = int(os.getenv("WEAVIATE_GRPC_PORT", "50051"))
 WEAVIATE_COLLECTION: str = os.getenv("WEAVIATE_COLLECTION", "aas_documents")
-IDTA_TEMPLATE_COLLECTION: str = "IdtaTemplateSpec"
+IDTA_TEMPLATE_BASE: str = "IdtaTemplateSpec"
+
+
+def _get_collection_name(base: str) -> str:
+    """Build model-aware collection name from base + EMBEDDING_MODEL slug.
+
+    Must match the helper in embedding-service/vectorstore.py.
+    """
+    raw = os.environ.get("EMBEDDING_MODEL")
+    if not raw or ":" not in raw:
+        raise ValueError(
+            f"EMBEDDING_MODEL must be set in provider:model format "
+            f"(e.g. openai:text-embedding-3-small), got: {raw!r}"
+        )
+    model = raw.split(":", 1)[1]
+    if not model:
+        raise ValueError(
+            f"EMBEDDING_MODEL must specify a model after the colon "
+            f"(e.g. openai:text-embedding-3-small), got: {raw!r}"
+        )
+    # Weaviate class names must be alphanumeric only.
+    base = base[0].upper() + base[1:]
+    # Split on hyphens/dots, then Title-Case each part.
+    parts = re.split(r'[-\.]', model)
+    slug = "".join(p.title() for p in parts)
+    return f"{base}{slug}"
 
 # ---------------------------------------------------------------------------
 # Embedding model (lazy singleton)
@@ -118,9 +144,10 @@ def _get_client() -> weaviate.WeaviateClient:
 def _count_chunks_for_submodel(submodel_id: str) -> int:
     """Cheap presence check: how many chunks are stored under this submodel_id."""
     client = _get_client()
-    if not client.collections.exists(WEAVIATE_COLLECTION):
+    collection_name = _get_collection_name(WEAVIATE_COLLECTION)
+    if not client.collections.exists(collection_name):
         return 0
-    collection = client.collections.get(WEAVIATE_COLLECTION)
+    collection = client.collections.get(collection_name)
     result = collection.aggregate.over_all(
         filters=wvq.Filter.by_property("submodelId").equal(submodel_id),
         total_count=True,
@@ -141,13 +168,15 @@ def _search_sync(
     """
     client = _get_client()
 
-    if not client.collections.exists(WEAVIATE_COLLECTION):
+    collection_name = _get_collection_name(WEAVIATE_COLLECTION)
+
+    if not client.collections.exists(collection_name):
         return {"results": [], "diagnostic": "collection_missing"}
 
     model = _get_embedding_model()
     vector = model.embed_query(query)
 
-    collection = client.collections.get(WEAVIATE_COLLECTION)
+    collection = client.collections.get(collection_name)
 
     filters = None
     if submodel_id:
@@ -209,13 +238,15 @@ def _search_templates_sync(
     """Compute query embedding and run a near_vector search on IdtaTemplateSpec."""
     client = _get_client()
 
-    if not client.collections.exists(IDTA_TEMPLATE_COLLECTION):
+    collection_name = _get_collection_name(IDTA_TEMPLATE_BASE)
+
+    if not client.collections.exists(collection_name):
         return []
 
     model = _get_embedding_model()
     vector = model.embed_query(query)
 
-    collection = client.collections.get(IDTA_TEMPLATE_COLLECTION)
+    collection = client.collections.get(collection_name)
 
     filters = None
     if template_name:

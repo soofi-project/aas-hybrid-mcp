@@ -1,6 +1,8 @@
 """Weaviate client — singleton connection and collection operations."""
 
 import logging
+import os
+import re
 from typing import Sequence
 
 import weaviate
@@ -16,6 +18,37 @@ from config import (
 )
 
 log = logging.getLogger(__name__)
+
+
+def _get_collection_name(base: str) -> str:
+    """Build model-aware collection name from base + EMBEDDING_MODEL slug.
+
+    Embeddings from different models are incompatible, so each model gets its
+    own collection.  Changing EMBEDDING_MODEL automatically creates a new
+    collection; the old one stays untouched for easy rollback.
+
+    The base name is upper-cased (Weaviate auto-cases it to camelCase) and the
+    model slug is converted to camelCase so special characters are handled
+    cleanly, e.g.  ``text-embedding-3-small`` → ``TextEmbedding3Small``.
+    """
+    raw = os.environ.get("EMBEDDING_MODEL")
+    if not raw or ":" not in raw:
+        raise ValueError(
+            f"EMBEDDING_MODEL must be set in provider:model format "
+            f"(e.g. openai:text-embedding-3-small), got: {raw!r}"
+        )
+    model = raw.split(":", 1)[1]
+    if not model:
+        raise ValueError(
+            f"EMBEDDING_MODEL must specify a model after the colon "
+            f"(e.g. openai:text-embedding-3-small), got: {raw!r}"
+        )
+    # Weaviate class names must be alphanumeric only.
+    base = base[0].upper() + base[1:]
+    # Split on hyphens/dots, then Title-Case each part.
+    parts = re.split(r'[-\.]', model)
+    slug = "".join(p.title() for p in parts)
+    return f"{base}{slug}"
 
 _client: weaviate.WeaviateClient | None = None
 
@@ -40,12 +73,12 @@ def _get_client() -> weaviate.WeaviateClient:
     return _client
 
 
-def _ensure_collection(client: weaviate.WeaviateClient) -> None:
+def _ensure_collection(client: weaviate.WeaviateClient, collection_name: str) -> None:
     """Create the document collection if it does not exist yet."""
-    if not client.collections.exists(WEAVIATE_COLLECTION):
-        log.info("Creating Weaviate collection %s", WEAVIATE_COLLECTION)
+    if not client.collections.exists(collection_name):
+        log.info("Creating Weaviate collection %s", collection_name)
         client.collections.create(
-            name=WEAVIATE_COLLECTION,
+            name=collection_name,
             vector_config=wvc.Configure.Vectors.self_provided(),
             properties=[
                 wvc.Property(name="text", data_type=wvc.DataType.TEXT),
@@ -74,9 +107,10 @@ def insert_chunks(
     before the caller pays for PDF conversion and embedding.
     """
     client = _get_client()
-    _ensure_collection(client)
+    collection_name = _get_collection_name(WEAVIATE_COLLECTION)
+    _ensure_collection(client, collection_name)
 
-    collection = client.collections.get(WEAVIATE_COLLECTION)
+    collection = client.collections.get(collection_name)
     data_objects = [
         wcd.DataObject(
             properties={
@@ -110,10 +144,11 @@ def has_chunks(
     """
     client = _get_client()
 
-    if not client.collections.exists(WEAVIATE_COLLECTION):
+    collection_name = _get_collection_name(WEAVIATE_COLLECTION)
+    if not client.collections.exists(collection_name):
         return False
 
-    collection = client.collections.get(WEAVIATE_COLLECTION)
+    collection = client.collections.get(collection_name)
     where_filter = (
         wvf.Filter.by_property("submodelId").equal(submodel_id)
         & wvf.Filter.by_property("smElementPath").equal(sm_element_path or "")
@@ -128,10 +163,11 @@ def delete_documents(submodel_id: str, sm_element_path: str | None = None) -> No
     """Delete all chunks matching submodel_id (optionally scoped to smElementPath)."""
     client = _get_client()
 
-    if not client.collections.exists(WEAVIATE_COLLECTION):
+    collection_name = _get_collection_name(WEAVIATE_COLLECTION)
+    if not client.collections.exists(collection_name):
         return
 
-    collection = client.collections.get(WEAVIATE_COLLECTION)
+    collection = client.collections.get(collection_name)
     where_filter = wvf.Filter.by_property("submodelId").equal(submodel_id)
 
     if sm_element_path:
