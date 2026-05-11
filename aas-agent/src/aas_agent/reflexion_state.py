@@ -77,4 +77,6 @@ class ReflexionState(TypedDict):
     current_trial: int
     max_trials: int
     accept_threshold: float
+    last_answer_text: str  # most recent executor answer (overwritten each trial)
+    best_answer_text: str  # highest-scored answer across all trials
     remaining_steps: RemainingSteps

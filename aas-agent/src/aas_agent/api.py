@@ -1,4 +1,13 @@
-"""FastAPI app — OpenAI-compatible chat completions endpoint."""
+"""FastAPI app — OpenAI-compatible chat completions with multi-variant routing.
+
+Each variant is advertised as a separate model ID on /v1/models. The user
+picks their orchestration pattern in Open WebUI (or any client) by setting
+the `model` field. Runners are lazily initialized on first request for
+their model ID and cached for the lifetime of the process.
+
+A shared MCP client provides tools, manual, and schema context to all
+variants so that only the graph topology and system prompt differ.
+"""
 
 import asyncio
 import json
@@ -8,6 +17,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -23,26 +33,54 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-# Exposed model IDs — users pick one in Open WebUI's model dropdown to toggle
-# the Qwen3 thinking mode on or off. Both share the same tools, resources,
-# system prompt, and underlying weights; only the chat-template flag differs.
-MODEL_ID_NO_THINK = "aas-agent"
-MODEL_ID_THINK = "aas-agent-think"
+# ---------------------------------------------------------------------------
+# Model / variant registry
+# ---------------------------------------------------------------------------
+# _MODEL_INFO maps model_id → (variant, prompt_file_stem, has_mcp_tools).
+# "react" is the baseline ReAct agent (agent.py).
+# "react" with has_tools=False produces the passthrough baseline.
+_MODEL_INFO: dict[str, tuple[str, str, bool]] = {
+    "aas-agent:react":       ("react",            "system-prompt.md",              True),
+    "aas-agent:react-valid": ("react",           "system-prompt-validating.md",   True),
+    "aas-agent:passthrough": ("react",            "system-prompt.md",              False),
+    "aas-agent:plan":        ("plan_reflect",     "system-prompt.md",              True),
+    "aas-agent:crag":        ("crag",             "system-prompt.md",              True),
+    "aas-agent:reflexion":   ("reflexion",        "system-prompt.md",              True),
+    "aas-agent:rewoo":       ("rewoo",            "system-prompt.md",              True),
+    "aas-agent:supervisor":  ("agent_supervisor", "system-prompt.md",              True),
+}
+
+_PROMPT_DIR = Path(__file__).parent
 
 
-def _effort_for_model(model_name: str | None) -> str | None:
-    """Map the requested model name to a reasoning_effort override.
+# ---------------------------------------------------------------------------
+# Shared resources (initialized in lifespan)
+# ---------------------------------------------------------------------------
+_mcp: MCPClientManager | None = None
+_mcp_context: str = ""
+_all_tools: list = []
+_llm_base_url: str = ""
+_llm_model: str = ""
+_log_dir: Path | None = None
+_inject_manual: bool = True
+_inject_schema: bool = True
 
-    ``aas-agent-think`` forces thinking on; ``aas-agent`` forces it off.
-    Anything else (or missing) returns None, so the request's own
-    ``reasoning_effort`` field and the deployment default apply.
-    """
-    if model_name == MODEL_ID_THINK:
-        return "high"
-    if model_name == MODEL_ID_NO_THINK:
-        return "off"
-    return None
+# Per-model runner cache + init lock
+_runners: dict[str, Any] = {}
+_runner_locks: dict[str, asyncio.Lock] = {}
 
+
+# ---------------------------------------------------------------------------
+# Validate required env vars at import time
+# ---------------------------------------------------------------------------
+_default_model: str = os.environ.get("AGENT_DEFAULT_MODEL") or ""
+if not _default_model:
+    raise RuntimeError("Missing required env var: AGENT_DEFAULT_MODEL")
+if _default_model not in _MODEL_INFO:
+    raise RuntimeError(
+        f"AGENT_DEFAULT_MODEL={_default_model!r} is not registered. "
+        f"Available: {sorted(_MODEL_INFO.keys())}"
+    )
 
 # ---------------------------------------------------------------------------
 # Request / response models (OpenAI-compatible subset)
@@ -54,15 +92,15 @@ class Message(BaseModel):
 
 
 class ChatCompletionRequest(BaseModel):
-    model_config = ConfigDict(extra="allow")  # capture unknown Open WebUI fields
+    model_config = ConfigDict(extra="allow")
 
-    model: str = "aas-agent"
+    model: str = _default_model
     messages: list[Message]
     stream: bool = False
     temperature: float | None = None
     max_tokens: int | None = None
-    reasoning_effort: str | None = None  # "off" | "low" | "medium" | "high"
-    chat_id: str | None = None           # Open WebUI conversation ID (non-standard)
+    reasoning_effort: str | None = None
+    chat_id: str | None = None
 
 
 def _last_user_content(messages: list[dict]) -> str:
@@ -78,15 +116,113 @@ def _is_utility_request(messages: list[dict]) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Lifespan — startup / shutdown
+# Lazy runner initialization
 # ---------------------------------------------------------------------------
 
-_runner = None  # type: Any  — concrete class chosen at startup via AGENT_VARIANT
+def _resolve_prompt_file(prompt_file_stem: str) -> Path:
+    override = os.environ.get("AGENT_SYSTEM_PROMPT_DIR", "")
+    if override:
+        candidate = Path(override) / prompt_file_stem
+        if candidate.exists():
+            return candidate
+    return _PROMPT_DIR / prompt_file_stem
 
+
+async def _get_runner(model_id: str) -> Any:
+    """Return a ready-to-use agent runner for *model_id*, initializing it on first call."""
+    if model_id in _runners and _runners[model_id] is not None:
+        return _runners[model_id]
+
+    # Ensure lock exists
+    if model_id not in _runner_locks:
+        _runner_locks[model_id] = asyncio.Lock()
+
+    async with _runner_locks[model_id]:
+        # Double-check after acquiring lock
+        if model_id in _runners:
+            runner = _runners[model_id]
+            if runner is not None:
+                return runner
+
+        info = _MODEL_INFO.get(model_id)
+        if info is None:
+            raise ValueError(f"Unknown model: {model_id}")
+
+        variant, prompt_file_stem, has_tools = info
+
+        # --- Passthrough (aas:null): no tools, no LangGraph ---
+        if not has_tools:
+            from aas_agent.passthrough import PassthroughRunner
+            runner = PassthroughRunner(
+                base_system=_mcp_context,
+                llm_base_url=_llm_base_url,
+                llm_model=_llm_model,
+                log_dir=_log_dir,
+            )
+            await runner.initialize()
+            log.info("Passthrough agent initialized for model %s", model_id)
+            _runners[model_id] = runner
+            return runner
+
+        # --- Tool-bearing variants ---
+        system_prompt = _resolve_prompt_file(prompt_file_stem).read_text(encoding="utf-8")
+        log.info("Loaded %s prompt for model %s (%d chars)", prompt_file_stem, model_id, len(system_prompt))
+
+        runner_cls = _resolve_runner_class(variant)
+        runner = runner_cls(
+            mcp_client=_mcp,
+            llm_base_url=_llm_base_url,
+            llm_model=_llm_model,
+            system_prompt=system_prompt,
+            default_thinking=False,
+            log_dir=_log_dir,
+        )
+
+        await runner._lazy_init(
+            mcp_context=_mcp_context,
+            all_tools=list(_all_tools),
+        )
+
+        log.info("Agent runner initialized for model %s (variant=%s)", model_id, variant)
+        _runners[model_id] = runner
+        return runner
+
+
+def _resolve_runner_class(variant: str):
+    """Map variant string to its Runner class."""
+    if variant == "plan_reflect":
+        from aas_agent.agent_plan import PlanReflectAgentRunner
+        return PlanReflectAgentRunner
+    elif variant == "agent_supervisor":
+        from aas_agent.agent_supervisor import SupervisorAgentRunner
+        return SupervisorAgentRunner
+    elif variant == "crag":
+        from aas_agent.crag import CragAgentRunner
+        return CragAgentRunner
+    elif variant == "rewoo":
+        from aas_agent.rewoo import RewooAgentRunner
+        return RewooAgentRunner
+    elif variant == "reflexion":
+        from aas_agent.reflexion import ReflexionAgentRunner
+        return ReflexionAgentRunner
+    else:
+        from aas_agent.agent import AgentRunner
+        return AgentRunner
+
+
+# ---------------------------------------------------------------------------
+# Lifespan — startup / shutdown (shared resources only)
+# ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _runner
+    global _mcp, _mcp_context, _all_tools
+    global _llm_base_url, _llm_model, _log_dir
+    global _inject_manual, _inject_schema
+
+    mcp_url = os.environ.get("MCP_SERVER_URL", "http://localhost:8110/mcp/")
+    _llm_base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
+    _llm_model = os.environ.get("LLM_MODEL", "gpt-4o")
 
     def _env_bool(name: str, default: bool) -> bool:
         raw = os.environ.get(name)
@@ -94,97 +230,43 @@ async def lifespan(app: FastAPI):
             return default
         return raw.lower() in ("1", "true", "yes", "on")
 
-    mcp_url = os.environ.get("MCP_SERVER_URL", "http://localhost:8110/mcp/")
-    llm_base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
-    llm_model = os.environ.get("LLM_MODEL", "gpt-4o")
-    default_thinking = _env_bool("AGENT_DEFAULT_THINKING", False)
-    inject_manual = _env_bool("AGENT_INJECT_MANUAL", True)
-    inject_schema = _env_bool("AGENT_INJECT_SCHEMA", True)
+    _inject_manual = _env_bool("AGENT_INJECT_MANUAL", True)
+    _inject_schema = _env_bool("AGENT_INJECT_SCHEMA", True)
 
     log_dir_env = os.environ.get("AGENT_LOG_DIR", "")
-    log_dir = Path(log_dir_env) if log_dir_env else None
-    if log_dir:
-        log.info("Conversation logging enabled → %s", log_dir)
+    _log_dir = Path(log_dir_env) if log_dir_env else None
+    if _log_dir:
+        log.info("Conversation logging enabled → %s", _log_dir)
 
-    # Determine which system prompt to load based on agent variant.
-    variant = os.environ.get("AGENT_VARIANT", "react").lower()
-    if variant == "react_validating":
-        # Self-validating prompt: teaches LLM to describe expected structure
-        # → query → validate → refine → repeat. No graph, no planner/reflector.
-        default_prompt_file = Path(__file__).parent / "system-prompt-validating.md"
-        prompt_file = Path(os.environ.get("AGENT_SYSTEM_PROMPT_FILE") or default_prompt_file)
-        log.info("AGENT_VARIANT=react_validating — will use prompt from %s", prompt_file)
-    else:
-        # By default the prompt ships next to the source as `system-prompt.md`.
-        # AGENT_SYSTEM_PROMPT_FILE overrides the path (e.g. for a bind-mounted
-        # editable copy in docker-compose).
-        default_prompt_file = Path(__file__).parent / "system-prompt.md"
-        prompt_file = Path(os.environ.get("AGENT_SYSTEM_PROMPT_FILE") or default_prompt_file)
-
-    system_prompt = prompt_file.read_text(encoding="utf-8")
-    log.info("Loaded system prompt from %s (%d chars)", prompt_file, len(system_prompt))
-
-    mcp = MCPClientManager(
+    _mcp = MCPClientManager(
         mcp_url,
-        inject_manual=inject_manual,
-        inject_schema=inject_schema,
+        inject_manual=_inject_manual,
+        inject_schema=_inject_schema,
     )
-    log.info(
-        "Auto-injected resources: manual=%s, schema=%s",
-        inject_manual, inject_schema,
-    )
+    log.info("Auto-injected resources: manual=%s, schema=%s", _inject_manual, _inject_schema)
 
-    variant = os.environ.get("AGENT_VARIANT", "react").lower()
-    if variant == "plan_reflect":
-        from aas_agent.agent_plan import PlanReflectAgentRunner as RunnerCls
-        log.info("AGENT_VARIANT=plan_reflect — using PlanReflectAgentRunner")
-    elif variant == "agent_supervisor":
-        from aas_agent.agent_supervisor import SupervisorAgentRunner as RunnerCls
-        log.info("AGENT_VARIANT=agent_supervisor — using SupervisorAgentRunner")
-    elif variant == "crag":
-        from aas_agent.crag import CragAgentRunner as RunnerCls
-        log.info("AGENT_VARIANT=crag — using CragAgentRunner")
-    elif variant == "rewoo":
-        from aas_agent.rewoo import RewooAgentRunner as RunnerCls
-        log.info("AGENT_VARIANT=rewoo — using RewooAgentRunner")
-    elif variant == "reflexion":
-        from aas_agent.reflexion import ReflexionAgentRunner as RunnerCls
-        log.info("AGENT_VARIANT=reflexion — using ReflexionAgentRunner")
-    else:
-        from aas_agent.agent import AgentRunner as RunnerCls
-        if variant not in ("react", "react_validating"):
-            log.info("AGENT_VARIANT=%s — using AgentRunner with %s prompt", variant, prompt_file.name)
-        elif variant == "react_validating":
-            log.info("AGENT_VARIANT=%s — using AgentRunner with validating prompt", variant)
-        else:
-            log.info("AGENT_VARIANT=%s → using react AgentRunner (default)", variant)
-
-    _runner = RunnerCls(
-        mcp,
-        llm_base_url,
-        llm_model,
-        system_prompt,
-        default_thinking=default_thinking,
-        log_dir=log_dir,
-    )
-
-    # Retry MCP connect during startup — MCP server may be initializing
-    # after docker compose marks the dependency healthy.
+    # Connect MCP and load shared context + tools
     for _retry in range(15):
         try:
-            await _runner.initialize()
+            await _mcp.connect()
             break
         except Exception as e:
             if _retry == 14:
-                log.critical("Agent initialization failed after 15 retries: %s", e)
+                log.critical("MCP connect failed after 15 retries: %s", e)
                 raise
-            log.warning("Agent initialize attempt %d failed, retrying in 3s: %s", _retry + 1, e)
+            log.warning("MCP connect attempt %d failed, retrying in 3s: %s", _retry + 1, e)
             await asyncio.sleep(3)
+
+    _mcp_context = await _mcp.load_context()
+    _all_tools = await _mcp.get_langchain_tools()
+    log.info("Shared resources loaded — %d tools, %d chars context", len(_all_tools), len(_mcp_context))
 
     yield
 
-    await mcp.disconnect()
-    _runner = None
+    await _mcp.disconnect()
+    _mcp = None
+    _runners.clear()
+    _runner_locks.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -205,24 +287,19 @@ async def list_models():
         "object": "list",
         "data": [
             {
-                "id": MODEL_ID_NO_THINK,
+                "id": mid,
                 "object": "model",
                 "created": 0,
                 "owned_by": "aas-hybrid-mcp",
-            },
-            {
-                "id": MODEL_ID_THINK,
-                "object": "model",
-                "created": 0,
-                "owned_by": "aas-hybrid-mcp",
-            },
+            }
+            for mid in _MODEL_INFO.keys()
         ],
     }
 
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatCompletionRequest, http_request: Request):
-    if _runner is None:
+    if _mcp is None:
         return {"error": "Agent not initialized"}, 503
 
     messages = [{"role": m.role, "content": m.content} for m in request.messages]
@@ -232,8 +309,6 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
     headers = {k.lower(): v for k, v in http_request.headers.items()}
     client_id = _extract_client_id(request, headers)
 
-    # Log non-standard body fields and custom headers — helps discover whether
-    # Open WebUI (or a Pipelines extension) is sending a chat ID.
     extra = request.model_extra or {}
     if extra:
         log.info("Extra body fields from client: %s", extra)
@@ -244,13 +319,16 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
     if custom_headers:
         log.info("Custom headers from client: %s", custom_headers)
 
-    model = request.model or MODEL_ID_NO_THINK
-    effort = _effort_for_model(model) or request.reasoning_effort
+    model = request.model or _default_model
+    try:
+        runner = await _get_runner(model)
+    except ValueError as e:
+        return {"error": str(e)}, 400
 
     # Utility calls (title gen, tags, follow-up suggestions) from Open WebUI:
-    # bypass LangGraph, call LLM directly, skip logging.
+    # bypass LangGraph, call LLM directly.
     if _is_utility_request(messages):
-        text = await _runner.direct_invoke(messages)
+        text = await runner.direct_invoke(messages)
         return {
             "id": completion_id,
             "object": "chat.completion",
@@ -262,11 +340,11 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
 
     if request.stream:
         return StreamingResponse(
-            _stream_sse(completion_id, created, model, messages, effort, client_id, extra or None),
+            _stream_sse(completion_id, created, model, runner, messages, client_id, extra or None),
             media_type="text/event-stream",
         )
 
-    text = await _runner.invoke(messages, reasoning_effort=effort, conversation_id=completion_id, chat_id=client_id, extra=extra or None)
+    text = await runner.invoke(messages, conversation_id=completion_id, chat_id=client_id, extra=extra or None)
     return {
         "id": completion_id,
         "object": "chat.completion",
@@ -287,18 +365,6 @@ def _extract_client_id(
     request: ChatCompletionRequest,
     headers: dict[str, str] | None = None,
 ) -> str | None:
-    """Extract a stable session ID from the request, or ``None`` if none is sent.
-
-    Priority order:
-    1. ``chat_id`` from request body (Open WebUI Pipelines / custom backend).
-    2. ``client_id`` from extra body fields.
-    3. Custom headers some Open WebUI versions set
-       (``x-openwebui-chat-id``, ``x-chat-id``).
-
-    Returns ``None`` when nothing is found — the logger then falls back to a
-    fingerprint of the first user message, which is stable because Open
-    WebUI sends the full conversation history on every turn.
-    """
     if request.chat_id:
         return request.chat_id
     if "client_id" in (request.model_extra or {}):
@@ -314,20 +380,13 @@ async def _stream_sse(
     completion_id: str,
     created: int,
     model: str,
+    runner: Any,
     messages: list[dict],
-    reasoning_effort: str | None,
     client_id: str | None,
     extra: dict | None = None,
 ):
-    """Yield OpenAI-compatible SSE chunks.
-
-    The try/finally ensures the terminating ``done_chunk`` and ``[DONE]``
-    sentinel are always emitted - otherwise an exception inside the agent
-    stream leaves the HTTP chunked transfer unfinished and clients see a
-    ``TransferEncodingError``.
-    """
     try:
-        async for token in _runner.stream(messages, reasoning_effort=reasoning_effort, conversation_id=completion_id, chat_id=client_id, extra=extra):
+        async for token in runner.stream(messages, conversation_id=completion_id, chat_id=client_id, extra=extra):
             if not isinstance(token, str):
                 token = str(token)
             chunk = {
@@ -369,7 +428,7 @@ async def _stream_sse(
 
 
 # ---------------------------------------------------------------------------
-# Entry point (for pyproject.toml console_scripts)
+# Entry point
 # ---------------------------------------------------------------------------
 
 def main():

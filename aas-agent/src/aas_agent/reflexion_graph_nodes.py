@@ -208,7 +208,28 @@ def make_judge_node(llm: BaseChatModel) -> Callable:
                 reason="Parse failure, defaulting to revise.",
             )
 
-        return {"judgment": judgment}
+        # Record this trial and increment counter for next iteration
+        new_record = TrialRecord(
+            trial=trial,
+            score=judgment.score,
+            verdict=judgment.verdict,
+            summary=answer[:500] if answer else "(empty answer)",
+        )
+        existing = list(state.get("trial_records", []))
+        existing.append(new_record)
+
+        # Track best-scoring answer across all trials
+        best_answer = state.get("best_answer_text", "")
+        existing_best_score = max((t.score for t in existing), default=0.0)
+        if judgment.score >= existing_best_score:
+            best_answer = answer
+
+        return {
+            "judgment": judgment,
+            "trial_records": existing,
+            "current_trial": trial + 1,
+            "best_answer_text": best_answer,
+        }
 
     return judge_node
 
@@ -230,8 +251,11 @@ def _parse_judgment(content: str) -> Judgment | None:
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "score" in parsed and "verdict" in parsed:
+            # LLM often returns missing as a string — coerce to list
+            if isinstance(parsed.get("missing"), str):
+                parsed["missing"] = [parsed["missing"]] if parsed["missing"] else []
             return Judgment.model_validate(parsed)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, Exception):
         pass
 
     return None
@@ -326,6 +350,8 @@ def _parse_reflection(content: str) -> ReflectionFeedback | None:
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "strategy_hint" in parsed:
+            if isinstance(parsed.get("common_pitfalls"), str):
+                parsed["common_pitfalls"] = [parsed["common_pitfalls"]] if parsed["common_pitfalls"] else []
             return ReflectionFeedback.model_validate(parsed)
     except json.JSONDecodeError:
         pass
@@ -343,17 +369,23 @@ def make_finalizer_node(llm: BaseChatModel) -> Callable:
         trials = state.get("trial_records", [])
         best_score = max((t.score for t in trials), default=0.0)
 
-        ctx = (
-            f"User query:\n{user_request}\n\n"
-            f"Best available answer (from trial #{state.get('current_trial', 1)})\n"
-        )
+        best_answer_text = state.get("best_answer_text", "")
+        last_answer = state.get("last_answer_text", "")
+
+        ctx = (f"User query:\n{user_request}\n\n")
         if trials:
-            ctx += "\n## Trial History\n\n"
+            ctx += "## Trial History\n\n"
             for t in trials:
                 ctx += f"- Trial {t.trial}: score={t.score:.2f}, verdict={t.verdict}\n"
+            ctx += "\n"
+
+        if best_answer_text:
+            ctx += f"## Best Available Answer (score={best_score:.2f})\n{best_answer_text}\n\n"
+        elif last_answer:
+            ctx += f"## Last Available Answer\n{last_answer}\n\n"
 
         ctx += (
-            f"\n\nSynthesize a final answer from the best available evidence.\n"
+            f"Use the best available answer as your starting point. Improve it if possible.\n"
             f"Output ONLY a JSON object: {{answer, confidence, unresolved}}"
         )
 
@@ -401,6 +433,17 @@ def make_finalizer_node(llm: BaseChatModel) -> Callable:
     return finalizer_node
 
 
+def _coerce_final_answer(d: dict) -> dict:
+    """Normalize FinalAnswer fields so pydantic validation passes."""
+    if isinstance(d.get("confidence"), (int, float)):
+        c = d["confidence"]
+        d["confidence"] = "high" if c >= 0.7 else ("medium" if c >= 0.4 else "low")
+    unresolved = d.get("unresolved")
+    if not isinstance(unresolved, list):
+        d["unresolved"] = [unresolved] if unresolved and unresolved is not False else []
+    return d
+
+
 def _parse_final_answer(content: str) -> FinalAnswer:
     try:
         parser = QwenOutputParser(pydantic_model=FinalAnswer)
@@ -411,6 +454,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "answer" in normalized and "confidence" in normalized:
         try:
+            _coerce_final_answer(normalized)
             return FinalAnswer.model_validate(normalized)
         except Exception:
             pass
@@ -418,6 +462,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "answer" in parsed and "confidence" in parsed:
+            _coerce_final_answer(parsed)
             return FinalAnswer.model_validate(parsed)
     except json.JSONDecodeError:
         pass
@@ -443,9 +488,9 @@ def route_after_judge(state: ReflexionState) -> str:
         return "finalizer"
 
     max_trials = state.get("max_trials", 3)
-    current = state.get("current_trial", 1)
+    current = state.get("current_trial", 2)
 
-    if current >= max_trials:
+    if current > max_trials:
         log.info("Reflexion: max trials (%d) reached → finalizer", max_trials)
         return "finalizer"
 

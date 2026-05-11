@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncIterator
@@ -61,10 +62,10 @@ class AgentRunner:
 
     def __init__(
         self,
-        mcp_client: MCPClientManager,
-        llm_base_url: str,
-        llm_model: str,
-        system_prompt: str,
+        mcp_client=None,
+        llm_base_url: str = "",
+        llm_model: str = "",
+        system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
     ) -> None:
@@ -77,16 +78,18 @@ class AgentRunner:
         self._agent_thinking_off = None
         self._agent_thinking_on = None
         self._full_system_message: str = ""
+        self._recursion_limit = int(os.environ.get("AGENT_RECURSION_LIMIT", "60"))
 
     @property
     def model_name(self) -> str:
         return self._llm_model
 
-    async def initialize(self) -> None:
-        """Connect MCP, load resources, build both ReAct graphs."""
-        await self._mcp.connect()
+    async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
+        """Build both ReAct graphs using pre-loaded shared resources.
 
-        mcp_context = await self._mcp.load_context()
+        Called by api.py after the shared MCP client has connected and loaded
+        context + tools. Avoids a redundant connect/load cycle per variant.
+        """
         self._full_system_message = _build_system_message(
             self._system_prompt, mcp_context
         )
@@ -97,8 +100,7 @@ class AgentRunner:
             len(mcp_context),
         )
 
-        tools = await self._mcp.get_langchain_tools()
-        tools.append(get_current_utc_time)
+        tools = list(all_tools) + [get_current_utc_time]
 
         self._agent_thinking_off = create_react_agent(
             model=self._build_llm(enable_thinking=False),
@@ -114,6 +116,13 @@ class AgentRunner:
             "Agent initialized with %d tools (default_thinking=%s)",
             len(tools), self._default_thinking,
         )
+
+    async def initialize(self) -> None:
+        """Legacy: Connect MCP, load resources, build both ReAct graphs."""
+        await self._mcp.connect()
+        mcp_context = await self._mcp.load_context()
+        all_tools = await self._mcp.get_langchain_tools()
+        return await self._lazy_init(mcp_context, all_tools)
 
     def _build_llm(self, enable_thinking: bool, with_tools: bool = True, extra_body: dict | None = None) -> ChatOpenAI:
         """Construct the LLM with optional vLLM thinking support.
@@ -221,7 +230,9 @@ class AgentRunner:
         in_tool_block = False
         try:
             async for event in agent.astream_events(
-                {"messages": lc_messages}, version="v2"
+                {"messages": lc_messages},
+                config={"recursion_limit": self._recursion_limit},
+                version="v2",
             ):
                 try:
                     kind = event.get("event")
@@ -268,7 +279,10 @@ class AgentRunner:
             raise RuntimeError("Agent not initialized")
 
         lc_messages = self._to_langchain_messages(messages)
-        result = await agent.ainvoke({"messages": lc_messages})
+        result = await agent.ainvoke(
+            {"messages": lc_messages},
+            config={"recursion_limit": self._recursion_limit},
+        )
 
         response = ""
         for msg in reversed(result.get("messages", [])):

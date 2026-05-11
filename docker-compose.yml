@@ -475,8 +475,35 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://langfuse:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
     volumes:
-      # Bind-mount prompts over the packaged copies so edits take effect on
-      # restart without rebuilding the image.
+      # Bind-mount individual files over the installed copies so edits take
+      # effect on restart without rebuilding the image. (Full directory mount
+      # unreliable on Windows — see C:/134 path issue.)
+      - ./aas-agent/src/aas_agent/api.py:/usr/local/lib/python3.11/site-packages/aas_agent/api.py:ro
+      - ./aas-agent/src/aas_agent/agent.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent.py:ro
+      - ./aas-agent/src/aas_agent/agent_plan.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan.py:ro
+      - ./aas-agent/src/aas_agent/agent_plan_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan_nodes.py:ro
+      - ./aas-agent/src/aas_agent/agent_plan_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan_graph.py:ro
+      - ./aas-agent/src/aas_agent/agent_plan_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan_state.py:ro
+      - ./aas-agent/src/aas_agent/crag.py:/usr/local/lib/python3.11/site-packages/aas_agent/crag.py:ro
+      - ./aas-agent/src/aas_agent/crag_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/crag_nodes.py:ro
+      - ./aas-agent/src/aas_agent/crag_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/crag_graph.py:ro
+      - ./aas-agent/src/aas_agent/crag_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/crag_state.py:ro
+      - ./aas-agent/src/aas_agent/reflexion.py:/usr/local/lib/python3.11/site-packages/aas_agent/reflexion.py:ro
+      - ./aas-agent/src/aas_agent/reflexion_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/reflexion_graph.py:ro
+      - ./aas-agent/src/aas_agent/reflexion_graph_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/reflexion_graph_nodes.py:ro
+      - ./aas-agent/src/aas_agent/reflexion_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/reflexion_state.py:ro
+      - ./aas-agent/src/aas_agent/rewoo.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo.py:ro
+      - ./aas-agent/src/aas_agent/rewoo_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo_nodes.py:ro
+      - ./aas-agent/src/aas_agent/rewoo_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo_graph.py:ro
+      - ./aas-agent/src/aas_agent/rewoo_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo_state.py:ro
+      - ./aas-agent/src/aas_agent/agent_supervisor.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor.py:ro
+      - ./aas-agent/src/aas_agent/agent_supervisor_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor_nodes.py:ro
+      - ./aas-agent/src/aas_agent/agent_supervisor_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor_graph.py:ro
+      - ./aas-agent/src/aas_agent/agent_supervisor_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor_state.py:ro
+      - ./aas-agent/src/aas_agent/passthrough.py:/usr/local/lib/python3.11/site-packages/aas_agent/passthrough.py:ro
+      - ./aas-agent/src/aas_agent/mcp_client.py:/usr/local/lib/python3.11/site-packages/aas_agent/mcp_client.py:ro
+      - ./aas-agent/src/aas_agent/qwen_parser.py:/usr/local/lib/python3.11/site-packages/aas_agent/qwen_parser.py:ro
+      - ./aas-agent/src/aas_agent/trace.py:/usr/local/lib/python3.11/site-packages/aas_agent/trace.py:ro
       - ./aas-agent/src/aas_agent/system-prompt.md:/usr/local/lib/python3.11/site-packages/aas_agent/system-prompt.md:ro
       - ./aas-agent/src/aas_agent/system-prompt-validating.md:/usr/local/lib/python3.11/site-packages/aas_agent/system-prompt-validating.md:ro
       - ./aas-agent/src/aas_agent/agent_plan_prompts:/usr/local/lib/python3.11/site-packages/aas_agent/agent_plan_prompts:ro
@@ -514,10 +541,10 @@ services:
       RAG_RERANKING_MODEL_AUTO_UPDATE: "false"
       ENABLE_OLLAMA_API: "false"
       ENABLE_OPENAI_API: "true"
-      OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://aas-agent:8120/v1"
-      OPENAI_API_KEYS: "${OPENAI_API_KEY};no-key"
-      DEFAULT_MODELS: "aas-assistant"
-      TASK_MODEL_EXTERNAL: "gpt-4o-mini"
+      OPENAI_API_BASE_URLS: "http://aas-agent:8120/v1"
+      OPENAI_API_KEYS: "no-key"
+      DEFAULT_MODELS: "aas-agent:react"
+      TASK_MODEL_EXTERNAL: "aas-agent:react"
       # Direct MCP still available for tools; agent adds resource access
       TOOL_SERVER_CONNECTIONS: '[{"url":"http://aas-hybrid-mcp:8110/mcp/","type":"mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"aas-hybrid-mcp","name":"AAS Hybrid MCP","description":"Neo4j graph queries, Weaviate document search, and IDTA template search for Asset Administration Shells"}}]'
     volumes:

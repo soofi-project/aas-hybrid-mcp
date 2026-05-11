@@ -35,7 +35,7 @@ def build_crag_graph(
 
     # Executor — bounded ReAct sub-loop for retrieval
     graph.add_node(
-        "executor", make_executor_node(exec_llm, tools, base_system)
+        "executor", make_executor_node(exec_llm.bind_tools(tools), tools, base_system)
     )
 
     # Relevance evaluator

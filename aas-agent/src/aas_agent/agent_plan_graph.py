@@ -59,7 +59,7 @@ def build_plan_reflect_graph(
     graph.add_node(
         "execute_step",
         make_execute_step_node(
-            executor_llm,
+            executor_llm.bind_tools(tools),
             tools,
             base_system,
             executor_prompt,

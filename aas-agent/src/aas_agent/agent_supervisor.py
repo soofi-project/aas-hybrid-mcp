@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, AsyncIterator
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
@@ -55,10 +55,10 @@ class SupervisorAgentRunner:
 
     def __init__(
         self,
-        mcp_client: MCPClientManager,
-        llm_base_url: str,
-        llm_model: str,
-        system_prompt: str,
+        mcp_client=None,
+        llm_base_url: str = "",
+        llm_model: str = "",
+        system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
     ) -> None:
@@ -70,69 +70,45 @@ class SupervisorAgentRunner:
         self._log_dir = log_dir
         self._graph_thinking_off = None
         self._graph_thinking_on = None
+        self._mcp_context = ""
 
     @property
     def model_name(self) -> str:
         return self._llm_model
 
-    async def initialize(self) -> None:
-        """Connect MCP, load resources, build worker sub-graphs and supervisor graph."""
-        await self._mcp.connect()
-
-        mcp_context = await self._mcp.load_context()
-        all_tools = await self._mcp.get_langchain_tools()
-        all_tools.append(get_current_utc_time)
+    async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
+        """Build worker sub-graphs and supervisor graph using pre-loaded resources."""
         self._mcp_context = mcp_context
+        tools = list(all_tools) + [get_current_utc_time]
 
-        # Build LLM instances
         supervisor_llm = self._build_llm(enable_thinking=False, with_tools=False)
         worker_llm = self._build_llm(enable_thinking=False, with_tools=True)
 
-        # Build worker sub-graphs
         worker_subgraphs = {}
-        from aas_agent.agent_supervisor_nodes import (
-            _worker_prompts,
-            _worker_tools,
-        )
+        from aas_agent.agent_supervisor_nodes import _WORKER_PROMPTS as _worker_prompts
 
         for worker_name in ("work_graph", "work_document", "work_template"):
-            subgraph = self._build_worker_agent(worker_llm, all_tools, worker_name)
+            subgraph = self._build_worker_agent(worker_llm, tools, worker_name)
             worker_subgraphs[worker_name] = (subgraph, _worker_prompts[worker_name])
 
-        log.info(
-            "Built worker sub-graphs for: %s",
-            ", ".join(worker_subgraphs.keys()),
-        )
+        log.info("Built worker sub-graphs for: %s", ", ".join(worker_subgraphs.keys()))
 
-        # Build supervisor graph (no-thinking)
         self._graph_thinking_off = build_supervisor_graph(
             supervisor_llm=supervisor_llm,
             worker_subgraphs=worker_subgraphs,
             synthesize_llm=supervisor_llm,
             finalizer_prompt=None,
         )
+        self._graph_thinking_on = self._graph_thinking_off
 
-        # Build thinking variant
-        if "openai.com" not in self._llm_base_url and self._default_thinking:
-            supervisor_llm_think = self._build_llm(enable_thinking=True, with_tools=False)
-            worker_llm_think = self._build_llm(enable_thinking=True, with_tools=True)
-            thinking_worker_subgraphs = {}
-            for worker_name in ("work_graph", "work_document", "work_template"):
-                subgraph = self._build_worker_agent(worker_llm_think, all_tools, worker_name)
-                thinking_worker_subgraphs[worker_name] = (subgraph, _worker_prompts[worker_name])
-            self._graph_thinking_on = build_supervisor_graph(
-                supervisor_llm=supervisor_llm_think,
-                worker_subgraphs=thinking_worker_subgraphs,
-                synthesize_llm=supervisor_llm_think,
-                finalizer_prompt=None,
-            )
-        else:
-            self._graph_thinking_on = self._graph_thinking_off
+        log.info("Supervisor agent initialized — %d tools", len(tools))
 
-        log.info(
-            "Supervisor agent initialized — %d tools",
-            len(all_tools),
-        )
+    async def initialize(self) -> None:
+        """Legacy: Connect MCP, load resources, build worker sub-graphs and supervisor graph."""
+        await self._mcp.connect()
+        mcp_context = await self._mcp.load_context()
+        all_tools = await self._mcp.get_langchain_tools()
+        return await self._lazy_init(mcp_context, all_tools)
 
     def _build_worker_agent(
         self,

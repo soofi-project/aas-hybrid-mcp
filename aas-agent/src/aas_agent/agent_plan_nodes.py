@@ -76,14 +76,68 @@ async def _qwen_structured_invoke(
     try:
         return parser.parse(content)
     except Exception:
-        # 3. Fallback: strip reasoning tags and retry with full normalisation
-        stripped = re.sub(
-            r'<think[^>]*>.*?</think>', '', content, flags=re.DOTALL
-        ).strip()
-        parsed = _normalize_json_from_qwen(stripped)
-        if parsed is not None:
-            return model_cls(**parsed)
-        raise
+        pass
+
+    # 3. Coercion + extraction fallback
+    stripped = re.sub(
+        r'<think[^>]*>.*?</think>', '', content, flags=re.DOTALL
+    ).strip()
+    parsed = _normalize_json_from_qwen(stripped)
+    if parsed is None:
+        # Brute-force: find largest JSON object in mixed text
+        depth, start = 0, -1
+        for i, ch in enumerate(stripped):
+            if ch == '{':
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    try:
+                        parsed = json.loads(stripped[start:i+1])
+                    except json.JSONDecodeError:
+                        pass
+    if parsed is not None and isinstance(parsed, dict):
+        try:
+            return _coerce_and_validate(model_cls, parsed)
+        except Exception:
+            pass
+
+    # 4. Final fallback: try QwenOutputParser one more time on stripped text
+    try:
+        return parser.parse(stripped)
+    except Exception:
+        pass
+
+    raise ValueError(f"Could not parse model output as structured data. Model returned: {content[:200]!r}...")
+
+
+def _coerce_and_validate(model_cls, parsed: dict):
+    """Apply common coercions before attempting model_cls(**parsed)."""
+    if isinstance(parsed.get("unresolved"), str):
+        parsed["unresolved"] = [parsed["unresolved"]] if parsed["unresolved"] else []
+    if isinstance(parsed.get("common_pitfalls"), str):
+        parsed["common_pitfalls"] = [parsed["common_pitfalls"]] if parsed["common_pitfalls"] else []
+    # Coerce evidence items to match Evidence schema
+    if isinstance(parsed.get("evidence"), list):
+        coerced = []
+        for item in parsed["evidence"]:
+            if not isinstance(item, dict):
+                continue
+            if "source" in item:
+                src = item["source"]
+                if isinstance(src, str) and "/" in src:
+                    item["source"] = src.split("/")[0]
+                if item["source"] not in ("graph", "document", "concept", "manual", "spec", "other"):
+                    item["source"] = "other"
+            else:
+                item["source"] = "other"
+            item.setdefault("tool", "unknown")
+            item["summary"] = item.get("summary", item.get("fact", ""))
+            coerced.append(item)
+        parsed["evidence"] = coerced
+    return model_cls(**parsed)
 
 
 def _last_human_text(messages: list[BaseMessage]) -> str:
@@ -163,13 +217,7 @@ def make_planner_node(
             SystemMessage(content=f"{planner_prompt}\n\n---\n\n{base_system}"),
             HumanMessage(content=f"User request:\n{user_request}{replan_note}\n\nOutput ONLY a JSON object with keys: goal, steps, fallback_notes."),
         ]
-        try:
-            plan: Plan = await _qwen_structured_invoke(llm, Plan, msgs)
-        except Exception as e:
-            log.warning("Structured output parsing failed: %s, retrying with stronger JSON hint...", e)
-            msgs_strict = list(msgs)
-            msgs_strict.append(HumanMessage(content="\n\nCRITICAL: Your ENTIRE response must be valid JSON only. Do not include any text outside the JSON object."))
-            plan = await _qwen_structured_invoke(llm, Plan, msgs_strict)
+        plan: Plan = await _qwen_structured_invoke(llm, Plan, msgs)
 
         # Auto-assign step ids if Qwen didn't provide them
         plan = plan.auto_assign_step_ids()

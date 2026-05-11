@@ -243,7 +243,7 @@ def make_orchestrator_node(
 
             subgraph, task_prompt = worker_subgraphs[worker_name]
             agent = subgraph  # pre-compiled StateGraph
-            lc_messages = _to_lc_messages(task_prompt, task)
+            lc_messages = _to_lc_messages(task, task_prompt)
 
             invocations.append({
                 "task": task,
@@ -456,11 +456,15 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     if normalized and isinstance(normalized, dict):
         required_keys = {"answer", "confidence"}
         if required_keys.issubset(normalized.keys()):
+            if isinstance(normalized.get("unresolved"), str):
+                normalized["unresolved"] = [normalized["unresolved"]] if normalized["unresolved"] else []
             return FinalAnswer.model_validate(normalized)
 
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "answer" in parsed and "confidence" in parsed:
+            if isinstance(parsed.get("unresolved"), str):
+                parsed["unresolved"] = [parsed["unresolved"]] if parsed["unresolved"] else []
             return FinalAnswer.model_validate(parsed)
     except json.JSONDecodeError:
         pass

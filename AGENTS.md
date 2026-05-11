@@ -75,7 +75,7 @@ Six generic write tools: `put_aas`, `put_submodel`, `put_submodel_element`, `del
 
 ## Agent variants
 
-Configured via `AGENT_VARIANT` in `.env`. Defaults: `react_validating`. See `aas-agent/` for LangGraph state machine. `AGENT_INJECT_MANUAL` and `AGENT_INJECT_SCHEMA` control whether system prompt gets manual/schema injected at startup vs. agent fetching on demand.
+Variants are selectable **per-conversation** via OpenAI model name (`aas`, `aas:plan`, `aas:crag`, etc.). `api.py` lazily initializes each runner on first request. Shared MCP client, tools, and context loaded once at startup. `AGENT_VARIANT` env var is deprecated. **Full details in `memory/agent_variants.md`** — model ID → variant routing, graph topology, budget env vars, and paper mapping. Keep that file in sync when adding/changing variants or budget parameters. `AGENT_INJECT_MANUAL` and `AGENT_INJECT_SCHEMA` control whether system prompt gets manual/schema injected at startup vs. agent fetching on demand.
 
 ## Bind-mounted-over-pacakaged files
 

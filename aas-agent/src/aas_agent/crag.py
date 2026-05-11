@@ -49,10 +49,10 @@ class CragAgentRunner:
 
     def __init__(
         self,
-        mcp_client: MCPClientManager,
-        llm_base_url: str,
-        llm_model: str,
-        system_prompt: str,
+        mcp_client=None,
+        llm_base_url: str = "",
+        llm_model: str = "",
+        system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
     ) -> None:
@@ -65,7 +65,6 @@ class CragAgentRunner:
         self._graph_thinking_off = None
         self._graph_thinking_on = None
 
-        # Budgets from env (defaults match plan_reflect)
         self._recursion_limit = os.environ.get("AGENT_RECURSION_LIMIT", "60")
         self._max_refinements = os.environ.get("CRAG_MAX_REFINEMENTS", "3")
         self._relevance_threshold = float(os.environ.get("CRAG_RELEVANCE_THRESHOLD", "0.7"))
@@ -74,16 +73,10 @@ class CragAgentRunner:
     def model_name(self) -> str:
         return self._llm_model
 
-    async def initialize(self) -> None:
-        """Connect MCP, load resources, build CRAG graph."""
-        await self._mcp.connect()
+    async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
+        """Build CRAG graph using pre-loaded shared resources."""
+        tools = list(all_tools) + [get_current_utc_time]
 
-        mcp_context = await self._mcp.load_context()
-        all_tools = await self._mcp.get_langchain_tools()
-        all_tools.append(get_current_utc_time)
-
-        # Build LLMs
-        # Executor needs tools; structured LLMs (relevance/refine/synthesize) don't
         exec_llm = self._build_llm(enable_thinking=False, with_tools=True, streaming=True)
         structure_llm = self._build_llm(
             enable_thinking=False, with_tools=False, streaming=False
@@ -91,7 +84,7 @@ class CragAgentRunner:
 
         self._graph_thinking_off = build_crag_graph(
             exec_llm=exec_llm,
-            tools=all_tools,
+            tools=tools,
             base_system=mcp_context,
             relevance_llm=structure_llm,
             refine_llm=structure_llm,
@@ -99,30 +92,19 @@ class CragAgentRunner:
             max_refinements=int(self._max_refinements),
             relevance_threshold=self._relevance_threshold,
         )
-
-        # Build thinking variant
-        if "openai.com" not in self._llm_base_url and self._default_thinking:
-            exec_llm_think = self._build_llm(enable_thinking=True, with_tools=True, streaming=True)
-            structure_llm_think = self._build_llm(
-                enable_thinking=True, with_tools=False, streaming=False
-            )
-            self._graph_thinking_on = build_crag_graph(
-                exec_llm=exec_llm_think,
-                tools=all_tools,
-                base_system=mcp_context,
-                relevance_llm=structure_llm_think,
-                refine_llm=structure_llm_think,
-                synthesize_llm=structure_llm_think,
-                max_refinements=int(self._max_refinements),
-                relevance_threshold=self._relevance_threshold,
-            )
-        else:
-            self._graph_thinking_on = self._graph_thinking_off
+        self._graph_thinking_on = self._graph_thinking_off
 
         log.info(
             "CRAG agent initialized — %d tools, threshold=%.1f, max_refinements=%s",
-            len(all_tools), self._relevance_threshold, self._max_refinements,
+            len(tools), self._relevance_threshold, self._max_refinements,
         )
+
+    async def initialize(self) -> None:
+        """Legacy: Connect MCP, load resources, build CRAG graph."""
+        await self._mcp.connect()
+        mcp_context = await self._mcp.load_context()
+        all_tools = await self._mcp.get_langchain_tools()
+        return await self._lazy_init(mcp_context, all_tools)
 
     def _build_llm(
         self,
@@ -206,7 +188,8 @@ class CragAgentRunner:
         trace.write_header(messages, self._llm_model, extra=extra)
 
         try:
-            result = await graph.ainvoke(initial_state)
+            config = {"recursion_limit": int(self._recursion_limit)}
+            result = await graph.ainvoke(initial_state, config=config)
             for msg in reversed(result.get("messages", [])):
                 if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
                     text = msg.content.strip()
@@ -236,7 +219,8 @@ class CragAgentRunner:
 
         lc = self._to_lc_messages(messages)
         initial_state = self._initial_state(lc)
-        result = await graph.ainvoke(initial_state)
+        config = {"recursion_limit": int(self._recursion_limit)}
+        result = await graph.ainvoke(initial_state, config=config)
 
         response = ""
         for msg in reversed(result.get("messages", [])):

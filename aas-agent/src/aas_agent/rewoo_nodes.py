@@ -93,7 +93,7 @@ def make_plan_node(
 
         prompt = (
             f"User request:\n{user_request}\n\n"
-            f"{_PLAN_PROMPT}{tool_refs}\n{base_system}\n{_PLAN_PROMPT_SUFFIX.format(max_thoughts=max_thoughts)}\n"
+            f"{_PLAN_PROMPT}{tool_refs}\n{base_system}\n{_PLAN_PROMPT_SUFFIX.replace('{max_thoughts}', str(max_thoughts))}\n"
             f"Output ONLY a JSON object with keys: thoughts (list), synthesis_hint (string)."
         )
 
@@ -288,11 +288,16 @@ async def _execute_batch(
 async def _execute_single(task: dict, tool_map: dict[str, BaseTool]) -> str:
     """Execute a single tool call and return the observation text."""
     tool_name = task["tool_name"]
-    tool_args = task["tool_args"] if task["tool_args"] else {}
+    tool_args = dict(task["tool_args"]) if task["tool_args"] else {}
     tool = tool_map.get(tool_name)
 
     if tool is None:
         return f"Tool '{tool_name}' not found in available tools."
+
+    # Normalize LLM arg name confusion: the LLM often emits {"query": ...} for
+    # tools that expect {"cypher": ...} (query_aas_graph).
+    if tool_name == "query_aas_graph" and "query" in tool_args and "cypher" not in tool_args:
+        tool_args["cypher"] = tool_args.pop("query")
 
     try:
         result = await tool.ainvoke(tool_args)
@@ -408,6 +413,17 @@ def make_synthesize_node(llm: BaseChatModel) -> Callable:
     return synthesize_node
 
 
+def _coerce_final_answer(d: dict) -> dict:
+    """Normalize FinalAnswer fields so pydantic validation passes."""
+    if isinstance(d.get("confidence"), (int, float)):
+        c = d["confidence"]
+        d["confidence"] = "high" if c >= 0.7 else ("medium" if c >= 0.4 else "low")
+    unresolved = d.get("unresolved")
+    if not isinstance(unresolved, list):
+        d["unresolved"] = [unresolved] if unresolved and unresolved is not False else []
+    return d
+
+
 def _parse_final_answer(content: str) -> FinalAnswer:
     """Parse FinalAnswer from LLM output."""
     try:
@@ -419,6 +435,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "answer" in normalized and "confidence" in normalized:
         try:
+            _coerce_final_answer(normalized)
             return FinalAnswer.model_validate(normalized)
         except Exception:
             pass
@@ -426,6 +443,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "answer" in parsed and "confidence" in parsed:
+            _coerce_final_answer(parsed)
             return FinalAnswer.model_validate(parsed)
     except json.JSONDecodeError:
         pass

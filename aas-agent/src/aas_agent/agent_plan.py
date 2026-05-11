@@ -94,19 +94,16 @@ class PlanReflectAgentRunner:
 
     def __init__(
         self,
-        mcp_client: MCPClientManager,
-        llm_base_url: str,
-        llm_model: str,
-        system_prompt: str,
+        mcp_client=None,
+        llm_base_url: str = "",
+        llm_model: str = "",
+        system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
     ) -> None:
         self._mcp = mcp_client
         self._llm_base_url = llm_base_url
         self._llm_model = llm_model
-        # Kept for parity with AgentRunner; the plan/reflect variant has its
-        # own per-node prompts. The injected MCP context (manual + schema)
-        # still threads through so the executor and planner share ground truth.
         self._legacy_system_prompt = system_prompt
         self._default_thinking = default_thinking
         self._log_dir = log_dir
@@ -114,7 +111,6 @@ class PlanReflectAgentRunner:
         self._graph_thinking_on = None
         self._base_system: str = ""
 
-        # Budgets — env-overridable per the plan.
         self._recursion_limit = int(os.environ.get("AGENT_RECURSION_LIMIT", "60"))
         self._max_step_attempts = int(os.environ.get("AGENT_MAX_STEP_ATTEMPTS", "3"))
         self._max_replans = int(os.environ.get("AGENT_MAX_REPLANS", "2"))
@@ -129,17 +125,15 @@ class PlanReflectAgentRunner:
     def model_name(self) -> str:
         return self._llm_model
 
-    async def initialize(self) -> None:
-        """Connect MCP, load resources, build both graphs."""
-        await self._mcp.connect()
-        self._base_system = await self._mcp.load_context()
+    async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
+        """Build both graphs using pre-loaded shared resources."""
+        self._base_system = mcp_context
         log.info(
             "Plan/reflect base system context: %d chars (manual + schema)",
             len(self._base_system),
         )
 
-        tools = await self._mcp.get_langchain_tools()
-        tools.append(get_current_utc_time)
+        tools = list(all_tools) + [get_current_utc_time]
 
         planner_prompt = _read_prompt("planner")
         executor_prompt = _read_prompt("executor")
@@ -183,6 +177,13 @@ class PlanReflectAgentRunner:
             self._max_total_tool_calls,
             self._sub_recursion_limit,
         )
+
+    async def initialize(self) -> None:
+        """Legacy: Connect MCP, load resources, build both graphs."""
+        await self._mcp.connect()
+        mcp_context = await self._mcp.load_context()
+        all_tools = await self._mcp.get_langchain_tools()
+        return await self._lazy_init(mcp_context, all_tools)
 
     def _build_llm(
         self,

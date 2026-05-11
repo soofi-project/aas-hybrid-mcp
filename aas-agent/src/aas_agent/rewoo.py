@@ -52,10 +52,10 @@ class RewooAgentRunner:
 
     def __init__(
         self,
-        mcp_client: MCPClientManager,
-        llm_base_url: str,
-        llm_model: str,
-        system_prompt: str,
+        mcp_client=None,
+        llm_base_url: str = "",
+        llm_model: str = "",
+        system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
     ) -> None:
@@ -67,8 +67,8 @@ class RewooAgentRunner:
         self._log_dir = log_dir
         self._graph_thinking_off = None
         self._graph_thinking_on = None
+        self._mcp_context = ""
 
-        # Budgets from env
         import os
         self._recursion_limit = int(os.environ.get("AGENT_RECURSION_LIMIT", "60"))
         self._max_thoughts = int(os.environ.get("REWOO_MAX_THOUGHTS", "10"))
@@ -78,28 +78,14 @@ class RewooAgentRunner:
     def model_name(self) -> str:
         return self._llm_model
 
-    async def initialize(self) -> None:
-        """Connect MCP, load resources, build ReWOO graph."""
-        await self._mcp.connect()
-
-        mcp_context = await self._mcp.load_context()
-        all_tools = await self._mcp.get_langchain_tools()
-        all_tools.append(get_current_utc_time)
+    async def _lazy_init(self, mcp_context: str, all_tools: list) -> None:
+        """Build ReWOO graph using pre-loaded shared resources."""
         self._mcp_context = mcp_context
+        tools = list(all_tools) + [get_current_utc_time]
 
-        # Build LLMs for planning and synthesis (no tools, structured output, not streaming)
         plan_llm = self._build_llm(enable_thinking=False, with_tools=False, streaming=False)
         synthesize_llm = self._build_llm(enable_thinking=False, with_tools=False, streaming=False)
-
-        # Build thinking variant
-        if "openai.com" not in self._llm_base_url and self._default_thinking:
-            plan_llm_think = self._build_llm(enable_thinking=True, with_tools=False, streaming=False)
-            synthesize_llm_think = self._build_llm(enable_thinking=True, with_tools=False, streaming=False)
-        else:
-            plan_llm_think = plan_llm
-            synthesize_llm_think = synthesize_llm
-
-        tool_map = {t.name: t for t in all_tools}
+        tool_map = {t.name: t for t in tools}
 
         self._graph_thinking_off = build_rewoo_graph(
             plan_llm=plan_llm,
@@ -109,20 +95,19 @@ class RewooAgentRunner:
             max_thoughts=self._max_thoughts,
             parallel_batch_size=self._parallel_batch_size,
         )
-
-        self._graph_thinking_on = build_rewoo_graph(
-            plan_llm=plan_llm_think,
-            synthesize_llm=synthesize_llm_think,
-            tool_map=tool_map,
-            base_system=mcp_context,
-            max_thoughts=self._max_thoughts,
-            parallel_batch_size=self._parallel_batch_size,
-        )
+        self._graph_thinking_on = self._graph_thinking_off
 
         log.info(
             "ReWOO agent initialized — %d tools, max_thoughts=%d, batch=%d",
-            len(all_tools), self._max_thoughts, self._parallel_batch_size,
+            len(tools), self._max_thoughts, self._parallel_batch_size,
         )
+
+    async def initialize(self) -> None:
+        """Legacy: Connect MCP, load resources, build ReWOO graph."""
+        await self._mcp.connect()
+        mcp_context = await self._mcp.load_context()
+        all_tools = await self._mcp.get_langchain_tools()
+        return await self._lazy_init(mcp_context, all_tools)
 
     def _build_llm(
         self,
@@ -200,7 +185,8 @@ class RewooAgentRunner:
         trace.write_header(messages, self._llm_model, extra=extra)
 
         try:
-            result = await graph.ainvoke(initial_state)
+            config = {"recursion_limit": int(self._recursion_limit)}
+            result = await graph.ainvoke(initial_state, config=config)
             for msg in reversed(result.get("messages", [])):
                 if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
                     text = msg.content.strip()
@@ -230,7 +216,8 @@ class RewooAgentRunner:
 
         lc = self._to_lc_messages(messages)
         initial_state = self._initial_state(lc)
-        result = await graph.ainvoke(initial_state)
+        config = {"recursion_limit": int(self._recursion_limit)}
+        result = await graph.ainvoke(initial_state, config=config)
 
         response = ""
         for msg in reversed(result.get("messages", [])):

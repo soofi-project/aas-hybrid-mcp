@@ -25,7 +25,7 @@ def build_reflexion_graph(
     graph = StateGraph(ReflexionState)
 
     graph.add_node(
-        "executor", make_executor_node(exec_llm, tools, base_system)
+        "executor", make_executor_node(exec_llm.bind_tools(tools), tools, base_system)
     )
 
     graph.add_node(

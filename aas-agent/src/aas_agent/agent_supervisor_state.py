@@ -36,6 +36,7 @@ class SupervisorTask(BaseModel):
         description="What this worker needs to find/return. Phrase as a direct question or request."
     )
     expected_output: Literal["graph_query_result", "manual_content", "template_info"] = Field(
+        default="graph_query_result",
         description="What kind of result to expect — affects synthesis."
     )
 

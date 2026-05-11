@@ -11,7 +11,7 @@ import logging
 from typing import Callable
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 
@@ -234,8 +234,16 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
                 refinement_hint="Try alternative retrieval strategy.",
             )
 
+        # Propagate the relevance score back into the evidence entries so the
+        # synthesizer can filter HIGH vs PARTIAL findings.
+        updated = list(state.get("evidence", []))
+        for ev in updated:
+            if isinstance(ev, dict):
+                ev["relevance"] = relevance.relevance_score
+
         return {
             "last_relevance": relevance,
+            "evidence": updated,
         }
 
     return relevance_node
@@ -375,10 +383,12 @@ def make_synthesizer_node(llm: BaseChatModel) -> Callable:
             for i, step in enumerate(steps)
         ) if steps else "(single attempt)"
 
+        separator = "-----\n"
+        ev_text = separator.join(ev_blocks)
         ctx = (
             f"User request:\n{user_request}\n\n"
             f"Retrieval history:\n{step_history}\n\n"
-            f"Evidence:\n{'---\n'.join(ev_blocks)}\n\n"
+            f"Evidence:\n{ev_text}\n\n"
             f"Synthesize a final answer from this evidence. Cite sources. Note gaps.\n"
             f"Output ONLY a JSON object: {{answer, confidence, unresolved}}"
         )
@@ -445,6 +455,17 @@ def make_synthesizer_node(llm: BaseChatModel) -> Callable:
     return synthesizer_node
 
 
+def _coerce_final_answer(d: dict) -> dict:
+    """Normalize FinalAnswer fields so pydantic validation passes."""
+    if isinstance(d.get("confidence"), (int, float)):
+        c = d["confidence"]
+        d["confidence"] = "high" if c >= 0.7 else ("medium" if c >= 0.4 else "low")
+    unresolved = d.get("unresolved")
+    if not isinstance(unresolved, list):
+        d["unresolved"] = [unresolved] if unresolved and unresolved is not False else []
+    return d
+
+
 def _parse_final_answer(content: str) -> FinalAnswer:
     """Parse FinalAnswer from LLM output."""
     try:
@@ -456,6 +477,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "answer" in normalized and "confidence" in normalized:
         try:
+            _coerce_final_answer(normalized)
             return FinalAnswer.model_validate(normalized)
         except Exception:
             pass
@@ -463,6 +485,7 @@ def _parse_final_answer(content: str) -> FinalAnswer:
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "answer" in parsed and "confidence" in parsed:
+            _coerce_final_answer(parsed)
             return FinalAnswer.model_validate(parsed)
     except json.JSONDecodeError:
         pass
