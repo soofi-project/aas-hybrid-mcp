@@ -272,9 +272,10 @@ MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) .
 ```
 
 **3. Use semanticIds verbatim — do not enrich them.**
-The exact strings come from `get_templates_index()` or the graph's
-discovery query. Do not append `/Submodel`, change version numbers,
-or recall URIs from training memory.
+The exact strings come from `get_templates_index()`. Do not append
+`/Submodel`, change versions, or recall URIs from training memory.
+If a query returns zero rows with correct syntax, check `graphSemanticIds`
+to verify the ID exists in the graph.
 
 **4. `assetType` and `assetKind` are optional and often null.**
 They are not reliable filters. Type vs. instance is encoded structurally

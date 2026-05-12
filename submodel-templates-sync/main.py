@@ -959,11 +959,21 @@ def sync_custom_templates(
     push_concept_descriptions(custom_templates)
 
     # 5. Write merged index (IDTA + custom)
-    merged = idta_index_entries + custom_index_entries
+    # Merge by semanticId so custom entries overwrite stale duplicates from
+    # previous runs — no index growth on repeated starts.
+    seen: dict[str, dict] = {}
+    for e in idta_index_entries:
+        key = e.get("semanticId") or f"__nosid__{e.get('idShort', '')}"
+        seen[key] = e
+    for e in custom_index_entries:
+        key = e.get("semanticId") or f"__nosid__{e.get('idShort', '')}"
+        seen[key] = e  # custom overwrites stale entry from prior runs
+    merged = list(seen.values())
     index_path = TEMPLATES_OUTPUT_DIR / "index.json"
     index_path.write_text(json.dumps(merged, indent=2, ensure_ascii=False), encoding="utf-8")
-    log.info("Wrote merged index.json with %d templates (%d IDTA + %d custom)",
-             len(merged), len(idta_index_entries), len(custom_index_entries))
+    log.info("Wrote merged index.json with %d templates (%d IDTA, %d custom, %d deduped)",
+             len(merged), len(idta_index_entries), len(custom_index_entries),
+             len(idta_index_entries) + len(custom_index_entries) - len(merged))
 
 
 def generate_custom_classes(templates: list[dict]) -> int:

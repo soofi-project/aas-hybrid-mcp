@@ -1,10 +1,9 @@
 Return the index of all published IDTA submodel templates: name,
-version, semanticId, description.
+version, semanticId, description. The `graphSemanticIds` field
+lists matching IDs currently present in the graph.
 
-Call this to discover which template covers a domain concept (location,
-capability, maintenance, technical data, …) and to obtain the verbatim
-semanticId for Cypher queries.
+Use `semanticId` for Cypher queries. `graphSemanticIds` helps you spot
+mismatches between your AASX files and the IDTA reference.
 
-Call at most ONCE per session — the index is static. If a prior tool
-call in this conversation already returned the result, reuse it without
-calling again.
+Call at most ONCE per session. If a prior tool call already returned the
+result, reuse it without calling again.

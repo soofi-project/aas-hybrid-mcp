@@ -101,11 +101,7 @@ This repo has no pre-commit hooks, lint config, typecheck, CI workflows, or form
 
 - `CLAUDE.md` — phase tracking, key decisions, paper context
 - `QWEN.md` — more detailed architecture + data flow
-- `memory/future_phases.md` — future phase planning
-- `memory/paper_etfa2026.md` — paper paper eval axes
-- `memory/aas_type_instance_separation.md` — AAS type/instance separation notes
-- `memory/aas_template_compliance.md` — IDTA template compliance
-- `memory/weaviate_collection_model_naming.md` — model-aware collection naming
+- `memory/index.md` — overview of all memory context files. Check first for project knowledge.
 
 ## Common gotchas
 

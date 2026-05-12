@@ -39,9 +39,9 @@ BaSyx AAS environment. This page indexes the rest of the manual.
 2. `params` for `query_aas_graph` is an OBJECT, not a JSON string.
    `{}`, not `"{}"`.
 3. Use IDTA semanticIds VERBATIM from `get_templates_index()`. No `/Submodel`
-   suffix, no version normalisation, no recall from training memory. The graph
-   may also carry non-IDTA semanticIds (e.g. ZVEI Nameplate); discover them
-   with `MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc) RETURN DISTINCT sc.id`.
+   suffix manipulation, no version normalisation, no recall from training
+   memory. Use `semanticId` for Cypher queries. `graphSemanticIds` shows
+   what's currently in your graph — use it only to spot mismatches.
 4. Never use `idShort` for **domain reasoning** or **capability matching**.
    `idShort` is a free-form local label. Using it to identify a shell the
    user named (e.g. "Hall 4") is acceptable as a starting point — but
@@ -52,8 +52,9 @@ BaSyx AAS environment. This page indexes the rest of the manual.
 ## Tools — call on demand
 
 - `get_templates_index()` — all published IDTA templates with name, version,
-  semanticId, description. Call when picking a template or before any
-  non-trivial Cypher (per rule 1).
+   semanticId, description. `graphSemanticIds` shows live graph IDs.
+   Call when picking a template or before any non-trivial Cypher (per rule 1).
+   Always use `semanticId` for Cypher queries.
 - `get_template(name)` — element structure of one template (modelType,
   idShort, semanticId, nesting). Call before traversing a submodel or
   writing template-conformant JSON.
@@ -65,8 +66,8 @@ _CYPHER = """\
 
 **Pre-condition.** Before composing your first `query_aas_graph` call
 in a session, you must have read both `get_graph_schema()` (relation
-labels, traversal tips) and `get_templates_index()` (verbatim
-semanticIds). Do not skip this — invented relations and invented
+labels, traversal tips) and `get_templates_index()` (template names and
+reference semanticIds). Do not skip this — invented relations and invented
 semanticIds are the largest single source of zero-row results.
 
 ## Anti-patterns
@@ -89,11 +90,11 @@ MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) .
 ```
 
 **3. Use semanticIds verbatim — do not enrich them.**
-The exact strings come from `get_templates_index()` or the graph's
-discovery query. Do not append `/Submodel`, change version numbers,
-or recall URIs from training memory. For example, if the index says
-`https://example.com/template/1/0`, match that exact string — not
-`.../1/0/Submodel` or `.../2/0`.
+The exact strings come from `get_templates_index()`. Do not append
+`/Submodel`, change version numbers, or recall URIs from training
+memory. The index `semanticId` is authoritative. If a query returns
+zero rows with the correct syntax, check `graphSemanticIds` to verify
+the ID exists in the graph.
 
 **4. `assetType` and `assetKind` are optional and often null.**
 Use `(:AssetAdministrationShell)-[:DERIVED_FROM]->` for type vs.
@@ -393,7 +394,7 @@ RETURN sm.id
 Then: `search_aas_documents(query=..., submodel_id=<sm.id from step 2>)`.
 
 The `$docSemanticId` comes verbatim from `get_templates_index()` — do not
-type it from memory.
+   type it from memory.
 
 ## Recipe E — Reading name / designation fields (MultiLanguageProperty)
 
