@@ -72,7 +72,7 @@ class ReflexionState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     judgment: Judgment | None
     reflection: ReflectionFeedback | None
-    feedback_history: Annotated[list[str], add_messages]  # accumulated verbal feedback
+    feedback_history: list[str]  # verbal feedback, accumulated by the reflect node which returns the full list
     trial_records: list[TrialRecord]  # history of all trials
     current_trial: int
     max_trials: int

@@ -103,7 +103,6 @@ flowchart TB
 | `aas-agent:crag` | Corrective RAG: executor → relevance evaluator → refine query → retry (up to `CRAG_MAX_REFINEMENTS`) → synthesizer |
 | `aas-agent:reflexion` | Self-improvement: executor → judge → reflect → retry (up to `REFLEXION_MAX_TRIALS`) with verbal feedback |
 | `aas-agent:rewoo` | Reasoning Without Observation: plan all tool calls upfront → execute in parallel (`asyncio.gather`) → synthesize |
-| `aas-agent:supervisor` | Multi-agent: supervisor decomposes → 3 parallel workers (graph/document/template) → synthesizer |
 
 ---
 

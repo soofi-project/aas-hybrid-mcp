@@ -25,14 +25,15 @@ def build_rewoo_graph(
 ):
     """Compile the ReWOO graph with the given configuration.
 
-    ``base_system`` is the auto-injected MCP context (manual + schema).
+    ``base_system`` is injected into the synthesize node for domain context,
+    NOT the plan node (paper-aligned: planner stays lightweight).
     """
     graph = StateGraph(RewooState)
 
-    # Plan node — generates ALL tool calls upfront
+    # Plan node — lightweight, no domain context (paper-aligned)
     graph.add_node(
         "plan",
-        make_plan_node(plan_llm, tool_map, base_system, max_thoughts),
+        make_plan_node(plan_llm, tool_map, max_thoughts),
     )
 
     # Execute node — runs ALL planned tool calls in parallel batches
@@ -41,10 +42,10 @@ def build_rewoo_graph(
         make_execute_node(tool_map, parallel_batch_size),
     )
 
-    # Synthesize node — combines observations into FinalAnswer
+    # Synthesize node — receives domain context for evidence interpretation
     graph.add_node(
         "synthesize",
-        make_synthesize_node(synthesize_llm),
+        make_synthesize_node(synthesize_llm, base_system),
     )
 
     # Linear edges

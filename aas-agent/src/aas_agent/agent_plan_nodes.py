@@ -32,6 +32,55 @@ log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# JSON repair helper
+# ---------------------------------------------------------------------------
+
+def _repair_json_string(text: str) -> str | None:
+    """Try to fix truncated JSON by closing unclosed braces/brackets.
+
+    Qwen often cuts output mid-JSON when the response is long. This finds
+    the first ``{`` / ``[`` and attempts to parse the substring, adding
+    closing characters until ``json.loads`` succeeds.
+    """
+    first_brace = text.find("{")
+    first_bracket = text.find("[")
+    if first_brace == -1 and first_bracket == -1:
+        return None
+
+    start = min(
+        v for v in (first_brace, first_bracket) if v >= 0
+    )
+    base = text[start:].rstrip()
+    if not base:
+        return None
+
+    # Already valid?
+    try:
+        json.loads(base)
+        return base
+    except json.JSONDecodeError:
+        pass
+
+    # Close unclosed braces/brackets (max 20 added chars to avoid infinite loop)
+    repaired = base
+    for _ in range(20):
+        open_curly = repaired.count("{") - repaired.count("}")
+        open_sqr = repaired.count("[") - repaired.count("]")
+        if open_curly > 0:
+            repaired += "}"
+        elif open_sqr > 0:
+            repaired += "]"
+        else:
+            break
+        try:
+            json.loads(repaired)
+            return repaired
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -78,7 +127,8 @@ async def _qwen_structured_invoke(
     except Exception:
         pass
 
-    # 3. Coercion + extraction fallback
+    # 3. Coercion + extraction fallback (with JSON repair for truncated
+    #    output — common when Qwen's response is cut mid-JSON)
     stripped = re.sub(
         r'<think[^>]*>.*?</think>', '', content, flags=re.DOTALL
     ).strip()
@@ -98,6 +148,15 @@ async def _qwen_structured_invoke(
                         parsed = json.loads(stripped[start:i+1])
                     except json.JSONDecodeError:
                         pass
+    if parsed is None:
+        # JSON repair: try to fix truncated JSON by closing unclosed
+        # braces/brackets
+        repaired = _repair_json_string(stripped)
+        if repaired:
+            try:
+                parsed = json.loads(repaired)
+            except json.JSONDecodeError:
+                pass
     if parsed is not None and isinstance(parsed, dict):
         try:
             return _coerce_and_validate(model_cls, parsed)

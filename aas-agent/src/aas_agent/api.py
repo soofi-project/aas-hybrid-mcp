@@ -36,24 +36,22 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Model / variant registry
 # ---------------------------------------------------------------------------
-# _MODEL_INFO maps model_id → (variant, prompt_file_stem, has_mcp_tools).
-# "react" is the baseline ReAct agent (agent.py).
-# "react" with has_tools=False produces the passthrough baseline.
+# _MODEL_INFO maps model_id → (variant, prompt_file_stem).
+# All variants are tool-bearing. Open WebUI background tasks (title/tag/
+# follow-up) are routed directly to the vLLM endpoint via Open WebUI's
+# second OPENAI_API_BASE_URLS entry — they never hit this service.
 # Verbose variants (``*-verbose``) are handled automatically — the suffix is
 # stripped and ``extra['verbose']`` is set to ``True`` for stream/invoke.
-_MODEL_INFO: dict[str, tuple[str, str, bool]] = {
-    "aas-agent:react":       ("react",            "system-prompt.md",              True),
-    "aas-agent:passthrough": ("react",            "system-prompt.md",              False),
-    "aas-agent:plan":        ("plan_reflect",     "system-prompt.md",              True),
-    "aas-agent:crag":        ("crag",             "system-prompt.md",              True),
-    "aas-agent:reflexion":   ("reflexion",        "system-prompt.md",              True),
-    "aas-agent:rewoo":       ("rewoo",            "system-prompt.md",              True),
-    "aas-agent:supervisor":  ("agent_supervisor", "system-prompt.md",              True),
+_MODEL_INFO: dict[str, tuple[str, str]] = {
+    "aas-agent:react":     ("react",        "system-prompt.md"),
+    "aas-agent:plan":      ("plan_reflect", "system-prompt.md"),
+    "aas-agent:crag":      ("crag",         "system-prompt.md"),
+    "aas-agent:reflexion": ("reflexion",    "system-prompt.md"),
+    "aas-agent:rewoo":     ("rewoo",        "system-prompt.md"),
 }
 
-# Auto-generate verbose variants for every tool-bearing model
-_BASE_MODELS = {k: v for k, v in _MODEL_INFO.items() if v[2]}  # has_tools=True
-for base_id, info in list(_BASE_MODELS.items()):
+# Auto-generate verbose variants for every model
+for base_id, info in list(_MODEL_INFO.items()):
     _MODEL_INFO[base_id + "-verbose"] = info
 
 _DELIMITER = "-verbose"
@@ -111,18 +109,6 @@ class ChatCompletionRequest(BaseModel):
     chat_id: str | None = None
 
 
-def _last_user_content(messages: list[dict]) -> str:
-    for msg in reversed(messages):
-        if msg.get("role") == "user":
-            return msg.get("content", "")
-    return ""
-
-
-def _is_utility_request(messages: list[dict]) -> bool:
-    """Detect Open WebUI background tasks (title, tags, follow-up suggestions)."""
-    return _last_user_content(messages).startswith("### Task:")
-
-
 # ---------------------------------------------------------------------------
 # Lazy runner initialization
 # ---------------------------------------------------------------------------
@@ -156,23 +142,8 @@ async def _get_runner(model_id: str) -> Any:
         if info is None:
             raise ValueError(f"Unknown model: {model_id}")
 
-        variant, prompt_file_stem, has_tools = info
+        variant, prompt_file_stem = info
 
-        # --- Passthrough (aas:null): no tools, no LangGraph ---
-        if not has_tools:
-            from aas_agent.passthrough import PassthroughRunner
-            runner = PassthroughRunner(
-                base_system=_mcp_context,
-                llm_base_url=_llm_base_url,
-                llm_model=_llm_model,
-                log_dir=_log_dir,
-            )
-            await runner.initialize()
-            log.info("Passthrough agent initialized for model %s", model_id)
-            _runners[model_id] = runner
-            return runner
-
-        # --- Tool-bearing variants ---
         system_prompt = _resolve_prompt_file(prompt_file_stem).read_text(encoding="utf-8")
         log.info("Loaded %s prompt for model %s (%d chars)", prompt_file_stem, model_id, len(system_prompt))
 
@@ -201,9 +172,6 @@ def _resolve_runner_class(variant: str):
     if variant == "plan_reflect":
         from aas_agent.agent_plan import PlanReflectAgentRunner
         return PlanReflectAgentRunner
-    elif variant == "agent_supervisor":
-        from aas_agent.agent_supervisor import SupervisorAgentRunner
-        return SupervisorAgentRunner
     elif variant == "crag":
         from aas_agent.crag import CragAgentRunner
         return CragAgentRunner
@@ -342,20 +310,7 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
     extra = dict(extra)
     if verbose:
         extra["verbose"] = True
-    extra["variant"] = info[0]
-
-    # Utility calls (title gen, tags, follow-up suggestions) from Open WebUI:
-    # bypass LangGraph, call LLM directly.
-    if _is_utility_request(messages):
-        text = await runner.direct_invoke(messages)
-        return {
-            "id": completion_id,
-            "object": "chat.completion",
-            "created": created,
-            "model": model,
-            "choices": [{"index": 0, "message": {"role": "assistant", "content": text}, "finish_reason": "stop"}],
-            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-        }
+    extra["variant"] = _MODEL_INFO[model][0]
 
     if request.stream:
         return StreamingResponse(

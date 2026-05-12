@@ -1,6 +1,12 @@
 """Graph nodes for the CRAG (Context Retrieval Augmented Generation) variant.
 
-Pipeline: executor → relevance → (refine → executor) → synthesizer
+Pipeline (post-relevance routing):
+    executor → relevance → {
+        correct   → synthesize,
+        ambiguous → refine    → executor (retry with supplementary query),
+        incorrect → discard   → uncorrect → executor (retry with fresh query),
+    }
+Capped by CRAG_MAX_REFINEMENTS — on cap, route forced to synthesize.
 
 Each node factory receives its LLM and tools to avoid rebuilding inside nodes.
 """
@@ -179,7 +185,11 @@ def make_executor_node(
 
 
 def make_relevance_node(llm: BaseChatModel) -> Callable:
-    """Evaluates relevance of retrieved evidence against the user query."""
+    """Evaluates relevance of each evidence item individually against the user query.
+
+    Paper-aligned: per-document scoring (§4.2) with deterministic 3-way action trigger (§4.3).
+    One LLM call scores all items; action is derived from individual scores.
+    """
 
     async def relevance_node(state: AgentState) -> dict:
         user_request = _last_human_text(state)
@@ -195,23 +205,34 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
                 )
             }
 
-        # Combine evidence for evaluation (truncate to avoid context window blowup)
+        # Build per-evidence-item prompt
         evidence_parts = []
         for i, ev in enumerate(evidence):
             content = ev.get("content", "") if isinstance(ev, dict) else str(ev)
-            evidence_parts.append(f"--- Evidence {i+1} ---\n{content[:600]}")
-
-        combined = "\n\n".join(evidence_parts)[:6000]
+            query_str = ev.get("query", "") if isinstance(ev, dict) else ""
+            evidence_parts.append(
+                f"[E{i}] query='{query_str[:80]}'\ncontent: {content[:600]}"
+            )
 
         upper = state.get("relevance_threshold", 0.7)
         lower = state.get("relevance_threshold_low", 0.3)
         ctx = (
             f"User query:\n{user_request}\n\n"
-            f"Retrieved evidence:\n{combined}\n\n"
-            f"Rate relevance 0.0-1.0 and decide on an action.\n"
-            f"Thresholds — correct >= {upper}, incorrect <= {lower}, else ambiguous.\n\n"
-            f"Output ONLY a JSON object with keys: "
-            f"relevance_score, reason, needs_refinement, refinement_hint, action."
+            f"Retrieved evidence items (score each individually):\n"
+            + "\n\n".join(evidence_parts)
+            + f"\n\n"
+            f"For EACH evidence item [E0], [E1], etc., rate relevance 0.0-1.0.\n"
+            f"Then compute the aggregated score (average) and decide action:\n"
+            f"  - correct: at least ONE item >= {upper} → synthesize\n"
+            f"  - incorrect: ALL items <= {lower} → discard and retry\n"
+            f"  - ambiguous: otherwise → keep partial evidence, supplement\n\n"
+            f"Output ONLY a JSON object with keys:\n"
+            f"  item_scores: list of objects with item_idx and score\n"
+            f"  relevance_score: aggregated score (float, average of items >= {lower})\n"
+            f"  reason: short explanation\n"
+            f"  needs_refinement: boolean\n"
+            f"  refinement_hint: string\n"
+            f"  action: 'correct' | 'incorrect' | 'ambiguous'\n"
         )
 
         msgs = [
@@ -224,17 +245,130 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
         if isinstance(content, list):
             content = content[0].text if content else ""
 
-        relevance = _parse_relevance(content)
-        if relevance is None:
-            relevance = RelevanceScore(
-                relevance_score=0.5,
-                reason="Failed to parse relevance score, defaulting to medium.",
-                needs_refinement=True,
-                refinement_hint="Try alternative retrieval strategy.",
+        relevance_data = _parse_relevance_with_items(content)
+        if relevance_data is None:
+            # Fallback: holistic scoring (original behavior)
+            combined = "\n\n".join(ep for ep in evidence_parts)[:6000]
+            fallback_ctx = (
+                f"User query:\n{user_request}\n\n"
+                f"Retrieved evidence:\n{combined}\n\n"
+                f"Rate relevance 0.0-1.0 and decide on an action.\n"
+                f"Thresholds — correct >= {upper}, incorrect <= {lower}, else ambiguous.\n\n"
+                f"Output ONLY a JSON object with keys: "
+                f"relevance_score, reason, needs_refinement, refinement_hint, action."
             )
+            fallback_msgs = [
+                SystemMessage(content=_RELEVANCE_PROMPT),
+                HumanMessage(content=fallback_ctx),
+            ]
+            fb_response = await llm.ainvoke(fallback_msgs)
+            fb_content = fb_response.content
+            if isinstance(fb_content, list):
+                fb_content = fb_content[0].text if fb_content else ""
+            relevance = _parse_relevance(fb_content)
+            if relevance is None:
+                relevance = RelevanceScore(
+                    relevance_score=0.5,
+                    reason="Failed to parse relevance score, defaulting to medium.",
+                    needs_refinement=True,
+                    refinement_hint="Try alternative retrieval strategy.",
+                )
+            return _finalize_relevance(relevance, evidence, state, upper, lower, None)
 
-        # Enforce numeric thresholds — never trust the LLM's action string alone.
-        # (Paper §4.3: deterministic 3-way action trigger.)
+        return _finalize_relevance(
+            relevance_data.relevance,
+            evidence,
+            state,
+            upper,
+            lower,
+            relevance_data.item_scores,
+        )
+
+    return relevance_node
+
+
+# ---------------------------------------------------------------------------
+# Per-item scoring data structure
+# ---------------------------------------------------------------------------
+
+
+class _PerItemRelevance(BaseModel):
+    """Parsed per-evidence-item scoring result."""
+
+    relevance: RelevanceScore
+    item_scores: list[dict]  # [{"item_idx": int, "score": float}, ...]
+
+
+def _parse_relevance_with_items(content: str) -> _PerItemRelevance | None:
+    """Parse per-item relevance scores + aggregated decision from LLM output."""
+    try:
+        normalized = _normalize_json_from_qwen(content)
+        if not normalized:
+            normalized = json.loads(content.strip())
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+    if not isinstance(normalized, dict):
+        return None
+
+    # Extract item_scores
+    item_scores_raw = normalized.get("item_scores", [])
+    if not isinstance(item_scores_raw, list):
+        return None
+
+    item_scores = []
+    for item in item_scores_raw:
+        if isinstance(item, dict) and "item_idx" in item and "score" in item:
+            item_scores.append({
+                "item_idx": int(item["item_idx"]),
+                "score": float(item["score"]),
+            })
+
+    if not item_scores:
+        return None
+
+    # Remove item_scores from normalized, use rest for RelevanceScore
+    relevance_dict = {k: v for k, v in normalized.items() if k != "item_scores"}
+    if "relevance_score" not in relevance_dict:
+        return None
+
+    try:
+        relevance = RelevanceScore.model_validate(relevance_dict)
+    except Exception:
+        return None
+
+    return _PerItemRelevance(relevance=relevance, item_scores=item_scores)
+
+
+def _finalize_relevance(
+    relevance: RelevanceScore,
+    evidence: list,
+    state: AgentState,
+    upper: float,
+    lower: float,
+    item_scores: list[dict] | None,
+) -> dict:
+    """Apply per-item scores to evidence, enforce action based on paper §4.3 rules."""
+
+    # Paper §4.3: deterministic action from per-item scores
+    if item_scores:
+        scores = [it["score"] for it in item_scores]
+        has_high = any(s >= upper for s in scores)
+        all_low = all(s <= lower for s in scores)
+
+        if has_high:
+            relevance.action = "correct"
+        elif all_low:
+            relevance.action = "incorrect"
+        else:
+            relevance.action = "ambiguous"
+
+        # Compute aggregated score from items above the low threshold
+        relevant_scores = [s for s in scores if s > lower]
+        if relevant_scores:
+            relevance.relevance_score = round(sum(relevant_scores) / len(relevant_scores), 2)
+    else:
+        # Holistic fallback: single score determines action
         score = relevance.relevance_score
         if score >= upper:
             relevance.action = "correct"
@@ -243,33 +377,41 @@ def make_relevance_node(llm: BaseChatModel) -> Callable:
         else:
             relevance.action = "ambiguous"
 
-        log.info(
-            "relevance: score=%.2f action=%s (thresholds: <=%.2f incorrect, >=%.2f correct)",
-            score, relevance.action, lower, upper,
-        )
+    # Assign per-item scores to evidence entries
+    updated = []
+    for i, ev in enumerate(evidence):
+        entry = dict(ev)
+        if isinstance(entry, dict):
+            if item_scores:
+                matching = [it for it in item_scores if it["item_idx"] == i]
+                if matching:
+                    entry["relevance"] = matching[0]["score"]
+                else:
+                    entry["relevance"] = relevance.relevance_score
+            else:
+                entry["relevance"] = relevance.relevance_score
+        updated.append(entry)
 
-        # Propagate the relevance score back into the evidence entries so the
-        # synthesizer can filter HIGH vs PARTIAL findings.
-        # After "incorrect" action, evidence was already discarded → start fresh.
-        if relevance.action == "incorrect":
-            return {
-                "last_relevance": relevance,
-                "refinement_count": state.get("refinement_count", 0) + 1,
-                "_discard": True,
-            }
+    log.info(
+        "relevance: aggregated=%.2f action=%s items=%s scores=%s",
+        relevance.relevance_score,
+        relevance.action,
+        len(item_scores) if item_scores else 0,
+        [it["score"] for it in item_scores] if item_scores else "[holistic]",
+    )
 
-        updated = list(state.get("evidence", []))
-        for ev in updated:
-            if isinstance(ev, dict):
-                ev["relevance"] = relevance.relevance_score
-
+    if relevance.action == "incorrect":
         return {
             "last_relevance": relevance,
-            "evidence": updated,
             "refinement_count": state.get("refinement_count", 0) + 1,
+            "_discard": True,
         }
 
-    return relevance_node
+    return {
+        "last_relevance": relevance,
+        "evidence": updated,
+        "refinement_count": state.get("refinement_count", 0) + 1,
+    }
 
 
 def _parse_relevance(content: str) -> RelevanceScore | None:
@@ -528,7 +670,7 @@ def make_synthesizer_node(llm: BaseChatModel) -> Callable:
             if avg >= 0.85:
                 final.confidence = "high"
             else:
-                final.confidence = "high"
+                final.confidence = "medium"
         elif any(c >= 0.7 for c in confidences):
             final.confidence = "medium"
         else:
@@ -574,9 +716,15 @@ def make_synthesizer_node(llm: BaseChatModel) -> Callable:
 
 def _coerce_final_answer(d: dict) -> dict:
     """Normalize FinalAnswer fields so pydantic validation passes."""
-    if isinstance(d.get("confidence"), (int, float)):
-        c = d["confidence"]
-        d["confidence"] = "high" if c >= 0.7 else ("medium" if c >= 0.4 else "low")
+    conf = d.get("confidence")
+    if isinstance(conf, (int, float)):
+        d["confidence"] = "high" if conf >= 0.7 else ("medium" if conf >= 0.4 else "low")
+    elif isinstance(conf, str) and conf not in ("high", "medium", "low"):
+        try:
+            numeric = float(conf)
+            d["confidence"] = "high" if numeric >= 0.7 else ("medium" if numeric >= 0.4 else "low")
+        except (ValueError, TypeError):
+            d["confidence"] = "low"
     unresolved = d.get("unresolved")
     if not isinstance(unresolved, list):
         d["unresolved"] = [unresolved] if unresolved and unresolved is not False else []

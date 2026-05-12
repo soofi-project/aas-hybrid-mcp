@@ -1,76 +1,44 @@
 # CLAUDE.md
 
-Guidance for Claude Code working in this repository. Phase-detail planning and paper-eval design have been moved to memory files (see pointers below) to keep this lean.
+**Canonical operations guide: `AGENTS.md`.** Read it first — it covers stack
+commands (`./up.sh --vllm`, `./down.sh`), service ports, secrets, embedding-model
+swaps, agent variants, bind-mount strategy, Neo4j schema, and common gotchas.
+This file holds only the few things `AGENTS.md` deliberately omits.
 
-## Project Overview
-AAS Hybrid MCP — a hybrid MCP server combining Neo4j graph queries and Weaviate vector search for Asset Administration Shell environments. Targets IDTA Handover Documentation (VDI 2770). DFKI GmbH, MIT-licensed.
+## Phase status
 
-## Tech Stack
-- **MCP Server:** Python / FastMCP, streamable-http, port 8110
-- **Neo4j:** read-only Cypher via async driver
-- **Weaviate:** hybrid search (keyword + vector), langchain embeddings
-- **Embedding service:** Flask/gunicorn, PDF ingestion via Kafka events, **docling-only**
-- **Open WebUI:** chat frontend, port 8090, talks to LangGraph agent (not MCP directly)
-- **aas-agent:** LangGraph + FastAPI, OpenAI-compatible API, MCP client
-- **Infra:** Docker Compose, single bridge `aas-network`, BaSyx + MongoDB
-- **GPU (optional):** H200 + Triton + vLLM via `docker-compose.vllm.yml`
+- ✅ **1–7.5 committed** — Compose stack, MCP server + `query_aas_graph`,
+  Weaviate `search_aas_documents`, IDTA templates, Open WebUI, LangGraph agent +
+  OTel/Langfuse, 6 generic `put_*`/`delete_*` write tools with basyx-python-sdk
+  validation
+- ✅ **6.5** test fixtures (Hall3/4 + 7 robot instances + 5 type shells)
+- ✅ **Agent variants live** — 5 Model-IDs selectable per-request:
+  `aas-agent:react` (default), `:plan`, `:crag`, `:reflexion`, `:rewoo`.
+  Open WebUI utility tasks (title/tag/follow-up) bypass the agent and go
+  directly to `LLM_BASE_URL` via a second endpoint.
+  Details in `memory/agent_variants.md`.
+- 🟦 **Phase 9 — Retrieval ablation**: cross-encoder reranker (Qwen2-Reranker-7B
+  via vLLM), LLM query rewriting, HyDE — see `memory/future_phases.md`
+- 🟦 **Phase X — Kubernetes / Helm** packaging
+- 🟦 **Bench B eval running** — 4 variants (react / plan / crag / reflexion)
+  × 6 queries, manual grading. Protocol in `memory/bench_b_evaluation.md`
+- 🔴 **Research idea** — specialized worker vs. generalist agent (paper §Future Work)
 
-## Key Decisions
-- Single network (`aas-network`).
-- Neo4j Kafka Connect plugin as pre-built image `dfkibasys/aas-neo4j-kafka-connect-plugin`. Source lives in sibling repo `C:\repo\hackathon\mcp-playground\aas-repository-neo4j-kafka-plugin` (the `i4.0\basys\…` clone is stale).
-- **PDF processing — docling only** (~3 GB image with PyTorch CPU). ML-based layout/table recognition, image extraction, sound heading hierarchies. Initial ingest is slow (~seconds per page); real-world manual updates are rare and the quality delta compounds across the retrieval/reranking/template-awareness stack.
-- **Embedding model configurable** via `EMBEDDING_MODEL=provider:model` (openai, ollama, google_genai, voyageai; Triton via OpenAI-compatible endpoint).
-- **Secrets in `~/.env.secrets`**, referenced via `SECRETS_PATH` in `.env`.
-- **Ports hardcoded in `docker-compose.yml`**, not in `.env` — ports don't change, versions do.
-- **Data sovereignty — whole stack self-hostable** on H200 / EU cloud. No data leaves the premises. Cloud LLM remains configurable for non-sensitive deployments. Future: SOOFI 120B (~Sept 2026) as plug-in replacement via `LLM_BASE_URL` / `LLM_MODEL`, no code changes.
+Attachments (binary File/Blob upload), image extraction, GPU/Triton dispatcher,
+PDF → AAS extraction, ConceptDescription semantic layer: all in
+`memory/future_phases.md` and `memory/planned_features.md`.
 
-## Phase Status
-- ✅ 1 Scaffold + Compose
-- ✅ 2 MCP server + `query_aas_graph` + `aas://schema/graph`
-- ✅ 4 Weaviate `search_aas_documents` (reranker / query-rewrite / neighbor-expansion are paper eval axes — see `paper_etfa2026.md`)
-- ✅ 6 IDTA template integration + Open WebUI
-- ✅ 6.5 Test fixtures (Hall3/4 + 7 robot instances + 5 type shells)
-- ✅ 7 LangGraph agent + OTel/Langfuse plumbing
-- ✅ 7.5 Six generic write tools (`put_*`/`delete_*`), basyx-python-sdk validation, httpx → BaSyx
-- 🟦 8a (paper-relevant): image URLs in Weaviate metadata
-- 🟦 9, 10, 11, 12: future — see `memory/future_phases.md`
+## Memory entry point
 
-## AAS Neo4j Graph Schema
-Created by the Kafka Connect plugin. Core traversal:
-```
-(:AAS)-[:MANAGES_ASSET]->(:Asset)
-(:AAS)-[:HAS_SUBMODEL]->(:Submodel)-[:HAS_ELEMENT*]->(:SubmodelElement)
-```
+`memory/index.md` is the authoritative table of contents for all project memory
+files. Load on demand — covers architecture, AAS modeling decisions, template
+compliance, paper-summary digests (react / plan-and-solve / rewoo / reflexion /
+crag / multiagent-debate / autogen / self-refine), Bench-B protocol, and paper
+build setup.
 
-**SubmodelElement subtypes:** Property, File, Blob, Range, MultiLanguageProperty, SubmodelElementCollection, SubmodelElementList, ReferenceElement, RelationshipElement, AnnotatedRelationshipElement, Entity, Operation, BasicEventElement, Capability.
+## Data sovereignty
 
-**All 34 relationship types** documented in the `aas://schema/graph` MCP resource. Entity-nested statements use `HAS_ELEMENT` like all other containment slots; slot-specific labels are reserved for relations carrying semantic role beyond containment (`HAS_ANNOTATION`, Operation variables, `HAS_FIRST` / `HAS_SECOND`).
-
-## Project Structure
-```
-aas-hybrid-mcp/
-├── mcp-server/              # FastMCP server (Python, port 8110)
-├── submodel-templates-sync/ # Init: clone IDTA templates, extract JSON, ingest PDFs
-├── open-webui/              # Chat frontend + seed init container
-├── aas-agent/               # LangGraph agent (OpenAI-compatible API)
-├── embedding-service/       # PDF ingestion (Flask, docling)
-├── kafka-connect-rag/       # HTTP Sink Kafka Connect
-├── neo4j/                   # Custom Neo4j with APOC
-├── aasx/                    # Test AASX files
-├── docker-compose.yml
-├── .env / .env.embedding
-└── up.sh / down.sh
-```
-
-## Conventions
-- Python: pyproject.toml with pinned ranges (`>=x.y,<major`).
-- `src/` layout for installable packages (mcp-server); flat layout for simple services (embedding-service).
-- Docker: all versions pinned, no `:latest`.
-- All services `restart: unless-stopped`.
-- English for code, comments, log messages.
-
-## Memory pointers (for deeper context — load on demand)
-- `memory/paper_etfa2026.md` — paper working file, Benchmark A/B/C scope, ablation axes, compression strategy
-- `memory/future_phases.md` — Phases 8a–12 detailed planning
-- `memory/related_work.md` — full bibliography and "Our Differentiator" pitch
-- `memory/benchmark_c_plan.md` — write-path ablation (deferred from ETFA 2026, follow-up paper)
+The whole stack is self-hostable on H200 / EU cloud — no data leaves the premises.
+Cloud LLM remains configurable for non-sensitive deployments. SOOFI 120B (DFKI,
+~Sept 2026) will plug in via `LLM_BASE_URL` / `LLM_MODEL` with no code changes.
+Today's eval model is Qwen3.5-120B on the user's H200.

@@ -1,3 +1,5 @@
+**Use when template name is unknown** — fuzzy search by intent ("facility location model?", "service reports?"). For the complete catalogue, prefer `get_templates_index()`. Use result names verbatim for `get_template(name)` — spaces and case must match exactly.
+
 Semantic vector search over the specification PDFs of all published IDTA
 submodel templates (Nameplate, HandoverDocumentation, TechnicalData,
 ServiceRequestNotification, MaintenanceInstructions, HierarchicalStructures,

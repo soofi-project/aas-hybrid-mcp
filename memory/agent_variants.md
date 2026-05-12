@@ -1,6 +1,6 @@
 ---
 name: Agent variants
-description: Eight LangGraph agent orchestration patterns selectable per-request via model name
+description: Five LangGraph agent orchestration patterns selectable per-request via model name
 type: project
 ---
 
@@ -8,23 +8,21 @@ type: project
 
 All variants share a single MCP client connection, tool list, and MCP context at startup. Runners are **lazy-initialized** on first request for their model ID and cached for the process lifetime. Selection via **model name** in the OpenAI-compatible `/v1/chat/completions` request — the user picks their pattern in Open WebUI (or any client).
 
-Each runner implements the same interface: `initialize`, `_lazy_init`, `stream`, `invoke`, `direct_invoke`.
-
-All tool-bearing variants include `get_current_utc_time` as a built-in tool alongside MCP tools. The `aas-agent:passthrough` model is an internal baseline — single LLM call, no tools, no LangGraph — used for Open WebUI's follow-up question generation.
+Each runner implements the same interface: `initialize`, `_lazy_init`, `stream`, `invoke`. All variants are tool-bearing and include `get_current_utc_time` as a built-in tool alongside MCP tools.
 
 **Default model** is `aas-agent:react` (set via `AGENT_DEFAULT_MODEL` env var).
 
+**Open WebUI background tasks** (title generation, tag generation, follow-up suggestions) bypass the agent entirely. Open WebUI is configured with two `OPENAI_API_BASE_URLS` — the agent service for chat, and the LiteLLM/vLLM endpoint (`LLM_BASE_URL`) for utility tasks via `TASK_MODEL_EXTERNAL=${LLM_MODEL}`. This replaced the older `aas-agent:passthrough` variant + in-agent `_is_utility_request` shortcut (removed 2026-05-12).
+
 ## Model ID → Variant Routing
 
-| Model ID | Variant | Tools? | Graph Topology | Status (2026-05-11) |
-|---|---|---|---|---|
-| `aas-agent:react` | `AgentRunner` | ✅ | Single LLM loop with tool calls (`create_react_agent`) | ✅ Stable |
-| `aas-agent:passthrough` | `PassthroughRunner` | ❌ | Single LLM call, no graph, no tools (internal baseline) | ✅ Stable |
-| `aas-agent:plan` | `PlanReflectAgentRunner` | ✅ | `planner → executor → reflector → finalizer` | ✅ Stable (since 2026-05-11) |
-| `aas-agent:crag` | `CragAgentRunner` | ✅ | `executor → relevance check → (refine → executor) → synthesizer` | ✅ Stable (since 2026-05-11) |
-| `aas-agent:reflexion` | `ReflexionAgentRunner` | ✅ | `executor → judge → (reflect → executor) → finalizer` | ✅ Stable (since 2026-05-11) |
-| `aas-agent:rewoo` | `RewooAgentRunner` | ✅ | `plan → execute (parallel gather) → synthesize` | ✅ Stable (since 2026-05-11) |
-| `aas-agent:supervisor` | `SupervisorAgentRunner` | ✅ | `supervisor → orchestrator (parallel workers) → synthesize` | ✅ Stable (since 2026-05-11) |
+| Model ID | Variant | Graph Topology | Status (2026-05-12) |
+|---|---|---|---|
+| `aas-agent:react` | `AgentRunner` | Single LLM loop with tool calls (`create_react_agent`) | ✅ Stable |
+| `aas-agent:plan` | `PlanReflectAgentRunner` | `planner → executor → reflector → finalizer` | ✅ Stable |
+| `aas-agent:crag` | `CragAgentRunner` | `executor → relevance check → (refine → executor) → synthesizer` | ✅ Stable |
+| `aas-agent:reflexion` | `ReflexionAgentRunner` | `executor → judge → (reflect → executor) → finalizer` | ✅ Stable |
+| `aas-agent:rewoo` | `RewooAgentRunner` | `plan → execute (parallel gather) → synthesize` | ✅ Stable |
 
 ## Budget Environment Variables
 
@@ -70,8 +68,15 @@ All tool-bearing variants include `get_current_utc_time` as a built-in tool alon
 Full directory bind-mounts sind auf Windows nicht zuverlässig — der docker compose `./aas-agent/src/aas_agent` mount wurde als `C:\134` gemountet (falscher pfad). **Lösung:** einzelne `.py` files explizit in `docker-compose.yml` mounten (Zeile 477-501).
 
 **`api.py`** ist bind-mounted → änderungen greifen sofort nach restart.
-**Auch runner-files** (`reflexion.py`, `crag_nodes.py`, `agent_supervisor_nodes.py`, etc.) sind jetzt einzeln gemountet.
+**Auch runner-files** (`reflexion.py`, `crag_nodes.py`, `rewoo_nodes.py`, etc.) sind jetzt einzeln gemountet.
 **Nicht gemountet:** `__init__.py`, `_smoke_structured.py` — werden nie geändert.
+
+## Changes made on 2026-05-12
+
+- **`aas-agent:passthrough` Variante entfernt.** Open WebUI ruft Utility-Tasks (Title-/Tag-/Follow-up-Generierung) jetzt direkt an `LLM_BASE_URL` (LiteLLM/vLLM auf H200) statt durch den Agent zu hoppen. `OPENAI_API_BASE_URLS` ist zweistellig (`agent;LLM_BASE_URL`), `TASK_MODEL_EXTERNAL=${LLM_MODEL}`. Compose-Substitution funktioniert, weil `up.sh --vllm` jetzt `.env.vllm` zusätzlich in die Shell sourct.
+- **Model-Selector-Filter über `open-webui-seed`.** Nach dem Login setzt das Seed-Script via `POST /openai/config/update` eine `model_ids: ["__hidden__"]` Allowlist auf Connection-Index 1. Resultat: nur `aas-agent:*` taucht im User-Dropdown auf, `qwen36-27b` ist versteckt. `TASK_MODEL_EXTERNAL` funktioniert weiter, weil es Backend-routing ist. (`OPENAI_API_CONFIGS` als Env-Var hätte nicht funktioniert — ist PersistentConfig, greift nur bei leerer DB).
+- **`direct_invoke` aus allen Runnern entfernt** (`agent.py`, `agent_plan.py`, `crag.py`, `reflexion.py`, `rewoo.py`). Wurde nur vom Utility-Request-Shortcut in `api.py` gerufen — der Shortcut (`_is_utility_request`) ist auch raus.
+- **`passthrough.py` gelöscht** + bind-mount aus `docker-compose.yml` raus.
 
 ## Changes made on 2026-05-11
 
@@ -79,7 +84,6 @@ Full directory bind-mounts sind auf Windows nicht zuverlässig — der docker co
 - **`parallel_tool_calls` without tools**: vLLM rejects `parallel_tool_calls=False` when the LLM is called without `bind_tools()`. Fixed by calling `executor_llm.bind_tools(tools)` in `agent_plan_graph.py`, `crag_graph.py`, `reflexion_graph.py` before passing to the executor node.
 - **`AGENT_RECURSION_LIMIT` not passed to `ainvoke`**: `reflexion.py`, `crag.py`, `rewoo.py` read the env var but didn't pass it as `config={"recursion_limit": ...}` to `graph.ainvoke()`. Fixed.
 - **Missing `BaseMessage` import in `crag_nodes.py`**: Added to langchain import.
-- **Missing `BaseTool` import in `agent_supervisor.py`**: Added to langchain import.
 - **f-string backslash in `crag_nodes.py` line 381**: Python 3.11 rejects `\n` inside f-string `{...}` expressions. Replaced with `separator` variable + explicit join.
 
 ### Pydantic coercion fixes (LLM returns wrong types)
@@ -91,12 +95,9 @@ The vLLM Qwen model often returns:
 
 **Fixes applied:**
 - `reflexion_graph_nodes.py`: coerce `missing: str → list`, `common_pitfalls: str → list` in parse functions
-- `agent_supervisor_state.py`: `expected_output` field now has `default="graph_query_result"` (LLM often omits it)
-- `agent_supervisor_nodes.py`: coerce `unresolved: str → list` in `_parse_final_answer`
 - `agent_plan_nodes.py`: central `_coerce_and_validate()` function handles all common coercions — `unresolved`, `common_pitfalls`, `evidence` schema mismatch, `evidence[source]` literal normalization. Brute-force JSON extraction fallback for mixed text output.
 - `crag_nodes.py`: coerce `unresolved: str → list` and `confidence: float → "high"/"medium"/"low"` in `_parse_final_answer`
 - `rewoo_nodes.py`: `_PLAN_PROMPT_SUFFIX.format(...)` → `.replace('{max_thoughts}', ...)` (other `{}` in prompt collide with `.format()`)
-- `agent_supervisor_nodes.py`: fixed `_to_lc_messages(task_prompt, task)` → `_to_lc_messages(task, task_prompt)` argument swap
 
 ### Issues resolved on 2026-05-11 (second round)
 1. **`reflexion` non-termination**: `current_trial` was never incremented and no `TrialRecord` objects were created — judge routed to `reflect` forever until recursion limit. Fixed by creating `TrialRecord` in `judge_node`, incrementing `current_trial`, and adding a hard trial cap in `route_after_judge`.
@@ -119,14 +120,6 @@ The vLLM Qwen model often returns:
 - Can replan up to `AGENT_MAX_REPLANS` times; total tool calls capped at `AGENT_MAX_TOTAL_TOOL_CALLS`
 - Prompts from: `agent_plan_prompts/planner.md`, `executor.md`, `reflector.md`, `finalizer.md`
 - Inspired by plan-and-solve prompting (wang2023plan_solve)
-
-### agent_supervisor
-- **Nodes:** `supervisor`, `orchestrator`, `synthesize`
-- Supervisor decomposes request into typed worker sub-tasks
-- Three workers (run in parallel): `work_graph`, `work_document`, `work_template`
-- Each worker is a pre-compiled `create_react_agent` with domain-specific tool subset
-- Worker prompts and tool assignments in `agent_supervisor_nodes.py` (`_WORKER_PROMPTS`, `_WORKER_TOOLS`)
-- Inspired by AutoGen (wu2023autogen) and multi-agent debate (du2023multiagent_debate)
 
 ### crag
 - **Nodes:** `executor`, `relevance`, `refine`, `synthesize`
@@ -154,4 +147,4 @@ The vLLM Qwen model often returns:
 
 Section 3.6 "Agent Orchestration and Variants" (`paper/etfa2026/conference_etfa_2026.tex:113-124`):
 - Evaluated in Bench B: react, plan_reflect, crag, reflexion
-- Reserved: agent_supervisor (wu2023autogen, du2023multiagent_debate), rewoo (xu2024rewoo)
+- Reserved: rewoo (xu2024rewoo)

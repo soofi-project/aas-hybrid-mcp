@@ -1,8 +1,7 @@
 """Reflexion agent variant — public runner with the same surface as AgentRunner.
 
-Exposes ``initialize``, ``stream``, ``invoke``, ``direct_invoke``, and
-``model_name`` so ``api.py`` can swap it in via the ``AGENT_VARIANT``
-environment variable.
+Exposes ``initialize``, ``stream``, ``invoke``, and ``model_name`` so
+``api.py`` can swap it in via the ``aas-agent:reflexion`` model ID.
 
 Pipeline: executor → judge → (reflect → executor) → finalizer
 """
@@ -171,12 +170,6 @@ class ReflexionAgentRunner:
             "max_trials": int(self._max_trials),
             "accept_threshold": self._accept_threshold,
         }
-
-    async def direct_invoke(self, messages: list[dict]) -> str:
-        llm = self._build_llm(enable_thinking=False, with_tools=False)
-        lc = self._to_lc_messages(messages)
-        result = await llm.ainvoke(lc)
-        return result.content if isinstance(result.content, str) else str(result.content)
 
     async def stream(
         self,

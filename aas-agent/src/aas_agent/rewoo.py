@@ -1,8 +1,7 @@
 """ReWOO agent variant — public runner with the same surface as AgentRunner.
 
-Exposes ``initialize``, ``stream``, ``invoke``, ``direct_invoke``, and
-``model_name`` so ``api.py`` can swap it in via the ``AGENT_VARIANT``
-environment variable.
+Exposes ``initialize``, ``stream``, ``invoke``, and ``model_name`` so
+``api.py`` can swap it in via the ``aas-agent:rewoo`` model ID.
 
 Pipeline (linear): START → plan_node → execute_node → synthesize_node → END
 
@@ -166,13 +165,6 @@ class RewooAgentRunner:
             "plan": None,
             "observations": {},
         }
-
-    async def direct_invoke(self, messages: list[dict]) -> str:
-        """Bypass the graph."""
-        llm = self._build_llm(enable_thinking=False, with_tools=False)
-        lc = self._to_lc_messages(messages)
-        result = await llm.ainvoke(lc)
-        return result.content if isinstance(result.content, str) else str(result.content)
 
     async def stream(
         self,

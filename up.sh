@@ -26,6 +26,10 @@ for arg in "$@"; do
             ;;
         --vllm)
             COMPOSE_FILES+=(-f docker-compose.vllm.yml)
+            # Re-source vllm overrides so ${LLM_BASE_URL}/${LLM_MODEL} in
+            # docker-compose.yml interpolate to the H200 values (compose
+            # substitution only sees shell env + the root .env file, not env_file:).
+            set -a; source .env.vllm; set +a
             echo "[INFO] vllm backend activated"
             ;;
         *)

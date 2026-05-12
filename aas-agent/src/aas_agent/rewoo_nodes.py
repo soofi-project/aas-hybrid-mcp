@@ -52,14 +52,9 @@ INSTRUCTIONS:
 5. Reference prior evidence as E1, E2, etc.
 6. Output ONLY a JSON object with keys: thoughts (list of objects) and synthesis_hint (string).
 
-DISCOVERY-HEAVY QUERIES (e.g. "all assets in containers", "equipment layout"):
-- Use query_aas_graph (Cypher) with BROAD queries that discover structure directly.
-- Plan multiple parallel queries with different strategies so at least one succeeds.
-- Assets may be nested deep inside Entity nodes. Use Entity traversal patterns:
-  MATCH (sm:Submodel)-[:HAS_ELEMENT*]->(e:Entity)-[:REPRESENTS_ASSET]->(a:Asset)
-- If you need to find containers first (halls, lines, zones), query by idShort pattern:
-  MATCH (aas) WHERE aas.idShort CONTAINS 'Halle' OR aas.idShort CONTAINS 'Hall'
-- Never plan dependent chains. Plan independent parallel queries instead.
+FIRST-STEP RULE: Most queries need graph structure. Plan get_graph_schema() + get_templates_index() as your first parallel thoughts (E1, E2) so you know relationship labels and semantic IDs before writing Cypher. Don't skip this — zero-row results almost always come from wrong relationships or missing semanticIds.
+
+DISCOVERY: Use multiple parallel Cypher strategies when the data shape is uncertain. Each strategy gets its own thought with a different ref_id.
 
 IMPORTANT: Every tool_name MUST be one of the tools listed above. Every tool_args MUST be valid for that tool.
 IMPORTANT for Cypher: Only ONE RETURN clause per query. Use a single MATCH or chained patterns.
@@ -80,9 +75,16 @@ a specific observation from a parallel tool call. Use these references when citi
 RULES:
 - Be direct and factual. Cite evidence references (E1, E2, etc.).
 - Cross-reference evidence between different sources.
-- Note gaps where no evidence exists.
+- Note gaps where no evidence exists. Where evidence failed, add to "unresolved".
 - Calibrate confidence: high for verified hits, medium for derived, low for sparse.
 - Output ONLY a JSON object: {answer, confidence, unresolved}.
+
+EXAMPLE (how to combine parallel evidence into a single answer):
+Given observations:
+  E1 (tool_a): "Found 3 entries matching the query"
+  E2 (tool_b): ["item_A", "item_B"]
+  E3 (tool_c): (empty)
+Answer: {"answer": "Two items were found (E2) with 3 matching entries (E1). One query returned no results (E3).", "confidence": "high", "unresolved": ["No data available from E3 source."]}
 """
 
 
@@ -94,12 +96,11 @@ RULES:
 def make_plan_node(
     llm: BaseChatModel,
     tool_map: dict[str, BaseTool],
-    base_system: str,
     max_thoughts: int,
 ) -> Callable:
     """Plans ALL tool calls upfront based on the user request."""
 
-    # Build tool reference list from tool_map (include MCP context for available tools)
+    # Build tool reference list from tool_map
     tool_refs = _build_tool_refs(tool_map)
 
     async def plan_node(state: dict) -> dict:
@@ -107,7 +108,8 @@ def make_plan_node(
 
         prompt = (
             f"User request:\n{user_request}\n\n"
-            f"{_PLAN_PROMPT}{tool_refs}\n{base_system}\n{_PLAN_PROMPT_SUFFIX.replace('{max_thoughts}', str(max_thoughts))}\n"
+            f"{_PLAN_PROMPT}{tool_refs}\n\n"
+            f"{_PLAN_PROMPT_SUFFIX.replace('{max_thoughts}', str(max_thoughts))}\n"
             f"Output ONLY a JSON object with keys: thoughts (list), synthesis_hint (string)."
         )
 
@@ -164,6 +166,17 @@ def make_plan_node(
                     synthesis_hint="Use the default search results to answer the user request.",
                 )
 
+        # Normalize ref_ids to sequential E1, E2, E3, ... — the LLM may emit
+        # non-sequential or duplicate IDs (e.g. "E1, E3, E1"); the synthesizer
+        # later references thoughts by ref_id, so collisions silently drop
+        # observations. Auto-numbering is safe because thought order in
+        # plan.thoughts defines execution order anyway.
+        original_ids = [t.ref_id for t in plan.thoughts]
+        for idx, thought in enumerate(plan.thoughts, start=1):
+            thought.ref_id = f"E{idx}"
+        if original_ids != [t.ref_id for t in plan.thoughts]:
+            log.info("Normalized ref_ids %s → %s", original_ids, [t.ref_id for t in plan.thoughts])
+
         return {
             "plan": plan,
             "observations": {},
@@ -176,7 +189,7 @@ def _build_tool_refs(tool_map: dict[str, BaseTool]) -> str:
     """Build a reference list of available tools with name, description AND argument schema."""
     refs = []
     for name, tool in sorted(tool_map.items()):
-        desc = getattr(tool, "description", "")[:120]
+        desc = getattr(tool, "description", "")[:300]
         args_schema = getattr(tool, "args_schema", None)
         params_text = ""
         if args_schema is not None:
@@ -329,7 +342,7 @@ async def _execute_single(task: dict, tool_map: dict[str, BaseTool]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def make_synthesize_node(llm: BaseChatModel) -> Callable:
+def make_synthesize_node(llm: BaseChatModel, base_system: str) -> Callable:
     """Combines all observations into a FinalAnswer."""
 
     async def synthesize_node(state: dict) -> dict:
@@ -343,8 +356,9 @@ def make_synthesize_node(llm: BaseChatModel) -> Callable:
                 "messages": [AIMessage(content="No plan was generated. No answer available.")],
             }
 
-        # Build observations block
-        obs_blocks = []
+        # Build observations block with explicit categorization
+        success_blocks = []
+        failed_blocks = []
         for t in plan.thoughts:
             ref_id = t.ref_id if hasattr(t, "ref_id") else thoughts[plan.thoughts.index(t)].get("ref_id", "??") if isinstance(t, dict) else ""
             observation = observations.get(ref_id, f"(no observation for {ref_id})")
@@ -352,24 +366,34 @@ def make_synthesize_node(llm: BaseChatModel) -> Callable:
             thought_desc = t.plan if hasattr(t, "plan") else t.get("plan", "??")
             tool_name = t.tool_name if hasattr(t, "tool_name") else t.get("tool_name", "??")
 
-            obs_blocks.append(
+            obs_text = (
                 f"--- {ref_id} (thought: {thought_desc[:80]}) ---\n"
                 f"Tool: {tool_name}\nObservation:\n{observation}"
             )
 
-        observation_block = "\n\n".join(obs_blocks)
+            if not observation or "error" in observation.lower() or "not found" in observation.lower():
+                failed_blocks.append(obs_text)
+            else:
+                success_blocks.append(obs_text)
+
+        success_block = "\n\n".join(success_blocks) if success_blocks else "(no successful observations)"
+        failed_section = ""
+        if failed_blocks:
+            failed_section = "\n\n### FAILED OR EMPTY EVIDENCE (tool queries returned nothing or errored):\n" + "\n\n".join(failed_blocks)
 
         # Build synthesis context
         synthesis_hint = plan.synthesis_hint if hasattr(plan, "synthesis_hint") else ""
         synthesis_context = f"Synthesis guidance: {synthesis_hint}\n\n" if synthesis_hint else ""
 
         ctx = (
+            f"{base_system}\n\n"
             f"User request:\n{user_request}\n\n"
             f"{synthesis_context}"
-            f"Observations:\n{observation_block}\n\n"
+            f"### SUCCESSFUL EVIDENCE:\n{success_block}\n\n"
+            f"{failed_section}\n\n"
             f"Synthesize a unified answer from these parallel observations. "
             f"Reference evidence by its ID (E1, E2, etc.). "
-            f"Note any gaps where an observation is missing or empty.\n\n"
+            f"Where evidence failed, note the gap explicitly in 'unresolved'.\n\n"
             f"Output ONLY a JSON object with keys: answer, confidence, unresolved."
         )
 
@@ -418,8 +442,8 @@ def make_synthesize_node(llm: BaseChatModel) -> Callable:
         )
 
         log.info(
-            "synthesize: confidence=%s observations=%d unresolved=%d thoughts=%d",
-            final.confidence, len(observations), len(final.unresolved), len(plan.thoughts),
+            "synthesize: confidence=%s observations=%d failed=%d unresolved=%d thoughts=%d",
+            final.confidence, len(success_blocks), len(failed_blocks), len(final.unresolved), len(plan.thoughts),
         )
 
         return {"messages": [AIMessage(content=rendered)]}

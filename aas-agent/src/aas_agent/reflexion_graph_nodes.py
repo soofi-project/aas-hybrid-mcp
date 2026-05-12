@@ -48,8 +48,18 @@ Output ONLY a JSON object with keys: score, verdict, missing, reason.
 """
 
 _REFLECT_PROMPT = """You are a reflection advisor for the AAS Maintenance Assistant.
-You receive a failed answer attempt and its judgment. Propose a concrete strategy
-for the next attempt.
+You receive a failed answer attempt and its judgment. Analyze what went wrong
+and propose a concrete strategy for the next attempt.
+
+Write in first person as if the executor is reflecting on its own work.
+Be specific: name the tools or queries that failed, explain why they were insufficient,
+and describe exactly what to try differently.
+
+Examples of good reflections:
+- "I tried searching for 'Hall 3' in the graph but only found the facility node.
+  I should have followed the HierarchicalStructures submodel to find child assets."
+- "I called get_submodel_element but used the wrong identifier. I need to
+  discover the correct element idShort through template discovery first."
 
 Output ONLY a JSON object with keys: strategy_hint, common_pitfalls, focus_areas.
 """
@@ -253,9 +263,10 @@ def make_reflect_node(llm: BaseChatModel) -> Callable:
         trials = state.get("trial_records", [])
         current_trial = state.get("current_trial", 1)
 
+        completed_trial = current_trial - 1
         ctx = (
             f"User query:\n{user_request}\n\n"
-            f"Latest answer (trial #{current_trial}):\n{state.get('last_answer_text', '')}\n\n"
+            f"Latest answer (trial #{completed_trial}):\n{state.get('last_answer_text', '')}\n\n"
             f"Judgment:\n"
             f"  Score: {judgment.score if judgment else 'N/A'}\n"
             f"  Verdict: {judgment.verdict if judgment else 'N/A'}\n"
@@ -291,7 +302,7 @@ def make_reflect_node(llm: BaseChatModel) -> Callable:
 
         # Render feedback for the next executor attempt
         feedback_text = (
-            f"### Reflection after Trial {current_trial}\n\n"
+            f"### Reflection after Trial {completed_trial}\n\n"
             f"**Judge score:** {judgment.score:.2f}/{judgment.verdict}\n\n"
             f"**Missing:** {judgment.missing}\n\n"
             f"**Reason:** {judgment.reason}\n\n"
@@ -302,16 +313,27 @@ def make_reflect_node(llm: BaseChatModel) -> Callable:
 
         log.info(
             "reflect: trial %d — strategy=%s",
-            current_trial,
+            completed_trial,
             reflection.strategy_hint[:100],
         )
 
+        existing_feedback = list(state.get("feedback_history", []))
+        existing_feedback.append(feedback_text)
+
         return {
             "reflection": reflection,
-            "feedback_history": [feedback_text],
+            "feedback_history": existing_feedback,
         }
 
     return reflect_node
+
+
+def _coerce_reflection_fields(d: dict) -> None:
+    """Normalize ReflectionFeedback fields so pydantic validation passes."""
+    for field in ("common_pitfalls", "focus_areas"):
+        val = d.get(field)
+        if isinstance(val, str):
+            d[field] = [val] if val.strip() else []
 
 
 def _parse_reflection(content: str) -> ReflectionFeedback | None:
@@ -323,6 +345,7 @@ def _parse_reflection(content: str) -> ReflectionFeedback | None:
 
     normalized = _normalize_json_from_qwen(content)
     if normalized and isinstance(normalized, dict) and "strategy_hint" in normalized:
+        _coerce_reflection_fields(normalized)
         try:
             return ReflectionFeedback.model_validate(normalized)
         except Exception:
@@ -331,8 +354,7 @@ def _parse_reflection(content: str) -> ReflectionFeedback | None:
     try:
         parsed = json.loads(content.strip())
         if isinstance(parsed, dict) and "strategy_hint" in parsed:
-            if isinstance(parsed.get("common_pitfalls"), str):
-                parsed["common_pitfalls"] = [parsed["common_pitfalls"]] if parsed["common_pitfalls"] else []
+            _coerce_reflection_fields(parsed)
             return ReflectionFeedback.model_validate(parsed)
     except json.JSONDecodeError:
         log.debug("Failed to parse reflection via raw JSON")
@@ -358,7 +380,9 @@ def make_finalizer_node(llm: BaseChatModel) -> Callable:
             ctx += "## Trial History\n\n"
             for t in trials:
                 ctx += f"- Trial {t.trial}: score={t.score:.2f}, verdict={t.verdict}\n"
-            ctx += "\n"
+            ctx += "\n## All Trial Answers\n"
+            for t in trials:
+                ctx += f"### Trial {t.trial} (score={t.score:.2f}, verdict={t.verdict})\n{t.summary}\n\n"
 
         if best_answer_text:
             ctx += f"## Best Available Answer (score={best_score:.2f})\n{best_answer_text}\n\n"
@@ -466,6 +490,10 @@ def route_after_judge(state: ReflexionState) -> str:
         return "finalizer"
 
     if judgment.verdict == "accept":
+        return "finalizer"
+
+    threshold = state.get("accept_threshold", 0.7)
+    if judgment.score >= threshold:
         return "finalizer"
 
     max_trials = state.get("max_trials", 3)

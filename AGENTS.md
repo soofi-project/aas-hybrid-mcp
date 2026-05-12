@@ -11,6 +11,8 @@ cp .env.secrets.example ~/.env.secrets   # edit with your API key(s)
 ./down.sh --keep-all                      # stop only
 ```
 
+**Always start with `--vllm`:** `./down.sh && ./up.sh --vllm` (or `--vllm --build`). The `.env.vllm` overlay sets `AGENT_RECURSION_LIMIT=100`, `AGENT_DEFAULT_THINKING=false`, and the correct `LLM_BASE_URL`/`LLM_MODEL`. Without `--vllm`, the agent calls the wrong endpoint. Always use the `--vllm` flag for any stack restart — it's not optional.
+
 **Always use default `./down.sh` after changing AASX files** — without wiping mongo/kafka/neo4j, BaSyx logs 409 conflicts and changes silently don't reach the graph.
 
 ## Architecture (one-paragraph refresher)
@@ -79,7 +81,7 @@ Six generic write tools: `put_aas`, `put_submodel`, `put_submodel_element`, `del
 
 Variants are selectable **per-conversation** via OpenAI model name (`aas`, `aas:plan`, `aas:crag`, etc.). `api.py` lazily initializes each runner on first request. Shared MCP client, tools, and context loaded once at startup. `AGENT_VARIANT` env var is deprecated. **Full details in `memory/agent_variants.md`** — model ID → variant routing, graph topology, budget env vars, and paper mapping. Keep that file in sync when adding/changing variants or budget parameters. `AGENT_INJECT_MANUAL` and `AGENT_INJECT_SCHEMA` control whether system prompt gets manual/schema injected at startup vs. agent fetching on demand.
 
-**Variants must be comparable:** every runner must combine `system-prompt.md` + `mcp_context` as its `base_system`. The variant-specific prompt layer adds topology/strategy instructions (plan, judge, reflect, supervisor, etc.), but the core directives ("Act, don't ask permission", idShort anti-pattern, two entry points, output style) must never be dropped. If one variant deviates, the others will fail silently on the same queries. See `reflexion.py`, `crag.py`, `agent_plan.py`, `rewoo.py`, `agent_supervisor.py`, `agent.py`.
+**Variants must be comparable:** every runner must combine `system-prompt.md` + `mcp_context` as its `base_system`. The variant-specific prompt layer adds topology/strategy instructions (plan, judge, reflect, etc.), but the core directives ("Act, don't ask permission", idShort anti-pattern, two entry points, output style) must never be dropped. If one variant deviates, the others will fail silently on the same queries. See `reflexion.py`, `crag.py`, `agent_plan.py`, `rewoo.py`, `agent.py`.
 
 ## Bind-mounted-over-pacakaged files
 

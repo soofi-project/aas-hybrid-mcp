@@ -1,6 +1,6 @@
-Semantic vector search over PDF chunks ingested from AAS Submodel File
-elements. Returns chunks ranked by relevance with `submodel_id`, source
-filename, page number, and a relevance score.
+**Before calling: obtain `submodel_id` via `query_aas_graph`** — walk `Instance AAS → DERIVED_FROM → Type AAS → HAS_SUBMODEL → HandoverDocumentation`. Never invent or guess a `submodel_id`. Scope every call with it — searching the entire corpus loses asset-pinning and causes cross-asset hallucinations.
+
+Semantic vector search over PDF chunks ingested from AAS Submodel File elements. Returns chunks ranked by relevance with `submodel_id`, source filename, page number, and a relevance score.
 
 WHEN TO USE: content questions whose answers live inside referenced PDFs
 and are not exposed as Submodel Properties — troubleshooting steps, safety

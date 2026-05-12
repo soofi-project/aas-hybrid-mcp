@@ -1,11 +1,9 @@
+**Before calling: obtain the semanticId from a `query_aas_graph` result** — look for the `SemanticConcept.id` value on `HAS_SEMANTIC_ID` / `HAS_SUPPLEMENTAL_SEMANTIC_ID` relationships. Don't paste raw IRDIs from memory.
+
 Resolve a semanticId (IRDI like `0173-1#02-ABL884#002`, or IRI like
 `https://admin-shell.io/...`) to its IEC 61360 ConceptDescription content:
 preferredName, shortName, definition, dataType, and unit — multilingual
 where available.
-
-Use this whenever a graph traversal returns a `:SemanticConcept.id` that
-the agent does not recognise, or when the user asks what an unfamiliar
-IRDI means.
 
 Three response classes:
 
@@ -22,7 +20,6 @@ Three response classes:
 3. `resolved=false` with `error=...` — the BaSyx repository was
    unreachable or returned an unexpected status.
 
-Pair this with `query_aas_graph` for the canonical discovery flow:
-Cypher returns a `:SemanticConcept.id`, `lookup_semantic_id` resolves
-it to human-readable semantics. Never reason about a property by its
+Pair with `query_aas_graph`: Cypher returns a `SemanticConcept.id`, this tool
+resolves it to human-readable semantics. Never reason about a property by its
 `idShort` when its `semanticId` can be resolved.

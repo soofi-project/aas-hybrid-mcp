@@ -202,13 +202,6 @@ class AgentRunner:
                 lc_messages.append(HumanMessage(content=content))
         return lc_messages
 
-    async def direct_invoke(self, messages: list[dict]) -> str:
-        """Bypass LangGraph — call the LLM directly without tools or logging."""
-        llm = self._build_llm(enable_thinking=False, with_tools=False)
-        lc_messages = self._to_langchain_messages(messages)
-        result = await llm.ainvoke(lc_messages)
-        return result.content if isinstance(result.content, str) else str(result.content)
-
     async def stream(
         self,
         messages: list[dict],

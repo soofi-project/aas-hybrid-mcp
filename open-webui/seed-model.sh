@@ -75,6 +75,53 @@ if [ -z "$token" ] || [ "$token" = "null" ]; then
     exit 1
 fi
 
+# --- Restrict vLLM connection to a single model ID ---
+# Open WebUI is configured with two OPENAI_API_BASE_URLS:
+#   index 0 → aas-agent (agentic chat)
+#   index 1 → vLLM (LiteLLM proxy on H200, used for TASK_MODEL_EXTERNAL)
+#
+# Without a filter, Open WebUI lists every model the LiteLLM proxy exposes
+# (potentially many). We pin connection 1 to the single model that
+# TASK_MODEL_EXTERNAL needs (${TASK_MODEL_EXTERNAL:-}). This keeps the
+# user dropdown tidy — five aas-agent:* entries + one ${LLM_MODEL} entry
+# — without breaking title/tag/follow-up generation.
+#
+# model_ids in OPENAI_API_CONFIGS is a *synthesis* list (not an allowlist):
+# Open WebUI renders each entry as-is without checking the upstream. The
+# entry MUST be a real model on the upstream proxy or chat completions
+# will 404. OPENAI_API_CONFIGS is a PersistentConfig, so we apply this via
+# API on every restart (idempotent).
+TASK_MODEL_ID="${TASK_MODEL_ID:-qwen36-27b}"
+echo "Pinning vLLM connection to model_id=${TASK_MODEL_ID}..."
+current_config=$(curl --silent --fail \
+    -H "Authorization: Bearer ${token}" \
+    "${OPEN_WEBUI_URL}/openai/config" || echo "")
+
+if [ -z "$current_config" ]; then
+    echo "WARN: Could not read /openai/config; skipping filter"
+else
+    filter_payload=$(echo "$current_config" \
+        | jq --arg mid "$TASK_MODEL_ID" '.OPENAI_API_CONFIGS["1"] = {
+            "enable": true,
+            "model_ids": [$mid],
+            "connection_type": "external",
+            "prefix_id": "",
+            "tags": []
+        }')
+
+    filter_status=$(curl --silent -o /dev/null -w "%{http_code}" \
+        -X POST "${OPEN_WEBUI_URL}/openai/config/update" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer ${token}" \
+        -d "$filter_payload")
+
+    if [ "$filter_status" = "200" ]; then
+        echo "vLLM connection pinned to single model"
+    else
+        echo "WARN: /openai/config/update returned ${filter_status}"
+    fi
+fi
+
 # --- Import model ---
 echo "Importing workspace model..."
 import_payload="/tmp/import-payload.json"

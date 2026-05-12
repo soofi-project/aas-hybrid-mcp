@@ -1,18 +1,7 @@
-Create or replace a SubmodelElement at an idShortPath within a Submodel.
-Idempotent: replaces the element if the path exists, creates it otherwise.
+**Before calling: obtain element structure from `get_template(name)`.** Know the correct `modelType`, `idShort`, and nesting before creating the JSON. Pass `element_json` as a JSON string. `id_short_path` is dot-separated from the submodel root (e.g. `MarkingsObject.0.MarkingFile`). SDK validates before HTTP.
 
-Covers all SubmodelElement subtypes — Property, MultiLanguageProperty, File,
-Blob, Range, SubmodelElementCollection, SubmodelElementList, ReferenceElement,
-RelationshipElement, Entity, Operation, BasicEventElement, Capability — via
-the `modelType` field. The SDK validates the element structure by wrapping it
-in a temporary Submodel envelope before any HTTP call.
+Create or replace a SubmodelElement (all subtypes: Property, File, SMC, SML, Entity, Operation, etc.) under an existing Submodel. Idempotent.
 
-INPUT:
-- `submodel_id` — the Submodel id URI (non-empty string)
-- `id_short_path` — dot-separated path to the element, e.g. `"Documents"`
-  for a root element or `"Documents.Section1.File1"` for a nested element.
-  Every segment except the last must be an existing parent's idShort.
-- `element_json` — the SubmodelElement as a JSON **string**. Required fields:
-  `modelType` (e.g. "Property", "SubmodelElementCollection") and `idShort`.
+INPUT: `submodel_id` (URI), `id_short_path` (dot-separated path), `element_json` (JSON string).
 
-OUTPUT: `{"status": "ok", "idShortPath": "…"}` or `{"error": "…"}`.
+OUTPUT: `{"status": "ok"}` or `{"error": "..."}`.

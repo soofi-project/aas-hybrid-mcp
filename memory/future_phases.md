@@ -31,7 +31,7 @@ type: project
 ## Open engineering tasks
 
 ### Pydantic coercion centralization
-- **Where:** `qwen_parser.py`, `agent_plan_nodes.py`, `crag_nodes.py`, `rewoo_nodes.py`, `reflexion_graph_nodes.py`, `agent_supervisor_nodes.py`
+- **Where:** `qwen_parser.py`, `agent_plan_nodes.py`, `crag_nodes.py`, `rewoo_nodes.py`, `reflexion_graph_nodes.py`
 - **Problem:** Each parse function has its own ad-hoc coercion (`str → list`, `float → literal`, etc.)
 - **Fix:** Extract `_coerce_final_answer`, `_coerce_judgment`, etc. into a single module (e.g. `aas_agent/coercion.py`) with per-schema normalizers reused by all parsers
 
@@ -44,3 +44,30 @@ type: project
 - **Where:** `reflexion_graph_nodes.py`
 - **Problem:** Best answer text is now tracked but the LLM may still regenerate instead of using it
 - **Improvement:** Prompt tweak to make the finalizer _use_ the best answer as-is when confidence is high
+
+## Phase: Specialized Worker vs. Generalist Agent
+**Status:** 🔴 Research idea (Future Work in paper §Future Work)
+
+**Concept:** Supervisor decomposes queries → domain-specialized fine-tuned workers → supervisor evaluat → (re-dispatch unresolved → ... → synthesize)
+
+**Two competing approaches:**
+
+1. **Multi-specialist:** Small models (1.5--3B) each fine-tuned with a LoRA adapter for one retrieval domain
+   - Worker A: trained on Cypher query generation (graph specialist)
+   - Worker B: trained for NL query rewriting (vector search specialist)
+   - Worker C: trained for template schema resolution
+   - Supervisor: generalist orchestrator (routing + evaluation + resynthesis, iterativer loop for error recovery)
+
+2. **Single generalist:** One larger model (7--12B) fine-tuned across all tool domains
+   - Unified tool understanding
+   - No routing overhead, simpler deployment
+   - One training run, one model
+
+**Architectural advantage — context isolation:** Each worker operates with a fresh context window.  
+In a sequential agent (ReAct, Plan-and-Reflect), every turn appends tool results + history to the same context — on a 32k window, 8-10 turns fill ~35%. With multi-agent decomposition, the supervisor, each worker, and the synthesizer each get a clean window. No history accumulation. This is particularly relevant when context windows are bounded (cost-sensitive or edge deployment) or when queries naturally decompose into independent sub-tasks. The paper discusses this as a design rationale for the supervisor variant, not as a limitation.
+
+**Evaluation:** Same Bench B questions, same hardware budget. Does multi-specialist match/exceed generalist?
+
+**Key question:** For AAS retrieval patterns (hierarchical containment, semantic search, template matching) is per-domain specialization beneficial? The domain is relatively well-structured, which may favor the generalist.
+
+**Reference:** AutoGen (wu2023autogen) for the supervisor/worker decomposition pattern. MAD (du2023multiagent_debate) not applicable — iterative debate requires identical agents, not domain-specialized workers.

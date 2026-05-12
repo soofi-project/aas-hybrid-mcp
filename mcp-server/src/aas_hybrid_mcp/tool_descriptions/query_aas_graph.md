@@ -1,3 +1,5 @@
+**Before first use: plan `get_graph_schema()` and `get_templates_index()` in parallel** — they return the relationship labels and semantic IDs you need to write correct Cypher. Don't guess either from memory.
+
 Execute a read-only Cypher query against the AAS knowledge graph (Neo4j).
 
 WHEN TO USE: structural questions about the AAS environment — which shells
@@ -9,14 +11,9 @@ matching properties or relationships.
 GRAPH SHAPE — the Asset node has no outgoing relations:
   (:AssetAdministrationShell)-[:MANAGES_ASSET]->(:Asset)
   (:AssetAdministrationShell)-[:HAS_SUBMODEL]->(:Submodel)
-                                  -[:HAS_ELEMENT*]->(:SubmodelElement)
+                                   -[:HAS_ELEMENT*]->(:SubmodelElement)
   (:AssetAdministrationShell)-[:DERIVED_FROM]->(:AssetAdministrationShell)
-                                  -- instance shell → type shell
-
-Before composing non-trivial queries, call `get_graph_schema()` for the
-full relationship catalogue and `get_templates_index()` for verbatim
-semanticIds. Guessing either from training memory is the largest single
-source of zero-row results.
+                                   -- instance shell → type shell
 
 COMPOSITION: this tool resolves the *structural* part of a question. For
 PDF content, pass the discovered `submodel_id` to `search_aas_documents`.

@@ -498,11 +498,6 @@ services:
       - ./aas-agent/src/aas_agent/rewoo_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo_nodes.py:ro
       - ./aas-agent/src/aas_agent/rewoo_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo_graph.py:ro
       - ./aas-agent/src/aas_agent/rewoo_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/rewoo_state.py:ro
-      - ./aas-agent/src/aas_agent/agent_supervisor.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor.py:ro
-      - ./aas-agent/src/aas_agent/agent_supervisor_nodes.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor_nodes.py:ro
-      - ./aas-agent/src/aas_agent/agent_supervisor_graph.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor_graph.py:ro
-      - ./aas-agent/src/aas_agent/agent_supervisor_state.py:/usr/local/lib/python3.11/site-packages/aas_agent/agent_supervisor_state.py:ro
-      - ./aas-agent/src/aas_agent/passthrough.py:/usr/local/lib/python3.11/site-packages/aas_agent/passthrough.py:ro
       - ./aas-agent/src/aas_agent/mcp_client.py:/usr/local/lib/python3.11/site-packages/aas_agent/mcp_client.py:ro
       - ./aas-agent/src/aas_agent/qwen_parser.py:/usr/local/lib/python3.11/site-packages/aas_agent/qwen_parser.py:ro
       - ./aas-agent/src/aas_agent/trace.py:/usr/local/lib/python3.11/site-packages/aas_agent/trace.py:ro
@@ -542,10 +537,16 @@ services:
       RAG_RERANKING_MODEL_AUTO_UPDATE: "false"
       ENABLE_OLLAMA_API: "false"
       ENABLE_OPENAI_API: "true"
-      OPENAI_API_BASE_URLS: "http://aas-agent:8120/v1"
-      OPENAI_API_KEYS: "no-key"
+      # Two endpoints: aas-agent for chat (agentic), direct vLLM (LiteLLM proxy
+      # on H200) for Open WebUI background tasks (title/tag/follow-up).
+      # The vLLM endpoint sidesteps LangGraph entirely — no hop through the agent.
+      # open-webui-seed applies a model_ids allowlist on connection 1 via the
+      # /openai/config/update API so only aas-agent:* shows up in the user
+      # dropdown; TASK_MODEL_EXTERNAL still resolves ${LLM_MODEL} at the backend.
+      OPENAI_API_BASE_URLS: "http://aas-agent:8120/v1;${LLM_BASE_URL}"
+      OPENAI_API_KEYS: "no-key;dummy"
       DEFAULT_MODELS: "aas-agent:react"
-      TASK_MODEL_EXTERNAL: "aas-agent:react"
+      TASK_MODEL_EXTERNAL: "${LLM_MODEL}"
       # Direct MCP still available for tools; agent adds resource access
       TOOL_SERVER_CONNECTIONS: '[{"url":"http://aas-hybrid-mcp:8110/mcp/","type":"mcp","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"aas-hybrid-mcp","name":"AAS Hybrid MCP","description":"Neo4j graph queries, Weaviate document search, and IDTA template search for Asset Administration Shells"}}]'
     volumes:
@@ -572,6 +573,12 @@ services:
     environment:
       SEED_EMAIL:  ${OPEN_WEBUI_EMAIL}
       SEED_PASSWORD: ${OPEN_WEBUI_PASSWORD}
+      TASK_MODEL_ID: ${LLM_MODEL}
+    volumes:
+      # Bind-mount so edits to the seed script / model definition take effect
+      # on container restart without rebuilding the image.
+      - ./open-webui/seed-model.sh:/app/seed-model.sh:ro
+      - ./open-webui/model.json:/app/model.json:ro
     depends_on:
       open-webui:
         condition: service_healthy
