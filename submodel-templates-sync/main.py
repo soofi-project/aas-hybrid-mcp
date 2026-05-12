@@ -353,29 +353,57 @@ def extract_metadata(json_path: Path) -> dict | None:
 
 
 def extract_element_structure(submodel: dict, max_depth: int = 10) -> list[dict]:
-    """Recursively extract element structure from a submodel."""
+    """Recursively extract element structure from a submodel.
+
+    Preserves original AAS JSON child keys (`value`, `statements`) so an agent
+    can build correct Submodel JSON for ``put_submodel`` without guessing.
+    The top-level ``submodelElements`` key is stripped (implied by the template
+    context) to keep the output compact.
+    """
+
+    CHILD_KEYS = ["submodelElements", "value", "statements"]
 
     def _walk(elements: list, depth: int) -> list[dict]:
         if depth > max_depth:
             return []
         result = []
         for el in elements:
-            entry = {
-                "modelType": el.get("modelType", ""),
+            model_type = el.get("modelType", "")
+            entry: dict = {
+                "modelType": model_type,
                 "idShort": el.get("idShort", ""),
             }
+            # valueType on Property, Range — the agent needs this for put_submodel
+            if "valueType" in el:
+                entry["valueType"] = el["valueType"]
+
+            # Extract valueTypeListElement on SubmodelElementList
+            if "valueTypeListElement" in el:
+                entry["valueTypeListElement"] = el["valueTypeListElement"]
+
+            # Extract typeValueListElement and orderRelevant on SubmodelElementList
+            if model_type == "SubmodelElementList":
+                for k in ("typeValueListElement", "orderRelevant"):
+                    if k in el:
+                        entry[k] = el[k]
+
             # Extract semanticId
             sid = el.get("semanticId", {})
             keys = sid.get("keys", [])
             if keys:
                 entry["semanticId"] = keys[0].get("value", "")
 
-            # Recurse into children
-            children_keys = ["submodelElements", "value", "statements"]
-            for key in children_keys:
+            # Recurse into children, preserving the original AAS JSON child key
+            for key in CHILD_KEYS:
                 children = el.get(key)
                 if isinstance(children, list) and children:
-                    entry["children"] = _walk(children, depth + 1)
+                    if key == "submodelElements":
+                        # Always present for Submodel — implied, omit from output
+                        entry.setdefault("submodelElements", _walk(children, depth + 1))
+                    else:
+                        # "value" for SMC/SLE, "statements" for Entity —
+                        # preserve verbatim so the agent can use it directly
+                        entry[key] = _walk(children, depth + 1)
                     break
 
             result.append(entry)

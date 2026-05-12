@@ -11,6 +11,7 @@
 | `future_phases.md` | Zukünftige Phasen, open tasks |
 | `planned_features.md` | Features als future work im paper, noch nicht implementiert |
 | `paper_build.md` | LaTeX Paper Build mit docker compose |
+| `bench_b_evaluation.md` | Bench B — 6-question read-only eval, 4 agent variants, ETFA 2026 §Bench B |
 
 ## Regel
 
