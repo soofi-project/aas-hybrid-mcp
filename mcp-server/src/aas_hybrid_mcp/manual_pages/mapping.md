@@ -1,8 +1,8 @@
 # AASX field → Neo4j graph mapping
 
-Shows how the Kafka Connect plugin (aas-repository-neo4j-kafka-plugin)
-maps each AAS4J type's fields to Neo4j node labels and relationship types.
-Derived from the `*Node` mapping classes in the plugin's source code.
+How each AAS model class maps to Neo4j node labels, node properties, and
+relationship types. Use this to understand where data lives and how to
+traverse it.
 
 ## Common labels
 
@@ -34,8 +34,22 @@ below carefully.
 | SubmodelElementList | `semanticIdListElement` | `HAS_SEMANTIC_ID_LIST_ELEMENT` | Per-item semantic ref |
 | **Entity** | **`statements`** | **`HAS_ELEMENT`** | **Child entities — see Key insight** |
 | Entity | `globalAssetId` | `REPRESENTS_ASSET` | `:Asset` (from the ID string) |
+| Entity | `entityType` | `.entityType` (property) | Enum as string — the **only** scalar value on `:Entity` |
 | Entity | `specificAssetIds` | `HAS_SPECIFIC_ASSET_ID` | `:SpecificAssetId` |
 | ReferenceElement | `value` | `HAS_VALUE` | Cross-reference to target node |
+
+**`Entity.globalAssetId` is never a node property on `:Entity`.**
+It is mapped purely as a `[:REPRESENTS_ASSET]` relationship to the
+`:Asset` node.  The actual `globalAssetId` string lives on the `:Asset`
+node as `.globalAssetId`.  To resolve an Entity to its asset ID, always
+traverse:
+ 
+ ```cypher
+ MATCH (e:Entity)-[:REPRESENTS_ASSET]->(a:Asset)
+ RETURN e.idShort, a.globalAssetId
+ ```
+
+Never match on `e.globalAssetId` — it will be `null`.
 
 ### Key insight — Entity.statements is HAS_ELEMENT
 
@@ -73,36 +87,36 @@ MATCH (e)-[:REPRESENTS_ASSET]->(a:Asset)
 RETURN e.idShort, a.globalAssetId
 ```
 
-## Value-bearing elements
+## SubmodelElement value access
 
-| AAS Type | JSON/Java field | Neo4j | Details |
-|---|---|---|---|
-| Property | `value` | `.value` (property) | Scalar string on the node |
-| Property | `valueType` | `.valueType` (property) | |
-| Property | `valueId` | `HAS_VALUE_ID` | Reference target |
-| MultiLanguageProperty | `value` (LangString[]) | `HAS_VALUE` | `:LangString` (.language, .text) |
-| MultiLanguageProperty | `valueId` | `HAS_VALUE_ID` | Reference target |
-| File | `value` | `.value` (property) | URL path |
-| File | `contentType` | `.contentType` (property) | MIME type |
-| Blob | `value` | `.value` (property) | Base64-encoded |
-| Range | `min`, `max` | `.min`, `.max` (property) | |
+Each AAS SubmodelElement type maps its value-carrying fields to either
+**Neo4j node properties** (`.value`) or **relationships**
+(`[:HAS_VALUE]`, `[:HAS_ELEMENT]`, …). The table below is exhaustive —
+derived from the connector's `*Node` mappers.
 
-## Relationship-bearing elements
+> **When you see `value: null` on a node that's supposed to carry content,
+> the value lives on a relationship, not as a property.**
+> Check which relationship label applies to the element's type and traverse it.
 
-| AAS Type | JSON/Java field | Neo4j relationship |
+| AAS type (Neo4j label) | Value access | What the target carries |
 |---|---|---|
-| RelationshipElement | `first`, `second` | `HAS_FIRST`, `HAS_SECOND` |
-| AnnotatedRelationshipElement | `first`, `second` | `HAS_FIRST`, `HAS_SECOND` |
-| AnnotatedRelationshipElement | `annotations` | `HAS_ANNOTATION` |
-| Operation | `inputVariables` | `HAS_INPUT_VARIABLE` |
-| Operation | `outputVariables` | `HAS_OUTPUT_VARIABLE` |
-| Operation | `inoutputVariables` | `HAS_INOUTPUT_VARIABLE` |
-| BasicEventElement | `observed` | `OBSERVES` |
-| BasicEventElement | `messageBroker` | `USES_MESSAGE_BROKER` |
+| `Property` | `.value` (string) | — |
+| `MultiLanguageProperty` | `(el)-[:HAS_VALUE]->(:LangString)` | `.language`, `.text` |
+| `File` | `.value` (string), `.contentType` | URL/path |
+| `Blob` | `.value` (string), `.contentType` | Base64-encoded binary |
+| `Range` | `.min`, `.max`, `.valueType` | — |
+| `SubmodelElementCollection` | `(el)-[:HAS_ELEMENT]->(...)` | child elements |
+| `SubmodelElementList` | `(el)-[:HAS_ELEMENT]->(...)` | list items; also `.orderRelevant` (boolean) |
+| `ReferenceElement` | `(el)-[:HAS_VALUE]->(targetNode)` | referenced node |
+| `RelationshipElement` | `(el)-[:HAS_FIRST]->...`<br>`(el)-[:HAS_SECOND]->...` | referenceable nodes |
+| `AnnotatedRelationshipElement` | `HAS_FIRST`, `HAS_SECOND`, `HAS_ANNOTATION` | referenceable nodes |
+| `Entity` | no scalar `.value`; only `.entityType` | traverse `REPRESENTS_ASSET`, `HAS_ELEMENT` (statements), `HAS_SPECIFIC_ASSET_ID` |
+| `Operation` | no scalar value | `HAS_INPUT_VARIABLE`, `HAS_OUTPUT_VARIABLE`, `HAS_INOUTPUT_VARIABLE` → contained SMEs |
+| `BasicEventElement` | no scalar value | `OBSERVES`, `USES_MESSAGE_BROKER` → referenceable nodes |
 
-**Note:** Operation variables are wrapped in `OperationVariable` — the
-plugin extracts `.value` from each, so the `HAS_*_VARIABLE` edges point
-directly to the contained SubmodelElement.
+**Operation variables:** wrapped in `OperationVariable` — the connector
+extracts `.value` from each, so `HAS_*_VARIABLE` edges point directly
+to the contained SubmodelElement.
 
 ## Shared metadata (every SubmodelElement)
 
