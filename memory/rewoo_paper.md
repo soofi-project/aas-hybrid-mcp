@@ -80,6 +80,7 @@ Linear graph: `START → plan → execute → synthesize → END` (no conditiona
 | 3 | Generic exemplar added to synthesizer prompt | `rewoo_nodes.py:_SYNTHESIZER_PROMPT` | Paper (A.2): "providing a simple exemplar could mitigate Answer Miss issue." Single exemplar for the solver only, NOT the planner. |
 | 4 | Failed/empty observations split into separate section | `rewoo_nodes.py:synthesize_node` | Explicit categorization helps solver recognize gaps and populate `unresolved`. |
 | 5 | `REWOO_MAX_THOUGHTS`, `REWOO_PARALLEL_BATCH` env defaults | `.env` | Reproducibility, aligned with `rewoo.py` env reading. |
+| 6 | Shared `synthesizer_rules.md` appended to `_SYNTHESIZER_PROMPT` (2026-05-12) | `rewoo_nodes.py` | **Deliberate addition beyond paper.** Confidence calibration (high/medium/low), empty-result hard rule, forced-termination rule, anti-hallucination don'ts. Shared across rewoo/crag/reflexion finalizers so Bench-B compares retrieval/planning mechanisms, not synthesizer-prompt quality. Paper has no confidence dimension — this is our eval-fair extension. |
 
 ### Architectural differences from paper (by design)
 

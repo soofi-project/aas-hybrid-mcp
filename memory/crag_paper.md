@@ -100,6 +100,7 @@ Loop runs up to `CRAG_MAX_REFINEMENTS` (default 3).
 |---|---|---|---|
 | 1 | Per-evidence-item scoring replacing holistic block scoring | `crag_nodes.py:181-387` | Paper scores each document individually (§4.2). We now score each `[Ei]` individually in one LLM call with fallback to holistic scoring on parse failure. |
 | 2 | Deterministic 3-way action from per-item scores | `crag_nodes.py:` `_finalize_relevance()` | Paper §4.3: `correct` if ONE item >= upper, `incorrect` if ALL items <= lower. Implemented in code, not trusted from LLM output. |
+| 3 | Shared `synthesizer_rules.md` appended to `_SYNTHESIZER_PROMPT` (2026-05-12) | `crag_nodes.py` | **Deliberate addition beyond paper.** Confidence calibration (high/medium/low), empty-result hard rule, forced-termination rule (e.g. `CRAG_MAX_REFINEMENTS` hit without high-relevance evidence), anti-hallucination don'ts. Shared across rewoo/crag/reflexion finalizers so Bench-B compares retrieval mechanisms, not synthesizer-prompt quality. Paper has no confidence dimension — our eval-fair extension. |
 
 ### Architectural differences from paper (by design)
 

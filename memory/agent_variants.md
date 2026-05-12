@@ -65,10 +65,11 @@ Each runner implements the same interface: `initialize`, `_lazy_init`, `stream`,
 
 ## Bind-Mount Strategy (Windows-host)
 
-Full directory bind-mounts sind auf Windows nicht zuverlässig — der docker compose `./aas-agent/src/aas_agent` mount wurde als `C:\134` gemountet (falscher pfad). **Lösung:** einzelne `.py` files explizit in `docker-compose.yml` mounten (Zeile 477-501).
+Full directory bind-mounts sind auf Windows nicht zuverlässig — der docker compose `./aas-agent/src/aas_agent` mount wurde als `C:\134` gemountet (falscher pfad). **Lösung:** einzelne `.py` files explizit in `docker-compose.yml` mounten (Zeile 477-505).
 
 **`api.py`** ist bind-mounted → änderungen greifen sofort nach restart.
 **Auch runner-files** (`reflexion.py`, `crag_nodes.py`, `rewoo_nodes.py`, etc.) sind jetzt einzeln gemountet.
+**Prompts**: `system-prompt.md`, `synthesizer_rules.md` (shared eval-fair Finalizer-Rules), und der gesamte `agent_plan_prompts/` Ordner. Wenn ein neuer Prompt-File hinzukommt: Bind-Mount-Zeile in `docker-compose.yml` ergänzen, sonst sieht der Container es nicht.
 **Nicht gemountet:** `__init__.py`, `_smoke_structured.py` — werden nie geändert.
 
 ## Changes made on 2026-05-12

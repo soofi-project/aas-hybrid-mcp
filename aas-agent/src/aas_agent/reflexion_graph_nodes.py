@@ -6,6 +6,7 @@ Pipeline: executor → judge → (reflect → executor) → finalizer
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Callable
 
 from langchain_core.language_models import BaseChatModel
@@ -23,6 +24,13 @@ from aas_agent.reflexion_state import (
 )
 
 log = logging.getLogger(__name__)
+
+_SHARED_RULES_PATH = Path(__file__).parent / "synthesizer_rules.md"
+_SHARED_SYNTHESIZER_RULES = (
+    _SHARED_RULES_PATH.read_text(encoding="utf-8")
+    if _SHARED_RULES_PATH.exists()
+    else ""
+)
 
 # ---------------------------------------------------------------------------
 # Node system prompts
@@ -55,19 +63,40 @@ Write in first person as if the executor is reflecting on its own work.
 Be specific: name the tools or queries that failed, explain why they were insufficient,
 and describe exactly what to try differently.
 
-Examples of good reflections:
-- "I tried searching for 'Hall 3' in the graph but only found the facility node.
-  I should have followed the HierarchicalStructures submodel to find child assets."
-- "I called get_submodel_element but used the wrong identifier. I need to
-  discover the correct element idShort through template discovery first."
+Examples of good reflections (paper-style: identify the wrong mechanism,
+name what to do differently — but stay generic, do NOT bake in domain
+templates or submodel names; the next attempt should rediscover those
+through tool calls):
+- "I searched for the user's term as an idShort, but it was a category
+  label, not an identifier. Next attempt: discover the relevant template
+  via search_idta_templates first, then match Submodels by their
+  semanticId instead of guessing idShorts."
+- "I wrote Cypher without checking the graph schema first, so my
+  relationship label was wrong and the query returned zero rows. Next
+  attempt: call get_graph_schema before composing Cypher, and verify the
+  actual relationship names along the traversal path."
 
 Output ONLY a JSON object with keys: strategy_hint, common_pitfalls, focus_areas.
 """
 
 _FINALIZER_PROMPT = """You are a finalizer for the AAS Maintenance Assistant.
 Synthesize the final answer from the best available evidence, including all trial histories.
-Output ONLY a JSON object with keys: answer, confidence, unresolved.
+
+Pattern-specific rules (Reflexion):
+- Prefer the highest-scored trial answer (best_answer_text) as your primary
+  basis, but acknowledge information gathered in other trials that is
+  relevant to the user's request.
+- If the judge never accepted (REFLEXION_MAX_TRIALS exhausted with verdict
+  still "revise"), treat this as a forced-termination case (see hard rules
+  below) — confidence is low, unresolved is non-empty.
+- Output ONLY a JSON object with keys: answer, confidence, unresolved.
 """
+
+_FINALIZER_PROMPT_FULL = (
+    f"{_FINALIZER_PROMPT}\n\n---\n\n{_SHARED_SYNTHESIZER_RULES}"
+    if _SHARED_SYNTHESIZER_RULES
+    else _FINALIZER_PROMPT
+)
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +424,7 @@ def make_finalizer_node(llm: BaseChatModel) -> Callable:
         )
 
         msgs = [
-            SystemMessage(content=_FINALIZER_PROMPT),
+            SystemMessage(content=_FINALIZER_PROMPT_FULL),
             HumanMessage(content=ctx),
         ]
 

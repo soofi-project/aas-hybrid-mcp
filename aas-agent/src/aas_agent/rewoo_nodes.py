@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 import textwrap
+from pathlib import Path
 from typing import Any, Callable
 
 from langchain_core.language_models import BaseChatModel
@@ -22,6 +23,13 @@ from aas_agent.qwen_parser import QwenOutputParser, _normalize_json_from_qwen
 from aas_agent.rewoo_state import FinalAnswer, RewooPlan
 
 log = logging.getLogger(__name__)
+
+_SHARED_RULES_PATH = Path(__file__).parent / "synthesizer_rules.md"
+_SHARED_SYNTHESIZER_RULES = (
+    _SHARED_RULES_PATH.read_text(encoding="utf-8")
+    if _SHARED_RULES_PATH.exists()
+    else ""
+)
 
 # ---------------------------------------------------------------------------
 # Plan node prompt
@@ -72,11 +80,10 @@ You have a complete plan with parallel observations. Synthesize the final answer
 Evidence references are in the format E#, E#N, etc. Each reference points to
 a specific observation from a parallel tool call. Use these references when citing evidence.
 
-RULES:
+Pattern-specific rules:
 - Be direct and factual. Cite evidence references (E1, E2, etc.).
 - Cross-reference evidence between different sources.
 - Note gaps where no evidence exists. Where evidence failed, add to "unresolved".
-- Calibrate confidence: high for verified hits, medium for derived, low for sparse.
 - Output ONLY a JSON object: {answer, confidence, unresolved}.
 
 EXAMPLE (how to combine parallel evidence into a single answer):
@@ -86,6 +93,12 @@ Given observations:
   E3 (tool_c): (empty)
 Answer: {"answer": "Two items were found (E2) with 3 matching entries (E1). One query returned no results (E3).", "confidence": "high", "unresolved": ["No data available from E3 source."]}
 """
+
+_SYNTHESIZER_PROMPT_FULL = (
+    f"{_SYNTHESIZER_PROMPT}\n\n---\n\n{_SHARED_SYNTHESIZER_RULES}"
+    if _SHARED_SYNTHESIZER_RULES
+    else _SYNTHESIZER_PROMPT
+)
 
 
 # ---------------------------------------------------------------------------
@@ -398,7 +411,7 @@ def make_synthesize_node(llm: BaseChatModel, base_system: str) -> Callable:
         )
 
         msgs: list = [
-            SystemMessage(content=_SYNTHESIZER_PROMPT),
+            SystemMessage(content=_SYNTHESIZER_PROMPT_FULL),
             HumanMessage(content=ctx),
         ]
 

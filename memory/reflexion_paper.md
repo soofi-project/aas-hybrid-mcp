@@ -63,6 +63,7 @@ Three LLM specializations share the same base model:
 | 3 | `accept_threshold` ignored in routing | `score >= threshold → finalizer` as fallback | `reflexion_graph_nodes.py:495-497` |
 | 4 | Reflection prompt too abstract for executor guidance | Added first-person narrative + concrete AAS examples | `reflexion_graph_nodes.py:_REFLECT_PROMPT` |
 | 5 | Finalizer only saw best answer, not all trials | Added "All Trial Answers" section with all summaries | `reflexion_graph_nodes.py:383-385` |
+| 6 | Shared `synthesizer_rules.md` appended to `_FINALIZER_PROMPT` (2026-05-12) | `reflexion_graph_nodes.py` | **Deliberate addition beyond paper.** Confidence calibration (high/medium/low), empty-result hard rule, forced-termination rule (`REFLEXION_MAX_TRIALS` exhausted with verdict still `revise`), anti-hallucination don'ts. Shared across rewoo/crag/reflexion finalizers so Bench-B compares loop dynamics, not finalizer-prompt quality. Paper has no confidence dimension — our eval-fair extension. |
 
 ### Architectural differences from paper (by design)
 

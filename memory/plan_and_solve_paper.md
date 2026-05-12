@@ -69,3 +69,7 @@ Für unseren Kontext bedeutet das:
 Der `planner.md` ist bereits paper-konform generisch: keine Submodel-Namen hardcoded, statt dessen template-discovery mit generischen Beispielen ("location", "hierarchy", "capacity", "payload"). Das entspricht dem Paper-Geist ("devise a plan from the question, not from rules").
 
 **Was beibehalten werden muss:** Vorsicht, dass keine domain-spezifischen Hinweise in Replan-/Reflector-Prompts einsickern. Wenn der LLM `HierarchicalStructures` selbständig findet, ist das richtig; wenn der Prompt es nennt, ist es Code-statt-Plan.
+
+### Finalizer-Unification mit shared block (2026-05-12)
+
+`agent_plan_prompts/finalizer.md` enthielt eine eigene Confidence-Calibration + Empty-Result-Hard-Rule + "Things you must NOT do" Section. Diese sind jetzt in `synthesizer_rules.md` ausgelagert (shared mit rewoo/crag/reflexion). `agent_plan.py:_lazy_init` hängt den shared block beim Laden an `finalizer.md` an. In `finalizer.md` bleiben nur plan-spezifische Teile: die `evidence`-Struktur (plan-eigenes FinalAnswer-Feld), Cite-Source-Style ("according to the graph data…"), und die `give_up`-Hard-Rule (referenziert Reflector-Entscheidung — kein anderer Pattern hat einen Reflector mit `give_up`-Decision). **Deliberate addition beyond paper** — Paper ist nur Prompting-Pattern, Confidence ist unsere Bench-B-Eval-Erweiterung.

@@ -14,6 +14,7 @@ Each node factory receives its LLM and tools to avoid rebuilding inside nodes.
 import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import Callable
 
 from langchain_core.language_models import BaseChatModel
@@ -27,19 +28,27 @@ from aas_agent.qwen_parser import QwenOutputParser, _normalize_json_from_qwen
 
 log = logging.getLogger(__name__)
 
+_SHARED_RULES_PATH = Path(__file__).parent / "synthesizer_rules.md"
+_SHARED_SYNTHESIZER_RULES = (
+    _SHARED_RULES_PATH.read_text(encoding="utf-8")
+    if _SHARED_RULES_PATH.exists()
+    else ""
+)
+
 # ---------------------------------------------------------------------------
 # Worker system prompts (injected into executor + refinements)
 # ---------------------------------------------------------------------------
 
 _EXECUTOR_PROMPT = """You are a retrieval specialist for the AAS Maintenance Assistant.
 
-You have access to multiple MCP tools including graph queries (search_graph, get_asset,
-list_assets), manual/document lookups (get_manual_page, get_manual_index), and template
-discovery (search_idt_templates).
+You have access to MCP tools for graph queries, document/manual lookup,
+template discovery, semanticId resolution, and write operations. The exact
+tool list is provided via the tool schemas — call them by their actual
+names, never invent or guess a name.
 
 Your job: retrieve the BEST possible information to answer the user's query.
 - Try multiple search approaches if the first query seems unfruitful.
-- Cross-reference evidence between graph, manual, and template sources.
+- Cross-reference evidence between graph, document, and template sources.
 - For each source, try at least one alternative phrasing.
 - Be thorough — the quality of your retrieval directly determines the quality of the final answer.
 - Never fabricate content — if nothing matches, report that clearly.
@@ -63,9 +72,23 @@ Output ONLY a JSON object with keys: query (string), suggestion (string describi
 """
 
 _SYNTHESIZER_PROMPT = """You are a synthesizer. Combine the retrieved evidence into
-a final answer. Use HIGH-RELEVANCE findings as primary evidence. State gaps clearly.
-Output ONLY a JSON object with keys: answer, confidence, unresolved (list).
+a final answer.
+
+Pattern-specific rules (CRAG):
+- The retrieved evidence has been scored for relevance by an earlier node.
+  Use HIGH-RELEVANCE findings as primary evidence; treat low-relevance items
+  as supplementary or skeptically.
+- State gaps clearly. If the relevance pipeline forced termination at
+  CRAG_MAX_REFINEMENTS without producing high-relevance evidence, treat
+  this as a forced-termination case (see hard rules below).
+- Output ONLY a JSON object with keys: answer, confidence, unresolved (list).
 """
+
+_SYNTHESIZER_PROMPT_FULL = (
+    f"{_SYNTHESIZER_PROMPT}\n\n---\n\n{_SHARED_SYNTHESIZER_RULES}"
+    if _SHARED_SYNTHESIZER_RULES
+    else _SYNTHESIZER_PROMPT
+)
 
 
 # ---------------------------------------------------------------------------
@@ -650,7 +673,7 @@ def make_synthesizer_node(llm: BaseChatModel) -> Callable:
         )
 
         msgs = [
-            SystemMessage(content=_SYNTHESIZER_PROMPT),
+            SystemMessage(content=_SYNTHESIZER_PROMPT_FULL),
             HumanMessage(content=ctx),
         ]
 

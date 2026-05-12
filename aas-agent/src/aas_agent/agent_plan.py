@@ -38,6 +38,12 @@ log = logging.getLogger(__name__)
 
 
 _PROMPT_DIR = Path(__file__).parent / "agent_plan_prompts"
+_SHARED_RULES_PATH = Path(__file__).parent / "synthesizer_rules.md"
+_SHARED_SYNTHESIZER_RULES = (
+    _SHARED_RULES_PATH.read_text(encoding="utf-8")
+    if _SHARED_RULES_PATH.exists()
+    else ""
+)
 
 
 @tool
@@ -142,6 +148,8 @@ class PlanReflectAgentRunner:
         executor_prompt = _read_prompt("executor")
         reflector_prompt = _read_prompt("reflector")
         finalizer_prompt = _read_prompt("finalizer")
+        if _SHARED_SYNTHESIZER_RULES:
+            finalizer_prompt = f"{finalizer_prompt}\n\n---\n\n{_SHARED_SYNTHESIZER_RULES}"
 
         common_kwargs = dict(
             tools=tools,
