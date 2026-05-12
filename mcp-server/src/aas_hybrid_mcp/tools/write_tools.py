@@ -24,6 +24,33 @@ _VALID_MODEL_TYPES = {
 }
 
 
+def _infer_value_type(element: dict) -> None:
+    """Infer and set missing ``valueType`` on Property elements for SDK 1.0 compat.
+
+    Basyx SDK 1.0 (AAS 3.0) requires ``valueType`` on Property. The agent
+    rarely provides it.  This mutates the element dict in place."""
+    if element.get("modelType") == "Property":
+        if "valueType" not in element:
+            val = element.get("value")
+            if isinstance(val, bool):
+                element["valueType"] = "xs:boolean"
+            elif isinstance(val, int):
+                element["valueType"] = "xs:integer"
+            elif isinstance(val, float):
+                element["valueType"] = "xs:float"
+            else:
+                element["valueType"] = "xs:string"
+    # Recurse into nested elements
+    for key in ("submodelElements", "value"):
+        children = element.get(key)
+        if isinstance(children, list):
+            for child in children:
+                if isinstance(child, dict):
+                    _infer_value_type(child)
+        elif isinstance(children, dict):
+            _infer_value_type(children)
+
+
 def _check_nonempty(**kwargs: str) -> str | None:
     """Return an error message if any kwarg value is empty/whitespace, else None."""
     for name, value in kwargs.items():
@@ -65,6 +92,11 @@ def _validate_submodel(submodel_dict: dict) -> tuple[str | None, object | None]:
         return "modelType must be 'Submodel'", None
     if not submodel_dict.get("id", "").strip():
         return "Submodel 'id' field is required and must not be empty", None
+
+    # Infer missing valueType on Property elements before SDK deserialization.
+    for sme in submodel_dict.get("submodelElements", []):
+        _infer_value_type(sme)
+
     try:
         from basyx.aas.adapter.json import read_aas_json_file
         from basyx.aas.model import Submodel as BasyxSubmodel
