@@ -49,23 +49,23 @@ AVAILABLE MCP TOOLS (and example args):
 
 _PLAN_PROMPT_SUFFIX = """
 INSTRUCTIONS:
-1. Identify everything you need to find in ONE pass. You have NO feedback loop.
+1. Identify everything you need in ONE pass. You have NO feedback loop.
 2. For each piece of information, create a RewooThought:
-   - plan: your reasoning step (what you're doing and why)
-   - tool_name: which MCP tool to call
-   - tool_args: arguments to pass (empty dict {} for parameterless tools)
-   - ref_id: evidence reference ID (E1, E2, E3...) — how you'll cite this result later
+    - plan: reasoning step
+    - tool_name: MCP tool to call
+    - tool_args: arguments (empty dict {} for parameterless tools)
+    - ref_id: evidence reference (E1, E2, E3...) — for later citation
 3. Think of the WHOLE chain at once. DO NOT wait for results.
-4. Max {max_thoughts} thoughts. If you need more, combine related queries.
+4. Max {max_thoughts} thoughts. Combine related queries if needed.
 5. Reference prior evidence as E1, E2, etc.
-6. Output ONLY a JSON object with keys: thoughts (list of objects) and synthesis_hint (string).
+6. Output ONLY a JSON object with keys: thoughts (list) and synthesis_hint (string).
 
-FIRST-STEP RULE: Most queries need graph structure. Plan get_graph_schema() + get_templates_index() as your first parallel thoughts (E1, E2) so you know relationship labels and semantic IDs before writing Cypher. Don't skip this — zero-row results almost always come from wrong relationships or missing semanticIds.
+FIRST-STEP RULE: Plan structural context discovery (schema + templates) before domain queries.
 
-DISCOVERY: Use multiple parallel Cypher strategies when the data shape is uncertain. Each strategy gets its own thought with a different ref_id.
+DISCOVERY: Use multiple parallel strategies when the data shape is uncertain.
 
-IMPORTANT: Every tool_name MUST be one of the tools listed above. Every tool_args MUST be valid for that tool.
-IMPORTANT for Cypher: Only ONE RETURN clause per query. Use a single MATCH or chained patterns.
+IMPORTANT: Every tool_name MUST be one of the tools listed. Every tool_args must be valid.
+IMPORTANT for Cypher: Only ONE RETURN clause per query.
 """
 
 

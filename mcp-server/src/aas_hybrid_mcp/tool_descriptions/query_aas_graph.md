@@ -1,6 +1,6 @@
 **Before first use: plan `get_graph_schema()` and `get_templates_index()` in parallel** — they return the relationship labels and semantic IDs you need to write correct Cypher. Don't guess either from memory.
 
-Execute a read-only Cypher query against the AAS knowledge graph (Neo4j).
+Execute a read-only Cypher query against the AAS knowledge graph.
 
 WHEN TO USE: structural questions about the AAS environment — which shells
 exist, which submodels they expose, which elements and properties those

@@ -36,22 +36,20 @@ _SHARED_SYNTHESIZER_RULES = (
 # Node system prompts
 # ---------------------------------------------------------------------------
 
-_EXECUTOR_PROMPT = """You are an executor for the AAS Maintenance Assistant answering the user's query.
-
-You have access to MCP tools for graph queries, document search, template discovery,
-and manual lookups.
-
-Your job: produce a complete, accurate answer to the user's query.
-- Use tools to retrieve relevant information before answering.
-- Cross-reference evidence between sources.
-- Be thorough and precise. Never fabricate content.
-- After gathering enough information, STOP calling tools and provide a direct answer.
-- Structure your answer to address ALL parts of the user's query.
+_EXECUTOR_PROMPT = """You are an executor for the AAS Maintenance Assistant.
+Retrieve information to answer the user's query using MCP tools.
+Report your findings; do not synthesize the final answer.
 """
 
 _JUDGE_PROMPT = """You are an evaluator for the AAS Maintenance Assistant. Judge the quality of
 a generated answer against the user query. Give a score (0.0–1.0) and verdict (accept/revise).
 State what is missing or incorrect and whether the remaining attempts should succeed.
+
+CRITICAL: The answer MUST be based on tool-call evidence. Reject answers that:
+- Sound plausible but cite no specific data from tool results.
+- Hallucinate domain knowledge (biology, finance, etc.) when the domain is
+  industrial automation (robots, machines, sensors, AAS).
+- Claim "data is missing" without showing which tools were tried and what returned.
 Output ONLY a JSON object with keys: score, verdict, missing, reason.
 """
 
@@ -59,22 +57,21 @@ _REFLECT_PROMPT = """You are a reflection advisor for the AAS Maintenance Assist
 You receive a failed answer attempt and its judgment. Analyze what went wrong
 and propose a concrete strategy for the next attempt.
 
-Write in first person as if the executor is reflecting on its own work.
-Be specific: name the tools or queries that failed, explain why they were insufficient,
-and describe exactly what to try differently.
+DOMAIN: Stay in industrial automation / AAS. The user asks about factory assets
+(robots, machines, sensors). If previous attempts drifted into unrelated domains
+(biology, finance, etc.), explicitly course-correct.
 
-Examples of good reflections (paper-style: identify the wrong mechanism,
-name what to do differently — but stay generic, do NOT bake in domain
-templates or submodel names; the next attempt should rediscover those
-through tool calls):
-- "I searched for the user's term as an idShort, but it was a category
-  label, not an identifier. Next attempt: discover the relevant template
-  via search_idta_templates first, then match Submodels by their
-  semanticId instead of guessing idShorts."
-- "I wrote Cypher without checking the graph schema first, so my
-  relationship label was wrong and the query returned zero rows. Next
-  attempt: call get_graph_schema before composing Cypher, and verify the
-  actual relationship names along the traversal path."
+Write in first person as if the executor is reflecting on its own work.
+Be specific: name the tools or queries that failed, explain why they were
+insufficient, and describe exactly what to try differently. Keep examples
+generic — the next attempt should rediscover specific templates, structure,
+and paths through tool calls.
+
+Example reflection (focus on the mechanism, not on specific templates or
+semanticIds — the next attempt will rediscover those through tools):
+"My traversal returned zero rows because I used a relationship label
+that isn't in the schema. Next attempt: call get_graph_schema before
+composing Cypher, then verify each relationship name along the path."
 
 Output ONLY a JSON object with keys: strategy_hint, common_pitfalls, focus_areas.
 """

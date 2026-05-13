@@ -74,7 +74,7 @@ hinaus, aber notwendig für stabilen Betrieb):
 
 **Folge-Punkt erledigt:** PDF-inline-Viewer via Nginx-Sidecar
 (`basyx-viewer-proxy`, Port 8091) ist implementiert und verifiziert —
-siehe `task_pdf_inline_viewer.md` (done). Der Acceptance-Punkt „springt
+siehe `memory/tasks/closed/task_pdf_inline_viewer.md` (done). Der Acceptance-Punkt „springt
 im Browser zur richtigen PDF page" ist damit voll erfüllt.
 
 ## New Weaviate Schema

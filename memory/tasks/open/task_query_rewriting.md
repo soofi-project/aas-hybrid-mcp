@@ -58,7 +58,7 @@ Integration in `weaviate_client.py`:
 - **T6:** Planungsdoku updaten:
   - `memory/planned_features.md` — Query Rewriting: "Not implemented" → "Implemented"
   - `memory/future_phases.md` — Phase 9 Query Rewriting: 🟦 Planned → ✅ Done
-  - `memory/task_query_rewriting.md` — this file, status → done
+  - `memory/tasks/open/task_query_rewriting.md` — this file, status → done
 
 ## Config
 

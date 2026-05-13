@@ -8,7 +8,6 @@ Pages are loaded dynamically from the ``manual_pages/`` directory.
 The page index is auto-generated from available ``*.md`` files.
 """
 
-import os
 from pathlib import Path
 
 from fastmcp import FastMCP
@@ -41,51 +40,7 @@ def _build_pages_dict() -> dict[str, str]:
 _PAGES = _build_pages_dict()
 
 
-def _build_index() -> str:
-    """Build the index page from manual_pages/*.md headers and content."""
-    index_content = """\
-# AAS Hybrid MCP — Operator Manual
-
-You are talking to a hybrid Neo4j + Weaviate MCP server that wraps a
-BaSyx AAS environment. This page indexes the rest of the manual.
-
-## Sub-pages — call get_manual_page(page=...) on demand
-"""
-    # List pages in alphabetical order
-    for page_name in sorted(_PAGES.keys()):
-        index_content += f"- `{page_name}` — see the page for details.\n"
-
-    index_content += """
-
-## Four rules that catch the most failures
-
-1. **Before your first `query_aas_graph` call, call `get_templates_index()`
-   — but only ONCE per session.** Check the conversation history first: if a
-   prior `<think>` block already shows its result, use those semanticIds
-   directly. Do not call it again on every turn.
-2. `params` for `query_aas_graph` is an OBJECT, not a JSON string.
-   `{}`, not `"{}"`.
-3. Use IDTA semanticIds VERBATIM from `get_templates_index()`. No `/Submodel`
-   suffix, no version normalisation, no recall from training memory. The graph
-   may also carry non-IDTA semanticIds (e.g. ZVEI Nameplate); discover them
-   with `MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc) RETURN DISTINCT sc.id`.
-4. Never match by `idShort` for domain reasoning. `idShort` is a
-   free-form local label; semantic meaning lives only in
-   `HAS_SEMANTIC_ID` / `HAS_SUPPLEMENTAL_SEMANTIC_ID`.
-
-## Tools — call on demand
-
-- `get_templates_index()` — all published IDTA templates with name, version,
-  semanticId, description. Call when picking a template or before any
-  non-trivial Cypher (per rule 1).
-- `get_template(name)` — element structure of one template (modelType,
-  idShort, semanticId, nesting). Call before traversing a submodel or
-  writing template-conformant JSON.
-"""
-    return index_content
-
-
-_INDEX = _build_index()
+_INDEX = _load_page("index") or ""
 
 
 def register(mcp: FastMCP) -> None:

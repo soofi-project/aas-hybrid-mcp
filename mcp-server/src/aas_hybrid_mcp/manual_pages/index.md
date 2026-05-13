@@ -1,7 +1,7 @@
 # AAS Hybrid MCP — Operator Manual
 
-You are talking to a hybrid Neo4j + Weaviate MCP server that wraps a
-BaSyx AAS environment. This page indexes the rest of the manual.
+You are talking to a hybrid graph + vector MCP server for AAS data.
+This page indexes the rest of the manual.
 
 ## Sub-pages — call get_manual_page(page=...) on demand
 
@@ -23,10 +23,11 @@ BaSyx AAS environment. This page indexes the rest of the manual.
    directly. Do not call it again on every turn.
 2. `params` for `query_aas_graph` is an OBJECT, not a JSON string.
    `{}`, not `"{}"`.
-3. Use IDTA semanticIds VERBATIM from `get_templates_index()`. No `/Submodel`
-   suffix, no version normalisation, no recall from training memory. The graph
-   may also carry non-IDTA semanticIds (e.g. ZVEI Nameplate); discover them
-   with `MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc) RETURN DISTINCT sc.id`.
+3. Use semanticIds VERBATIM from `get_templates_index()` or graph discovery.
+   No `/Submodel` suffix, no version normalisation, no recall from training
+   memory. The graph may also carry legacy or custom semanticIds beyond the
+   index; discover them with
+   `MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc) RETURN DISTINCT sc.id`.
 4. Never match assets by `idShort` for domain reasoning. `idShort` is a
    free-form local label; semantic meaning lives only in
    `HAS_SEMANTIC_ID` / `HAS_SUPPLEMENTAL_SEMANTIC_ID`.

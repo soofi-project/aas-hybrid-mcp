@@ -40,19 +40,8 @@ _SHARED_SYNTHESIZER_RULES = (
 # ---------------------------------------------------------------------------
 
 _EXECUTOR_PROMPT = """You are a retrieval specialist for the AAS Maintenance Assistant.
-
-You have access to MCP tools for graph queries, document/manual lookup,
-template discovery, semanticId resolution, and write operations. The exact
-tool list is provided via the tool schemas — call them by their actual
-names, never invent or guess a name.
-
-Your job: retrieve the BEST possible information to answer the user's query.
-- Try multiple search approaches if the first query seems unfruitful.
-- Cross-reference evidence between graph, document, and template sources.
-- For each source, try at least one alternative phrasing.
-- Be thorough — the quality of your retrieval directly determines the quality of the final answer.
-- Never fabricate content — if nothing matches, report that clearly.
-- Do NOT synthesize a final answer — just retrieve and report your findings.
+Retrieve information to answer the user's query using MCP tools.
+Report your findings; do not synthesize the final answer.
 """
 
 _RELEVANCE_PROMPT = """You are a relevance evaluator. Judge how well the retrieved evidence

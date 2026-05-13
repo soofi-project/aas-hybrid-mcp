@@ -44,13 +44,9 @@ template name, use semantic search. Never guess template names.
 
 # Element inventory before traversal
 
-AAS submodels use different element types with different semantics:
-`Entity`, `ReferenceElement`, `RelationshipElement`,
-`SubmodelElementCollection`, `SubmodelElementList`, `Property`.
-
-Before assuming a specific type, **inventory** what exists under the
-submodel of interest (select distinct labels via `HAS_ELEMENT*`).
-Then pick the element type whose semantics fit the question.
+AAS submodel elements vary in type — inventory what actually exists
+(select distinct labels via `HAS_ELEMENT*`) before assuming a specific
+one. Then pick the type whose semantics fit the question.
 
 # Stop rules
 

@@ -107,7 +107,7 @@ und das two-phase retrieval durchführt.
 **Files:**
 - `memory/planned_features.md` — Reranker-Zeile: "Env vars defined" → "Implemented"
 - `memory/future_phases.md` — Phase 9 Reranker: 🟦 Planned → ✅ Done
-- `memory/task_reranker_integration.md` — this file, status → done
+- `memory/tasks/closed/task_reranker_integration.md` — this file, status → done
 
 ## Config
 

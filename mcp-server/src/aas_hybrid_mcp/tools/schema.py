@@ -5,10 +5,9 @@ from fastmcp import FastMCP
 from aas_hybrid_mcp.tool_descriptions import load as load_description
 
 _GRAPH_SCHEMA = """\
-# AAS Neo4j Graph Schema
+# AAS Graph Schema
 
-Generated from the Kafka Connect plugin (aas-neo4j-kafka-connect-plugin).
-All nodes also carry the label `GraphNode`. Use `get_aas_graph_schema` tool for live schema.
+All nodes also carry the label `GraphNode`.
 
 ## Core Nodes
 
@@ -25,7 +24,6 @@ The top-level AAS entity.
   - `-[:HAS_DESCRIPTION]->(:LangString)`
   - `-[:HAS_EXTENSION]->(:Extension)`
   - `-[:HAS_EMBEDDED_DATA_SPECIFICATION]->(:DataSpecification)`
-  - `-[:DEPLOYED_IN]->(:Repository)`
 
 ### Asset
 The physical or logical asset managed by an AAS.
@@ -33,7 +31,6 @@ The physical or logical asset managed by an AAS.
 - Properties: `globalAssetId`, `assetKind` (Instance/Type), `assetType`
 - Relationships:
   - `-[:HAS_SPECIFIC_ASSET_ID]->(:SpecificAssetId)`
-  - `-[:DEPLOYED_IN]->(:Repository)`
 
 ### Submodel
 Groups related SubmodelElements, belongs to an AAS.
@@ -48,7 +45,6 @@ Groups related SubmodelElements, belongs to an AAS.
   - `-[:HAS_DESCRIPTION]->(:LangString)`
   - `-[:HAS_QUALIFIER]->(:Qualifier)`
   - `-[:HAS_EMBEDDED_DATA_SPECIFICATION]->(:DataSpecification)`
-  - `-[:DEPLOYED_IN]->(:Repository)`
 
 ## SubmodelElement Types
 
@@ -166,10 +162,6 @@ Administrative/versioning metadata.
   - `-[:HAS_EMBEDDED_DATA_SPECIFICATION]->(:DataSpecification)`
   - `-[:CREATED_BY]->(reference)`
 
-### Repository
-BaSyx server endpoint.
-- Properties: `url`
-
 ### SpecificAssetId
 Named asset identifier.
 - Properties: `name`, `value`
@@ -217,7 +209,7 @@ Relationships: `HAS_FIRST`, `HAS_SECOND`, `HAS_ANNOTATION`
 Operations: `HAS_INPUT_VARIABLE`, `HAS_OUTPUT_VARIABLE`, `HAS_INOUTPUT_VARIABLE`
 Events: `OBSERVES`, `USES_MESSAGE_BROKER`
 Data specs: `HAS_EMBEDDED_DATA_SPECIFICATION`, `HAS_DATA_SPECIFICATION`, `HAS_DEFINITION`, `HAS_PREFERRED_NAME`, `HAS_SHORT_NAME`, `HAS_ALLOWED_VALUE`
-Other: `DEPLOYED_IN`, `CREATED_BY`, `REFERS_TO`
+Other: `CREATED_BY`, `REFERS_TO`
 
 ## Traversal Tips
 
@@ -242,24 +234,7 @@ containment:
 The following Cypher mistakes look reasonable but silently return zero rows.
 Read this section before writing queries.
 
-**1. `Repository` is AAS-storage, not a physical location.**
-The `(:Repository)-[:DEPLOYED_IN]` edge points to the *AAS environment* where
-a shell is stored (e.g. a BaSyx server URL). It is not a hall, room, or
-factory section. Never filter on `Repository.url` to find assets at a
-physical location — that information lives in the shell's submodels
-whose template describes location or containment, surfaced via
-`HAS_SEMANTIC_ID`.
-
-```cypher
-// WRONG — Repository is not a location
-MATCH (aas)-[:DEPLOYED_IN]->(:Repository {url: $physicalLocation}) ...
-
-// RIGHT — query the submodel by its template semanticId
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $semanticId})
-MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm) ...
-```
-
-**2. `semanticId` is a relation, not a property.**
+**1. `semanticId` is a relation, not a property.**
 Submodels and SubmodelElements do not carry a `semanticId` *property*.
 The semantic-id is a relation `-[:HAS_SEMANTIC_ID]->(:SemanticConcept)`.
 
@@ -407,5 +382,5 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(description=load_description("get_graph_schema"))
     def get_graph_schema() -> str:
-        """AAS Neo4j graph schema: all node labels, relationships, properties, and example Cypher queries."""
+        """AAS graph schema: all node labels, relationships, properties, and example Cypher queries."""
         return _GRAPH_SCHEMA

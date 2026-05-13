@@ -17,7 +17,7 @@ Von 33 citation keys im ETFA paper sind 32 als PDF in `paper/papers_downloaded/{
 - ✓ 19+1 citation-key-Ordner angelegt, alle zitierten Papers abgedeckt
 - ✓ `metadata.txt` für alle Ordner erstellt
 - ✓ Lockere PDFs + Duplikate entfernt
-- ✓ `archived/`-Ordner für unreferenzierte Papers (→ `task_cleanup_unused_papers.md`)
+- ✓ `archived/`-Ordner für unreferenzierte Papers (→ `memory/tasks/closed/task_cleanup_unused_papers.md`)
 - ✓ BibTeX in `main.bib` verifiziert + 8 Einträge korrigiert (bfcl2024, liu2024agentbench, shinn2023reflexion, yao2022react, maadaan2023self_refine, xu2024rewoo, wu2023autogen) + 1 neu (sakurada2025mas_aas_type3)
 - ✓ `ruebel2023skill` → `ruebel2025agent_comm` ersetzt (älteres IEEE Paper durch aktuelles Springer OA-Paper der gleichen Autoren)
 - ✓ `Bronto.pdf` → `archived/schmeyer2024data_broker/` archiviert
