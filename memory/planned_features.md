@@ -9,12 +9,12 @@ Sec 4.4+4.5 merged in Sec 4.6 "Planned Retrieval Enhancements" + Benchmark B abl
 
 | # | Feature | Paper Section | .env vars | Code status | Notes |
 |---|---|---|---|---|---|
-| 1 | **Cross-encoder Reranker** | Sec 4.4 | `RERANKER_MODE`, `RERANKER_URL`, `RERANKER_CANDIDATE_LIMIT` | Env vars defined; no reranker code in MCP server or Weaviate client | Default `distance` mode works; `vllm` mode is a no-op. Need: add reranker call in `weaviate_client.py` `_search_sync` + vLLM reranker endpoint |
+| 1 | **Cross-encoder Reranker** | Sec 4.4 | `RERANKER_MODE`, `RERANKER_URL`, `RERANKER_CANDIDATE_LIMIT`, `RERANKER_MODEL` | ✅ **Implemented (2026-05-13)** | Two-phase retrieval in both `_search_sync` and `_search_templates_sync`; new `reranker.py` module; `reranker_used` flag + per-item `reranker_score` exposed in MCP tool responses; graceful fallback when reranker unreachable. Model: `qwen3-reranker-4b` on H200 vLLM. |
 | 2 | **LLM-based Query Rewriting** | Sec 4.5 | — | Not implemented | Expand raw query with synonyms/domain terms before vector search. Could live in `search_aas_documents` tool or as a pre-retrieval agent node |
 | 3 | **HyDE (Hypothetical Document Embeddings)** | Sec 4.5 | — | Not implemented | Agent generates hypothetical answer passage, then embeds that for retrieval instead of raw query. Paper cites `gao2022hyde` |
 
 ### Dependencies
-- Reranker: requires `up.sh --vllm` (Qwen2-Reranker-7B on separate vLLM instance) OR plugging into existing reranker model if already deployed.
+- Reranker: `up.sh --vllm` activates it (Qwen3-Reranker-4b vLLM endpoint on H200 `10.2.10.33:8003`). Without `--vllm`, `RERANKER_MODE=distance` keeps behavior unchanged.
 - Query Rewrite / HyDE: require additional LLM call per search — latency impact to benchmark.
 
 ### Paper impact

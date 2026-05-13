@@ -2,12 +2,62 @@
 name: Task - Reranker Integration
 description: Integriere qwen3-reranker-4b (H200) in AAS MCP Weaviate search
 type: task
-status: open
+status: done
 priority: high
 depends_on: task_rag_metadata_overhaul
 ---
 
-## Summary
+## Status (2026-05-13)
+
+**Done.** Two-phase retrieval läuft in beiden Search-Pfaden
+(`_search_sync` + `_search_templates_sync`); `reranker_used`-Flag
++ `reranker_score` pro Item sind im MCP-Tool-Response.
+
+**Was beim Ist-Soll-Abgleich schon erledigt war:**
+- T4 (`httpx>=0.28,<1`) — bereits in `mcp-server/pyproject.toml:18`
+- T5 (Evidence-Klassifikation) — `"document"` war bereits in der Whitelist
+  in `agent_plan_nodes.py:191`. Seit `task_rag_metadata_overhaul` kommt aus
+  dem Search bereits `source="document"` als fixed category statt Filename,
+  fällt nicht mehr auf `"other"` zurück.
+- T2-Metadata-Teil (`source_heading`, `source_page`, `source_url`,
+  `source_filename`, `source_jump_url`, `content_hash` im Response) — schon
+  durch rag_metadata_overhaul geliefert (`weaviate_client.py:201-214`).
+
+**Was tatsächlich geliefert wurde:**
+- `mcp-server/src/aas_hybrid_mcp/reranker.py` (neu) — Port aus
+  `soofi-trainer/vector-mcp/src/vector_mcp/server.py:60-126`. Strikte
+  ENV-Validierung beim Import (`RERANKER_MODE` muss `vllm` oder
+  `distance` sein; im `vllm`-Mode sind `RERANKER_URL` +
+  `RERANKER_CANDIDATE_LIMIT` Pflicht, sonst RuntimeError). Lazy
+  `httpx.Client`-Singleton mit 5s timeout. `rerank()` gibt `None` bei
+  Exception zurück (Caller fällt graceful auf distance zurück).
+  Default-Modell `qwen3-reranker-4b` via `RERANKER_MODEL` env var
+  überschreibbar.
+- `weaviate_client.py:_search_sync` — im `vllm`-Mode
+  `near_vector(limit=RERANKER_CANDIDATE_LIMIT)`, danach Reranker mit
+  Out-of-Bounds-Index-Guard, Top-K-Truncation auf `limit`. Response-Dict
+  erweitert um `reranker_used: bool`. `score = 1 - distance` bleibt
+  zusätzlich zum `reranker_score: float` (4 Stellen gerundet).
+- `weaviate_client.py:_search_templates_sync` + async-Wrapper — gleiches
+  Pattern; **Vertragsänderung:** Rückgabe von `list[dict]` → `dict`
+  (`{results, reranker_used}`).
+- `tools/template_search.py` — auf neue Rückgabe-Shape angepasst,
+  `reranker_used` ans MCP-Response durchgereicht.
+- `tools/document_search.py` — `reranker_used` aus `weaviate_client.search()`
+  ins MCP-Response durchgereicht (war vorher stripped).
+- `memory/planned_features.md` + `memory/future_phases.md` — Status auf
+  ✅ Done gesetzt.
+
+**Noch zu tun (manuell vom User):**
+- `./down.sh && ./up.sh --vllm` → Sanity-Check `reranker_used: true` in
+  Search-Tool-Responses, Top-K nach `reranker_score` sortiert.
+- `./down.sh && ./up.sh` (ohne `--vllm`) → Baseline-Check
+  `reranker_used: false`, Verhalten unverändert.
+- Reranker-Endpoint kurzfristig blockieren (z.B. `RERANKER_URL` auf einen
+  ungültigen Port setzen) → 5s-Timeout, graceful Fallback, keine Crashes
+  zur Caller-Seite.
+
+## Summary (ursprünglich)
 
 Reranker läuft bereits auf H200 (`10.2.10.33:8003`), ENV-Vars sind in `.env.vllm`
 gescaffolded. Fehlt: Python-Code in `weaviate_client.py` der die ENV-Vars liest

@@ -13,6 +13,8 @@ import re
 import weaviate
 import weaviate.classes.query as wvq
 
+from aas_hybrid_mcp import reranker
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -182,9 +184,16 @@ def _search_sync(
     if submodel_id:
         filters = wvq.Filter.by_property("submodel_id").equal(submodel_id)
 
+    # In vllm-mode pull a wider candidate set so the reranker has something to reorder.
+    candidate_limit = (
+        reranker.RERANKER_CANDIDATE_LIMIT
+        if reranker.RERANKER_MODE == "vllm"
+        else limit
+    )
+
     response = collection.query.near_vector(
         near_vector=vector,
-        limit=limit,
+        limit=candidate_limit,
         filters=filters,
         return_metadata=wvq.MetadataQuery(distance=True),
     )
@@ -198,22 +207,53 @@ def _search_sync(
         # Build a jump-URL for browser navigation to the specific PDF page.
         jump_url = f"{raw_url}#page={raw_page}" if raw_url and raw_page > 0 else raw_url
 
-        results.append({
+        # Only emit fields that carry information; empty strings / zero-page
+        # signal "not applicable" (e.g. SubmodelElementList children have no
+        # idShort) and are dropped to reduce LLM context noise.
+        item: dict = {
             "text": props.get("text", ""),
             "source": props.get("source", "other"),
-            "source_heading": props.get("source_heading", ""),
-            "source_page": raw_page,
-            "source_url": raw_url,
-            "source_filename": props.get("source_filename", ""),
-            "source_jump_url": jump_url,
-            "submodel_id": props.get("submodel_id", props.get("submodelId", "")),
-            "sm_element_path": props.get("sm_element_path", props.get("smElementPath", "")),
-            "id_short": props.get("id_short", props.get("idShort", "")),
-            "content_hash": props.get("content_hash", props.get("contentHash", "")),
             "score": 1 - (obj.metadata.distance or 0),
-        })
+        }
+        for key, value in (
+            ("source_heading", props.get("source_heading", "")),
+            ("source_page", raw_page),
+            ("source_url", raw_url),
+            ("source_filename", props.get("source_filename", "")),
+            ("source_jump_url", jump_url),
+            ("submodel_id", props.get("submodel_id", props.get("submodelId", ""))),
+            ("sm_element_path", props.get("sm_element_path", props.get("smElementPath", ""))),
+            ("id_short", props.get("id_short", props.get("idShort", ""))),
+            ("content_hash", props.get("content_hash", props.get("contentHash", ""))),
+        ):
+            if value not in ("", 0, None):
+                item[key] = value
+        results.append(item)
 
-    out: dict = {"results": results}
+    reranker_used = False
+    if reranker.RERANKER_MODE == "vllm" and results:
+        ranked = reranker.rerank(query, [r["text"] for r in results])
+        if ranked is not None:
+            reranked = []
+            for item in ranked[:limit]:
+                idx = item["index"]
+                if idx >= len(results):
+                    log.warning(
+                        "Reranker returned out-of-bounds index %d (results size=%d), skipping",
+                        idx, len(results),
+                    )
+                    continue
+                r = results[idx]
+                r["reranker_score"] = round(float(item["score"]), 4)
+                reranked.append(r)
+            results = reranked
+            reranker_used = True
+        else:
+            results = results[:limit]
+    else:
+        results = results[:limit]
+
+    out: dict = {"results": results, "reranker_used": reranker_used}
     if not results and submodel_id:
         chunk_count = _count_chunks_for_submodel(submodel_id)
         out["chunk_count"] = chunk_count
@@ -246,14 +286,17 @@ def _search_templates_sync(
     *,
     template_name: str | None = None,
     limit: int = 5,
-) -> list[dict]:
-    """Compute query embedding and run a near_vector search on IdtaTemplateSpec."""
+) -> dict:
+    """Compute query embedding and run a near_vector search on IdtaTemplateSpec.
+
+    Returns `{"results": [...], "reranker_used": bool}`.
+    """
     client = _get_client()
 
     collection_name = _get_collection_name(IDTA_TEMPLATE_BASE)
 
     if not client.collections.exists(collection_name):
-        return []
+        return {"results": [], "reranker_used": False}
 
     model = _get_embedding_model()
     vector = model.embed_query(query)
@@ -264,24 +307,55 @@ def _search_templates_sync(
     if template_name:
         filters = wvq.Filter.by_property("templateName").equal(template_name)
 
+    candidate_limit = (
+        reranker.RERANKER_CANDIDATE_LIMIT
+        if reranker.RERANKER_MODE == "vllm"
+        else limit
+    )
+
     response = collection.query.near_vector(
         near_vector=vector,
-        limit=limit,
+        limit=candidate_limit,
         filters=filters,
         return_metadata=wvq.MetadataQuery(distance=True),
     )
 
-    return [
-        {
+    results = []
+    for obj in response.objects:
+        item: dict = {
             "text": obj.properties.get("text", ""),
-            "templateName": obj.properties.get("templateName", ""),
-            "pdfSource": obj.properties.get("pdfSource", ""),
-            "version": obj.properties.get("version", ""),
-            "semanticId": obj.properties.get("semanticId", ""),
             "score": 1 - (obj.metadata.distance or 0),
         }
-        for obj in response.objects
-    ]
+        for key in ("templateName", "pdfSource", "version", "semanticId"):
+            value = obj.properties.get(key, "")
+            if value:
+                item[key] = value
+        results.append(item)
+
+    reranker_used = False
+    if reranker.RERANKER_MODE == "vllm" and results:
+        ranked = reranker.rerank(query, [r["text"] for r in results])
+        if ranked is not None:
+            reranked = []
+            for item in ranked[:limit]:
+                idx = item["index"]
+                if idx >= len(results):
+                    log.warning(
+                        "Reranker returned out-of-bounds index %d (results size=%d), skipping",
+                        idx, len(results),
+                    )
+                    continue
+                r = results[idx]
+                r["reranker_score"] = round(float(item["score"]), 4)
+                reranked.append(r)
+            results = reranked
+            reranker_used = True
+        else:
+            results = results[:limit]
+    else:
+        results = results[:limit]
+
+    return {"results": results, "reranker_used": reranker_used}
 
 
 async def search_templates(
@@ -289,7 +363,7 @@ async def search_templates(
     *,
     template_name: str | None = None,
     limit: int = 5,
-) -> list[dict]:
+) -> dict:
     """Async wrapper — runs the sync template search in a thread pool."""
     return await asyncio.to_thread(
         _search_templates_sync,

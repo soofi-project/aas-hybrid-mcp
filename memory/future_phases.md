@@ -5,12 +5,15 @@ type: project
 ---
 
 ## Phase 9: Retrieval ablation techniques
-**Status:** 🟦 Planned
+**Status:** 🟦 Planned (reranker ✅ done 2026-05-13)
 
 ### Cross-encoder Reranker
-- Re-rank Weaviate vector search candidates with a locally hosted Qwen2-Reranker-7B via vLLM
-- Env vars scaffolded (`RERANKER_MODE`, `RERANKER_URL`, `RERANKER_CANDIDATE_LIMIT`); no functional code yet
-- Where: `weaviate_client.py` `_search_sync` — when `RERANKER_MODE=vllm`, fetch `RERANKER_CANDIDATE_LIMIT` candidates, POST + query to `RERANKER_URL`, re-sort and truncate to `limit`
+**Status:** ✅ Done (2026-05-13)
+- Two-phase retrieval in `weaviate_client.py` (both `_search_sync` and `_search_templates_sync`): pull `RERANKER_CANDIDATE_LIMIT` candidates, POST to `RERANKER_URL/rerank` (Cohere-compatible), sort by `relevance_score`, truncate to `limit`
+- New module `mcp-server/src/aas_hybrid_mcp/reranker.py` — ported from `soofi-trainer/vector-mcp/src/vector_mcp/server.py:60-126`
+- Graceful fallback: reranker down → `reranker_used: false`, distance-based ranking, no crash
+- Search tool responses now expose `reranker_used: bool` at top level and `reranker_score: float` per item (when reranker ran)
+- Model: `qwen3-reranker-4b` (vLLM on H200, `http://10.2.10.33:8003`)
 
 ### Query Rewriting
 - LLM-based query expansion with synonyms and domain terminology before vector search

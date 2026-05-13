@@ -30,7 +30,11 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(e)}
 
         results = response.get("results", [])
-        out: dict = {"results": results, "total": len(results)}
+        out: dict = {
+            "results": results,
+            "total": len(results),
+            "reranker_used": response.get("reranker_used", False),
+        }
         if "diagnostic" in response:
             out["diagnostic"] = response["diagnostic"]
         if "chunk_count" in response:

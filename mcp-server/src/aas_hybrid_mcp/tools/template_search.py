@@ -21,7 +21,7 @@ def register(mcp: FastMCP) -> None:
         limit = max(1, min(limit, MAX_LIMIT))
 
         try:
-            results = await weaviate_client.search_templates(
+            response = await weaviate_client.search_templates(
                 query,
                 template_name=template_name,
                 limit=limit,
@@ -29,7 +29,9 @@ def register(mcp: FastMCP) -> None:
         except Exception as e:
             return {"error": str(e)}
 
+        results = response.get("results", [])
         return {
             "results": results,
             "total": len(results),
+            "reranker_used": response.get("reranker_used", False),
         }

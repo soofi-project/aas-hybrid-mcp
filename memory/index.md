@@ -26,7 +26,7 @@ Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteri
 
 | Datei | Thema | Status |
 |---|---|---|
-| `task_reranker_integration.md` | qwen3-reranker-4b (H200) in Weaviate search integrieren | open |
+| `task_reranker_integration.md` | qwen3-reranker-4b (H200) in Weaviate search integrieren | done (2026-05-13) |
 
 ## Konventionen
 

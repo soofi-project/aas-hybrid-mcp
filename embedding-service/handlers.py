@@ -71,7 +71,9 @@ class AasPathBuilder:
                     parts.append("[?]")
             else:
                 id_short = el.get("idShort", "")
-                if parts and not parts[-1].startswith("["):
+                # AAS Part 2 idShortPath: "." separates segments — including
+                # after a list index, e.g. `Documents[0].DocumentVersions[0].Title`.
+                if parts:
                     parts.append(".")
                 parts.append(id_short)
 
@@ -107,7 +109,7 @@ def _public_url(url: str | None, submodel_id: str, sm_element_path: str) -> tupl
     For external PDFs: URL is used as-is, filename is the last path segment.
     For BaSyx attachments: URL is built from BASYX_PUBLIC_URL, filename is "attachment".
     Path segments are URL-encoded so that BaSyx idShortPath syntax (e.g.
-    ``Documents[0]DigitalFiles[0]``) survives copy/paste into a browser —
+    ``Documents[0].DigitalFiles[0]``) survives copy/paste into a browser —
     bare ``[``/``]`` are reserved in RFC 3986 and break unencoded links.
     """
     if url and url.startswith("http"):
