@@ -1,0 +1,52 @@
+lesspowerfulbasemodel. WhileVicuna-13Biscapableofgeneratinginitialoutputs,itstruggles
+significantly with the refinement process. Specifically, Vicuna-13B was not able to consistently
+generate the feedback in the required format. Furthermore, even when provided with Oracle or
+hard-coded feedback, it often failed to adhere to the prompts for refinement. Instead of refining
+its output, Vicuna-13B either repeated the same output or generated a hallucinated conversation,
+rendering the outputs less effective. We thus hypothesize that since Vicuna-13B was trained on
+conversations,itdoesnotgeneralizeaswellasinstruction-basedmodelstotest-timefew-shottasks.
+ExampleoutputandanalysisisprovidedinAppendixG.
+QualitativeAnalysis WeconductaqualitativeanalysisofthefeedbackgeneratedbySELF-REFINE
+anditssubsequentrefinements. Wemanuallyanalyze70samplesintotal(35successcasesand35
+failurecases)forCodeOptimization(Madaanetal.,2023)andMathReasoning(Cobbeetal.,2021).
+ForbothMathReasoningandCodeOptimization,wefoundthatthefeedbackwaspredominantly
+actionable,withthemajorityidentifyingproblematicaspectsoftheoriginalgenerationandsuggesting
+waystorectifythem.
+WhenSELF-REFINEfailedtoimprovetheoriginalgeneration,themajorityofissuesweredueto
+erroneousfeedbackratherthanfaultyrefinements.Specifically,33%ofunsuccessfulcasesweredueto
+feedbackinaccuratelypinpointingtheerror’slocation,while61%werearesultoffeedbacksuggesting
+an inappropriate fix. Only 6% of failures were due to the refiner incorrectly implementing good
+feedback. TheseobservationshighlightthevitalroleofaccuratefeedbackplaysinSELF-REFINE.
+Insuccessfulcases,therefinerwasguidedbyaccurateandusefulfeedbacktomakeprecisefixestothe
+originalgenerationin61%ofthecases. Interestingly,therefinerwascapableofrectifyingissueseven
+whenthefeedbackwaspartiallyincorrect,whichwasthesituationin33%ofsuccessfulcases. This
+suggestsresiliencetosub-optimalfeedback. Futureresearchcouldfocusonexaminingtherefiner’s
+robustnesstovarioustypesoffeedbackerrorsandexploringwaystoenhancethisresilience.InFigure
+5,weillustratehowSELF-REFINEsignificantlyimprovesprogramefficiencybytransformingabrute
+forceapproachintoadynamicprogrammingsolution,asaresultofinsightfulfeedback. Additional
+analysisonotherdatasetssuchasDialogueResponseGenerationisprovidedinAppendixH.
+GoingBeyondBenchmarks Whileourevaluationfocusesonbenchmarktasks,SELF-REFINEis
+designedwithbroaderapplicabilityinmind. Weexplorethisinareal-worldusecaseofwebsitegen-
+eration,wheretheuserprovidesahigh-levelgoalandSELF-REFINEassistsiniterativelydeveloping
+thewebsite. Startingfromarudimentaryinitialdesign,SELF-REFINErefinesHTML,CSS,andJS
+toevolvethewebsiteintermsofbothusabilityandaesthetics. Thisdemonstratesthepotentialof
+SELF-REFINEinreal-world,complex,andcreativetasks. SeeAppendixIforexamplesandfurther
+discussion,includingbroader,societalimpactofourwork.
+5 Relatedwork
+Leveraginghuman-andmachine-generatednaturallanguage(NL)feedbackforrefiningoutputshas
+beeneffectiveforavarietyoftasks,includingsummarization(Scheureretal.,2022),scriptgeneration
+(Tandonetal.,2021),programsynthesis(Leetal.,2022a;YasunagaandLiang,2020),andother
+tasks(Baietal.,2022a;Schicketal.,2022b;Saundersetal.,2022a;Baietal.,2022b;Wellecketal.,
+2022). Refinementmethodsdifferinthesourceandformatoffeedback,andthewaythatarefineris
+obtained. Table3summarizessomerelatedapproaches;seeAppendixBforanadditionaldiscussion.
+Source of feedback. Humans have been an effective source of feedback (Tandon et al., 2021;
+Elgoharyetal.,2021;Tandonetal.,2022;Baietal.,2022a). Sincehumanfeedbackiscostly,several
+approachesuseascalarrewardfunctionasasurrogateof(oralternativeto)humanfeedback(e.g.,
+(Baietal.,2022a;Liuetal.,2022;Luetal.,2022;Leetal.,2022a;Wellecketal.,2022)). Alternative
+sourcessuchascompilers(YasunagaandLiang,2020)orWikipediaedits(Schicketal.,2022b)can
+providedomain-specificfeedback. Recently,LLMshavebeenusedtogeneratefeedbackforgeneral
+domains(Fuetal.,2023;Pengetal.,2023;Yangetal.,2022),However,oursistheonlymethodthat
+generatesfeedbackusinganLLMonitsownoutput,forthepurposeofrefiningwiththesameLLM.
+Representationoffeedback. Theformoffeedbackcanbegenerallydividedintonaturallanguage
+(NL)andnon-NLfeedback.Non-NLfeedbackcancomeinhuman-providedexamplepairs(Dasgupta
+8

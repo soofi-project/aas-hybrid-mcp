@@ -1,0 +1,48 @@
+Improving Factuality and Reasoning in Language
+Models through Multiagent Debate
+YilunDu ShuangLi AntonioTorralba JoshuaB.Tenenbaum
+MITCSAIL MITCSAIL MITCSAIL MITCSAIL,BCS,CBMM
+yilundu@mit.edu lishuang@mit.edu torralba@mit.edu jbt@mit.edu
+IgorMordatch
+GoogleBrain
+imordatch@google.com
+Abstract
+Large language models (LLMs) have demonstrated remarkable capabilities in
+language generation, understanding, and few-shot learning in recent years. An
+extensivebodyofworkhasexploredhowtheirperformancemaybefurtherim-
+provedthroughthetoolsofprompting,rangingfromverification,self-consistency,
+orintermediatescratchpads. Inthispaper,wepresentacomplementaryapproach
+toimprovelanguageresponseswheremultiplelanguagemodelinstancespropose
+anddebatetheirindividualresponsesandreasoningprocessesovermultiplerounds
+to arrive at a common final answer. Our findings indicate that this approach
+significantlyenhancesmathematicalandstrategicreasoningacrossanumberof
+tasks. We also demonstrate that our approach improves the factual validity of
+generated content, reducing fallacious answers and hallucinations that contem-
+porary models are prone to. Our approach may be directly applied to existing
+black-boxmodelsandusesidenticalprocedureandpromptsforalltasksweinves-
+tigate. Overall,ourfindingssuggestthatsuch"societyofminds"approachhasthe
+potentialtosignificantlyadvancethecapabilitiesofLLMsandpavethewayfor
+furtherbreakthroughsinlanguagegenerationandunderstanding. Projectwebsite
+athttps://composable-models.github.io/llm_debate/.
+1 Introduction
+Largelanguagemodels(LLMs)havedemonstratedremarkablelanguagegeneration,understanding,
+andfew-shotlearningcapabilitiesinrecentyears. Thesemethodsaretrainedonamassivecorpusof
+textontheinternet,wherethequalityandaccuracyofextractednaturallanguagemaynotbeensured.
+Thus,currentmodelsmaysufferfromconfidentlyhallucinatingfactsormakingimplausiblejumpsin
+chainsofreasoning. Anextensivebodyofrecentworkhasfocusedonimprovingfactualaccuracy
+and reasoning in language models. These range from prompting models with few or zero-shot
+chain-of-thoughtdemonstrations,useofverification,self-consistency,orintermediatescratchpads.
+We note that these techniques are applied over a single model instance. Instead, we propose a
+complementary approach inspired by The Society of Mind [19] and multi-agent settings, where
+multiplelanguagemodelinstances(oragents)individuallyproposeandjointlydebatetheirresponses
+and reasoning processes to arrive at a single common answer. More specifically, given a query,
+multipleinstancesofalanguagemodelfirstgenerateindividualcandidateanswerstoaquery. Then
+eachindividualmodelinstancereadsandcritiquestheresponsesofallothermodelsandusesthis
+contenttoupdateitsownanswer. Thisstepisthenrepeatedoverseveralrounds. Thisprocessinduces
+modelstoconstructanswersthatareconsistentwithboththeirinternalcriticaswellassensiblein
+Preprint.Underreview.
+3202
+yaM
+32
+]LC.sc[
+1v52341.5032:viXra

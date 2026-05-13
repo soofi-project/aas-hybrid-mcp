@@ -1,0 +1,51 @@
+80
+76.19%
+75.74%
+75.06%
+73.39%
+71.34%
+70
+0 1 2 3 4
+Iteration
+)%(ycaruccA
+SolverateofSELF-REFINEOverIterationsforGSM-8k
+Figure14: ImprovementsinaccuracyontheGSM-8kmathreasoningbenchmarkasafunctionofthe
+#ofiterationsofSELF-REFINE.
+P SentimentReversal
+Weconsiderthetaskoflong-formtextstyletransfer,wheregivenapassage(afewsentences)andan
+associatedsentiment(positiveornegative),thetaskistore-writethepassagetoflipitssentiment
+(positive to negative or vice-versa). While a large body of work on style transfer is directed at
+sentence-levelsentimenttransfer(Lietal.,2018;Prabhumoyeetal.,2018),wefocusontransferring
+thesentimentofentirereviews,makingthetaskchallengingandprovidingopportunitiesforiterative
+improvements.
+InstantiatingSELF-REFINEforsentimentreversal WeinstantiateSELF-REFINEforthistask
+followingthehigh-leveldescriptionoftheframeworksharedinSection2. Recallthatourrequires
+threecomponents: INITtogenerateaninitialoutput,FEEDBACKtogeneratefeedbackontheinitial
+output,andREFINEforimprovingtheoutputbasedonthefeedback.
+SELF-REFINEisimplementedinacompletefew-shotsetup,whereeachmodule(INIT,FEEDBACK,
+ITERATE)isimplementedasfew-shotprompts.Weexecutetheself-improvementloopforamaximum
+ofk =4iterations. Theiterationscontinueuntilthetargetsentimentisreached.
+P.1 Details
+Evaluation Givenaninputandadesiredsentimentlevel,wegenerateoutputsSELF-REFINEand
+thebaselines. Then,wemeasurethe%oftimesoutputfromeachsetupwaspreferredtobetteralign
+withthedesiredsentimentlevel(seeSection2formoredetails).
+Wealsoexperimentwithstandardtext-classificationmetric. Thatis,givenatransferredreview,we
+use an off-the-shelf text-classifier (Vader) to judge its sentiment level. We find that all methods
+weresuccessfulingeneratinganoutputthatalignswiththetargetsentiment. Forinstance,whenthe
+targetsentimentwaspositive,bothGPT-3.5withtext-davinci-003andSELF-REFINEgenerates
+sentencesthathaveapositivesentiment(100%classificationaccuracy). Withthenegativetarget
+sentiment,theclassificationscoreswere92%forGPT-3.5and93.6%forSELF-REFINE.
+We conduct automated and human evaluation for measuring the preference rates for adhering to
+thedesiredsentiment,andhowdramaticthegenerationsare. Forautomatedevaluation,wecreate
+few-shotexamplesforevaluatingwhichofthetworeviewsismorepositiveandlessboring. Weusea
+separatepromptforeachtask. TheexamplesaredepictedinFigure33forinitialization,Figure34
+forfeedbackgeneration,andFigure35forrefinement. Thepromptsshowexamplesofreviewsof
+varyingdegreesofsentimentandcolorfulness(morecolorfulreviewsuseextremephrases—the
+35
+
+76.1
+75.74%
+75.06%
+73.39%
+4%
+

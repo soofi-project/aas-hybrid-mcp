@@ -1,0 +1,52 @@
+GPT-3.5 ChatGPT GPT4
+SELF-REFINEwins 36.0 48.0 54.0
+INITwins 23.0 18.0 16.0
+Bothareequal 41.0 50.0 30.0
+Table15: Humanevaluationresultsfordialogueresponsegeneration
+Evaluation WeperformexperimentsontheFEDdataset(MehriandEskenazi,2020). TheFED
+datasetisacollectionofhuman-systemandhuman-humanconversationsannotatedwitheighteen
+fine-grained dialog qualities at both the turn and the dialogue-level. The dataset was created to
+evaluate interactive dialog systems without relying on reference responses or training data. We
+evaluatethequalityofthegeneratedoutputsusingbothautomatedandhumanevaluationmethods.
+For automatic evaluation in Table1, we used zero-shot prompting with text-davinci-003 and
+evaluateonatestsetof342instances. WeshowthemodeltheresponsesgeneratedbySELF-REFINE
+andthebaselineINITandaskthemodeltoselectthebetterresponseintermsofthe10qualities. We
+reportthewinrate. However,weacknowledgethatautomatedmetricsmaynotprovideanaccurate
+assessmentoftextgenerationtasksandrelyonhumanevaluationinstead.
+Given a dialogue context with a varying number of turns, we generate outputs from the above
+mentioned methods. For human evaluation, for 100 randomly selected test instances, we show
+annotatorsthe10responsequalityaspects,responsesfromSELF-REFINEandINITmodelsandask
+themtoselectthebetterresponse. Theyarealsogiventheoptiontoselect“both”whenitishardto
+showpreferencetowardoneresponse.
+Results AutomaticevaluationresultsareshowninTable1andhumanevaluationresultsareare
+shown in Table 15. We experiment on 3 latest versions of GPT models. text-davinci-003 is
+capableofgeneratinghuman-likeresponsesofgreatqualityforawiderangeofdialoguecontexts
+andhenceGPT-3.5isastrongbaseline. Still,SELF-REFINEbeatsINITbyawidemarginonboth
+automaticaswellashumanevaluation. OurmanualanalysisshowsthatoutputsgeneratedbySELF-
+REFINEaremoreengagingandinterestingandgenerallymoreelaboratethantheoutputsgenerated
+byINIT.
+N CodeOptimization
+Performance-ImprovingCodeEditsorPIE(Madaanetal.,2023)focusesonenhancingtheefficiency
+offunctionallycorrectprograms. TheprimaryobjectiveofPIEistooptimizeagivenprogramby
+implementingalgorithmicmodificationsthatleadtoimprovedruntimeperformance.
+GivenanoptimizationgeneratedbyPIE,SELF-REFINEfirstgeneratesanaturallanguagefeedback
+onpossibleimprovementsFigure20. Then,thefeedbackisfedtoREFINEFigure21forrefinement.
+Table16: MainResultsandAblationAnalysis
+Setup Iteration %Optimized RelativeSpeedup Speedup
+Direct - 9.7 62.29 3.09
+SELF-REFINE−feedback 1 10.1 62.15 3.03
+SELF-REFINE−feedback 2 10.4 61.79 3.01
+SELF-REFINE 1 15.3 59.64 2.90
+SELF-REFINE 2 15.6 65.60 3.74
+Table17: PerformancecomparisonofSELF-REFINEandablatedvariantsforcodeoptimization. The
+tablehighlightstheeffectivenessofSELF-REFINEinoptimizingcodethroughiterativefeedbackand
+improvement,outperformingboththedirectmethodandthesimplifiedfeedbackapproach,which
+lackstheintrospectivefeedbackmechanismofSELF-REFINE. Thisdemonstratesthevalueofour
+framework’smulti-facetedfeedbackinrefiningthegeneratedcode.
+33
+36.0
+23.0
+41.0 | 48.0
+18.0
+50.0
+

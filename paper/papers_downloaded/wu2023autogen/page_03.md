@@ -1,0 +1,51 @@
+AutoGen also provides a collection of multi-agent applications created using conversable agents
+and conversation programming. These applications demonstrate how AutoGen can easily support
+applicationsofvariouscomplexitiesandLLMsofvariouscapabilities. Moreover,weperformboth
+evaluationonbenchmarksandapilotstudyofnewapplications. TheresultsshowthatAutoGencan
+helpachieveoutstandingperformanceonmanytasks, andenableinnovativewaysofusingLLMs,
+whilereducingdevelopmenteffort. (Section3andAppendixD)
+2 TheAutoGenFramework
+ToreducetheeffortrequiredfordeveloperstocreatecomplexLLMapplicationsacrossvariousdo-
+mains, acoredesignprincipleofAutoGenistostreamlineandconsolidatemulti-agentworkflows
+using multi-agent conversations. This approach also aims to maximize the reusability of imple-
+mentedagents. ThissectionintroducesthetwokeyconceptsofAutoGen: conversableagentsand
+conversationprogramming.
+2.1 ConversableAgents
+InAutoGen,aconversableagentisanentitywithaspecificrolethatcanpassmessagestosendand
+receiveinformationtoandfromotherconversableagents,e.g.,tostartorcontinueaconversation. It
+maintainsitsinternalcontextbasedonsentandreceivedmessagesandcanbeconfiguredtopossess
+asetofcapabilities,e.g.,enabledbyLLMs,tools,orhumaninput,etc. Theagentscanactaccording
+toprogrammedbehaviorpatternsdescribednext.
+AgentcapabilitiespoweredbyLLMs,humans,andtools. Sinceanagent’scapabilitiesdirectly
+influencehowitprocessesandrespondstomessages,AutoGenallowsflexibilitytoendowitsagents
+with various capabilities. AutoGen supports many common composable capabilities for agents,
+including1)LLMs. LLM-backedagentsexploitmanycapabilitiesofadvancedLLMssuchasrole
+playing,implicitstateinferenceandprogressmakingconditionedonconversationhistory,providing
+feedback,adaptingfromfeedback,andcoding.Thesecapabilitiescanbecombinedindifferentways
+via novel prompting techniques4 to increase an agent’s skill and autonomy. AutoGen also offers
+enhancedLLMinferencefeaturessuchasresultcaching,errorhandling,messagetemplating,etc.,
+viaanenhancedLLMinferencelayer. 2)Humans. Humaninvolvementisdesiredorevenessential
+in many LLM applications. AutoGen lets a human participate in agent conversation via human-
+backedagents, whichcouldsolicithumaninputsatcertainroundsofaconversationdependingon
+theagentconfiguration.Thedefaultuserproxyagentallowsconfigurablehumaninvolvementlevels
+and patterns, e.g., frequency and conditions for requesting human input including the option for
+humanstoskipprovidinginput. 3)Tools. Tool-backedagentshavethecapabilitytoexecutetools
+viacodeexecutionorfunctionexecution. Forexample,thedefaultuserproxyagentinAutoGenis
+abletoexecutecodesuggestedbyLLMs,ormakeLLM-suggestedfunctioncalls.
+Agent customization and cooperation. Based on application-specific needs, each agent can be
+configuredtohaveamixofbasicback-endtypestodisplaycomplexbehaviorinmulti-agentcon-
+versations.AutoGenallowseasycreationofagentswithspecializedcapabilitiesandrolesbyreusing
+orextendingthebuilt-inagents. Theyellow-shadedareaofFigure2providesasketchofthebuilt-in
+agents in AutoGen. The ConversableAgent class is the highest-level agent abstraction and, by
+default, can use LLMs, humans, and tools. The AssistantAgent and UserProxyAgent are two
+pre-configuredConversableAgentsubclasses,eachrepresentingacommonusagemode,i.e.,act-
+ing as an AI assistant (backed by LLMs) and acting as a human proxy to solicit human input or
+executecode/functioncalls(backedbyhumansand/ortools).
+In theexample on theright-hand side of Figure1, an LLM-backedassistant agent anda tool- and
+human-backed user proxy agent are deployed together to tackle a task. Here, the assistant agent
+generatesasolutionwiththehelpofLLMsandpassesthesolutiontotheuserproxyagent. Then,
+theuserproxyagentsolicitshumaninputsorexecutestheassistant’scodeandpassestheresultsas
+feedbackbacktotheassistant.
+4AppendixCpresentsanexampleofsuchnovelpromptingtechniqueswhichempowersthedefaultLLM-
+backedassistantagentinAutoGentoconversewithotheragentsinmulti-stepproblemsolving.
+3

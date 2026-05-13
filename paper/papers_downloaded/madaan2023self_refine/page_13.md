@@ -1,0 +1,19 @@
+NiketTandon,AmanMadaan,PeterClark,andYimingYang.2022. Learningtorepair: Repairing
+modeloutputerrorsafterdeploymentusingadynamicmemoryoffeedback. InFindingsofthe
+AssociationforComputationalLinguistics: NAACL2022,pages339–352.
+HugoTouvron,ThibautLavril,GautierIzacard,XavierMartinet,Marie-AnneLachaux,Timothée
+Lacroix,BaptisteRozière,NamanGoyal,EricHambro,FaisalAzhar,etal.2023. Llama: Open
+andefficientfoundationlanguagemodels. arXivpreprintarXiv:2302.13971.
+JasonWei,XuezhiWang,DaleSchuurmans,MaartenBosma,EdChi,QuocLe,andDennyZhou.
+2022. ChainofThoughtPromptingElicitsReasoninginLargeLanguageModels. arXivpreprint
+arXiv:2201.11903.
+SeanWelleck,XimingLu,PeterWest,FaezeBrahman,TianxiaoShen,DanielKhashabi,andYejin
+Choi.2022. Generatingsequencesbylearningtoself-correct. arXivpreprintarXiv:2211.00053.
+KevinYang,NanyunPeng,YuandongTian,andDanKlein.2022.Re3:Generatinglongerstorieswith
+recursiverepromptingandrevision. InConferenceonEmpiricalMethodsinNaturalLanguage
+Processing.
+Michihiro Yasunaga and Percy Liang. 2020. Graph-based, self-supervised program repair from
+diagnosticfeedback. 37thInt.Conf.Mach.Learn.ICML2020,PartF168147-14:10730–10739.
+XiangZhang,JunboZhao,andYannLeCun.2015. Character-levelconvolutionalnetworksfortext
+classification. Advancesinneuralinformationprocessingsystems,28.
+13
