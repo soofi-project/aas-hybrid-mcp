@@ -10,7 +10,7 @@ Sec 4.4+4.5 merged in Sec 4.6 "Planned Retrieval Enhancements" + Benchmark B abl
 | # | Feature | Paper Section | .env vars | Code status | Notes |
 |---|---|---|---|---|---|
 | 1 | **Cross-encoder Reranker** | Sec 4.4 | `RERANKER_MODE`, `RERANKER_URL`, `RERANKER_CANDIDATE_LIMIT`, `RERANKER_MODEL` | ✅ **Implemented (2026-05-13)** | Two-phase retrieval in both `_search_sync` and `_search_templates_sync`; new `reranker.py` module; `reranker_used` flag + per-item `reranker_score` exposed in MCP tool responses; graceful fallback when reranker unreachable. Model: `qwen3-reranker-4b` on H200 vLLM. |
-| 2 | **LLM-based Query Rewriting** | Sec 4.5 | — | Not implemented | Expand raw query with synonyms/domain terms before vector search. Could live in `search_aas_documents` tool or as a pre-retrieval agent node |
+| 2 | **LLM-based Query Rewriting** | Sec 4.5 | `QUERY_REWRITE_MODE`, `QUERY_REWRITE_URL`, `QUERY_REWRITE_MODEL`, `QUERY_REWRITE_TIMEOUT` | ✅ **Implemented (2026-05-13, ma2023rewrite)** | Scoped adaptation: asset-name stripping when `submodel_id` is set. New `query_rewriter.py` module; `asset_name` + `doc_language` params in `search()`; `query_rewritten` + `rewritten_query` in MCP tool responses; graceful fallback when rewriter unreachable. |
 | 3 | **HyDE (Hypothetical Document Embeddings)** | Sec 4.5 | — | Not implemented | Agent generates hypothetical answer passage, then embeds that for retrieval instead of raw query. Paper cites `gao2022hyde` |
 
 ### Dependencies

@@ -5,7 +5,7 @@ type: project
 ---
 
 ## Phase 9: Retrieval ablation techniques
-**Status:** 🟦 Planned (reranker ✅ done 2026-05-13)
+**Status:** ✅ Done (reranker + query rewriting 2026-05-13)
 
 ### Cross-encoder Reranker
 **Status:** ✅ Done (2026-05-13)
@@ -16,9 +16,14 @@ type: project
 - Model: `qwen3-reranker-4b` (vLLM on H200, `http://10.2.10.33:8003`)
 
 ### Query Rewriting
+**Status:** ✅ Done (2026-05-13, based on ma2023rewrite)
 - LLM-based query expansion with synonyms and domain terminology before vector search
+- Scoped adaptation: asset-name stripping when `submodel_id` is set (our contribution over Ma et al.)
+- New module `mcp-server/src/aas_hybrid_mcp/query_rewriter.py` — lazy httpx client, few-shot domain prompt, graceful fallback
+- Integrated in `weaviate_client.py` (`_search_sync` + `_search_templates_sync`): rewrite → embedding → vector search → rerank (orthogonal, no conflict)
+- `search_aas_documents` MCP tool: `asset_name` + `doc_language` params for scoped rewrite; `query_rewritten` + `rewritten_query` in response
+- Config: `QUERY_REWRITE_MODE`, `QUERY_REWRITE_URL`, `QUERY_REWRITE_MODEL`, `QUERY_REWRITE_TIMEOUT` (all required when mode=on)
 - Bench B ablation axis
-- Where: `search_aas_documents` MCP tool — add optional `rewrite_query` flag; agent invokes LLM with domain prompt to generate expanded query terms
 
 ### HyDE (Hypothetical Document Embeddings)
 - Generate a hypothetical answer passage; embed _that_ instead of the raw user query

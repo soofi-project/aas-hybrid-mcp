@@ -30,8 +30,12 @@ def register(mcp: FastMCP) -> None:
             return {"error": str(e)}
 
         results = response.get("results", [])
-        return {
+        out: dict = {
             "results": results,
             "total": len(results),
             "reranker_used": response.get("reranker_used", False),
+            "query_rewritten": response.get("query_rewritten", False),
         }
+        if response.get("rewritten_query"):
+            out["rewritten_query"] = response["rewritten_query"]
+        return out

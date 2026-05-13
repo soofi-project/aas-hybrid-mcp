@@ -16,6 +16,8 @@ def register(mcp: FastMCP) -> None:
         query: str,
         submodel_id: str | None = None,
         limit: int = 10,
+        asset_name: str | None = None,
+        doc_language: str | None = None,
     ) -> dict:
         """Search AAS documents by semantic similarity."""
         limit = max(1, min(limit, MAX_LIMIT))
@@ -25,6 +27,8 @@ def register(mcp: FastMCP) -> None:
                 query,
                 submodel_id=submodel_id,
                 limit=limit,
+                asset_name=asset_name,
+                doc_language=doc_language,
             )
         except Exception as e:
             return {"error": str(e)}
@@ -34,7 +38,10 @@ def register(mcp: FastMCP) -> None:
             "results": results,
             "total": len(results),
             "reranker_used": response.get("reranker_used", False),
+            "query_rewritten": response.get("query_rewritten", False),
         }
+        if response.get("rewritten_query"):
+            out["rewritten_query"] = response["rewritten_query"]
         if "diagnostic" in response:
             out["diagnostic"] = response["diagnostic"]
         if "chunk_count" in response:

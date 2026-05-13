@@ -21,7 +21,11 @@ QUERY HYGIENE:
 - Strip asset names from the query — `submodel_id` already scopes.
 - Match the documentation's language (often English or the manufacturer's locale).
 - Use technical vocabulary — a worker's phrase may miss the manual's term.
+- If unsure about vocabulary, rely on the server-side query rewriter — it
+  expands informal phrasing into datasheet terminology automatically.
 
 INPUT: `query` (str), `submodel_id` (optional str), `limit` (1–50,
-default 10).
-OUTPUT: `results` list with chunk text and metadata; `total` count.
+default 10), `asset_name` (optional str — enables scoped rewrite),
+`doc_language` (optional str — e.g. "en", "de").
+OUTPUT: `results` list with chunk text and metadata; `total` count;
+`query_rewritten` (bool); `rewritten_query` (str, when rewritten).

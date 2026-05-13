@@ -13,6 +13,7 @@ import re
 import weaviate
 import weaviate.classes.query as wvq
 
+from aas_hybrid_mcp import query_rewriter
 from aas_hybrid_mcp import reranker
 
 log = logging.getLogger(__name__)
@@ -162,14 +163,26 @@ def _search_sync(
     *,
     submodel_id: str | None = None,
     limit: int = 10,
+    asset_name: str | None = None,
+    doc_language: str | None = None,
 ) -> dict:
     """Compute query embedding and run a near_vector search in Weaviate.
 
     Returns a dict with `results` and an optional `diagnostic` describing why
     a scoped query came back empty (chunks missing vs. semantic miss).
     """
-    client = _get_client()
+    # Rewrite query before embedding (rewrite → embedding → vector search → rerank)
+    original_query = query
+    rewritten = query_rewriter.rewrite(
+        query,
+        asset_name=asset_name,
+        submodel_id=submodel_id,
+        doc_language=doc_language,
+    )
+    query_rewritten = rewritten != query
+    query = rewritten
 
+    client = _get_client()
     collection_name = _get_collection_name(WEAVIATE_COLLECTION)
 
     if not client.collections.exists(collection_name):
@@ -177,6 +190,12 @@ def _search_sync(
 
     model = _get_embedding_model()
     vector = model.embed_query(query)
+
+    filter_info = submodel_id if submodel_id else "none"
+    log.info(
+        "RAG search: query=%r collection=%s submodel=%s limit=%d",
+        original_query, collection_name, filter_info, limit,
+    )
 
     collection = client.collections.get(collection_name)
 
@@ -198,8 +217,19 @@ def _search_sync(
         return_metadata=wvq.MetadataQuery(distance=True),
     )
 
+    objects = list(response.objects)
+    raw_count = len(objects)
+
+    if raw_count:
+        log.info(
+            "Vector search returned %d results, rerank=%s",
+            raw_count, reranker.RERANKER_MODE == "vllm",
+        )
+    else:
+        log.warning("Vector search returned 0 results")
+
     results = []
-    for obj in response.objects:
+    for obj in objects:
         props = obj.properties
         raw_url = props.get("source_url", "")
         raw_page = props.get("source_page", 0) or 0
@@ -232,7 +262,7 @@ def _search_sync(
 
     reranker_used = False
     if reranker.RERANKER_MODE == "vllm" and results:
-        ranked = reranker.rerank(query, [r["text"] for r in results])
+        ranked = reranker.rerank(original_query, [r["text"] for r in results])
         if ranked is not None:
             reranked = []
             for item in ranked[:limit]:
@@ -253,7 +283,14 @@ def _search_sync(
     else:
         results = results[:limit]
 
-    out: dict = {"results": results, "reranker_used": reranker_used}
+    log.info("Returning %d results (reranked=%s, rewritten=%s)", len(results), reranker_used, query_rewritten)
+
+    out: dict = {
+        "results": results,
+        "reranker_used": reranker_used,
+        "query_rewritten": query_rewritten,
+        "rewritten_query": rewritten if query_rewritten else None,
+    }
     if not results and submodel_id:
         chunk_count = _count_chunks_for_submodel(submodel_id)
         out["chunk_count"] = chunk_count
@@ -266,6 +303,8 @@ async def search(
     *,
     submodel_id: str | None = None,
     limit: int = 10,
+    asset_name: str | None = None,
+    doc_language: str | None = None,
 ) -> dict:
     """Async wrapper — runs the sync Weaviate search in a thread pool."""
     return await asyncio.to_thread(
@@ -273,6 +312,8 @@ async def search(
         query,
         submodel_id=submodel_id,
         limit=limit,
+        asset_name=asset_name,
+        doc_language=doc_language,
     )
 
 
@@ -291,6 +332,12 @@ def _search_templates_sync(
 
     Returns `{"results": [...], "reranker_used": bool}`.
     """
+    # Rewrite query before embedding
+    original_query = query
+    rewritten = query_rewriter.rewrite(query)
+    query_rewritten = rewritten != query
+    query = rewritten
+
     client = _get_client()
 
     collection_name = _get_collection_name(IDTA_TEMPLATE_BASE)
@@ -334,7 +381,7 @@ def _search_templates_sync(
 
     reranker_used = False
     if reranker.RERANKER_MODE == "vllm" and results:
-        ranked = reranker.rerank(query, [r["text"] for r in results])
+        ranked = reranker.rerank(original_query, [r["text"] for r in results])
         if ranked is not None:
             reranked = []
             for item in ranked[:limit]:
@@ -355,7 +402,12 @@ def _search_templates_sync(
     else:
         results = results[:limit]
 
-    return {"results": results, "reranker_used": reranker_used}
+    return {
+        "results": results,
+        "reranker_used": reranker_used,
+        "query_rewritten": query_rewritten,
+        "rewritten_query": rewritten if query_rewritten else None,
+    }
 
 
 async def search_templates(
