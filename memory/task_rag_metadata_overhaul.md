@@ -2,7 +2,7 @@
 name: Task - RAG Metadata Overhaul
 description: Rich metadata für Weaviate chunks: source URL, page, heading, filename, snake_case schema
 type: task
-status: in_progress
+status: done
 priority: high
 depends_on: []
 ---
@@ -72,13 +72,10 @@ hinaus, aber notwendig für stabilen Betrieb):
   über Image-Rebuilds (Vorsicht: bei Modell-Updates muss das Volume
   manuell gelöscht werden, sonst maskiert es das aktualisierte Image)
 
-**Offener Folge-Punkt — in eigenem Task ausgelagert:**
-
-- `source_jump_url` Klick lädt PDF aktuell herunter (BaSyx sendet
-  `Content-Disposition: attachment`). Originaler Acceptance-Punkt
-  „springt im Browser zur richtigen PDF page" ist erst dann komplett
-  erfüllt, wenn der Nginx-Sidecar das Header umschreibt. Siehe
-  `task_pdf_inline_viewer.md` (depends_on diese Task hier).
+**Folge-Punkt erledigt:** PDF-inline-Viewer via Nginx-Sidecar
+(`basyx-viewer-proxy`, Port 8091) ist implementiert und verifiziert —
+siehe `task_pdf_inline_viewer.md` (done). Der Acceptance-Punkt „springt
+im Browser zur richtigen PDF page" ist damit voll erfüllt.
 
 ## New Weaviate Schema
 

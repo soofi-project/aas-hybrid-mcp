@@ -196,6 +196,23 @@ services:
     networks:
       - aas-network
 
+  ########### BaSyx Viewer Proxy (Content-Disposition rewrite sidecar) ##################
+
+  basyx-viewer-proxy:
+    image: nginx:alpine
+    container_name: basyx-viewer-proxy
+    restart: unless-stopped
+    ports:
+      # 8082 is taken by submodel-registry; 8091 sits next to open-webui (8090).
+      - "8091:80"
+    volumes:
+      - ./nginx-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      aas-environment:
+        condition: service_healthy
+    networks:
+      - aas-network
+
   ########### Kafka Connect — RAG (HTTP Sink) ############################################
 
   kafka-connect-rag:
