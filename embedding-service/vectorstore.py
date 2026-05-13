@@ -83,18 +83,24 @@ def _ensure_collection(client: weaviate.WeaviateClient, collection_name: str) ->
             properties=[
                 wvc.Property(name="text", data_type=wvc.DataType.TEXT),
                 wvc.Property(name="source", data_type=wvc.DataType.TEXT),
-                wvc.Property(name="submodelId", data_type=wvc.DataType.TEXT),
-                wvc.Property(name="smElementPath", data_type=wvc.DataType.TEXT),
-                wvc.Property(name="idShort", data_type=wvc.DataType.TEXT),
-                wvc.Property(name="contentHash", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="source_heading", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="source_page", data_type=wvc.DataType.INT),
+                wvc.Property(name="source_url", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="source_filename", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="submodel_id", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="sm_element_path", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="id_short", data_type=wvc.DataType.TEXT),
+                wvc.Property(name="content_hash", data_type=wvc.DataType.TEXT),
             ],
         )
 
 
 def insert_chunks(
-    texts: Sequence[str],
+    chunks: Sequence[dict[str, object]],
     vectors: Sequence[list[float]],
     source: str,
+    source_url: str,
+    source_filename: str,
     submodel_id: str,
     sm_element_path: str | None,
     id_short: str,
@@ -102,6 +108,7 @@ def insert_chunks(
 ) -> None:
     """Insert text chunks with pre-computed vectors into Weaviate.
 
+    ``chunks`` is a list of dicts with keys: ``text``, ``heading``, ``page``.
     All chunks from the same source document share the same ``content_hash``,
     so ``has_chunks`` can answer *"is this exact document already ingested?"*
     before the caller pays for PDF conversion and embedding.
@@ -114,20 +121,24 @@ def insert_chunks(
     data_objects = [
         wcd.DataObject(
             properties={
-                "text": t,
+                "text": ch["text"],
                 "source": source,
-                "submodelId": submodel_id,
-                "smElementPath": sm_element_path or "",
-                "idShort": id_short,
-                "contentHash": content_hash,
+                "source_heading": ch.get("heading", ""),
+                "source_page": ch.get("page", 1),
+                "source_url": source_url,
+                "source_filename": source_filename,
+                "submodel_id": submodel_id,
+                "sm_element_path": sm_element_path or "",
+                "id_short": id_short,
+                "content_hash": content_hash,
             },
             vector=v,
         )
-        for t, v in zip(texts, vectors)
+        for ch, v in zip(chunks, vectors)
     ]
     collection.data.insert_many(data_objects)
     log.info(
-        "Inserted %d chunks for submodel=%s idShort=%s hash=%s",
+        "Inserted %d chunks for submodel=%s id_short=%s hash=%s",
         len(data_objects), submodel_id, id_short, content_hash[:12],
     )
 
@@ -150,9 +161,9 @@ def has_chunks(
 
     collection = client.collections.get(collection_name)
     where_filter = (
-        wvf.Filter.by_property("submodelId").equal(submodel_id)
-        & wvf.Filter.by_property("smElementPath").equal(sm_element_path or "")
-        & wvf.Filter.by_property("contentHash").equal(content_hash)
+        wvf.Filter.by_property("submodel_id").equal(submodel_id)
+        & wvf.Filter.by_property("sm_element_path").equal(sm_element_path or "")
+        & wvf.Filter.by_property("content_hash").equal(content_hash)
     )
 
     result = collection.query.fetch_objects(filters=where_filter, limit=1)
@@ -168,10 +179,10 @@ def delete_documents(submodel_id: str, sm_element_path: str | None = None) -> No
         return
 
     collection = client.collections.get(collection_name)
-    where_filter = wvf.Filter.by_property("submodelId").equal(submodel_id)
+    where_filter = wvf.Filter.by_property("submodel_id").equal(submodel_id)
 
     if sm_element_path:
-        where_filter = where_filter & wvf.Filter.by_property("smElementPath").equal(
+        where_filter = where_filter & wvf.Filter.by_property("sm_element_path").equal(
             sm_element_path
         )
 

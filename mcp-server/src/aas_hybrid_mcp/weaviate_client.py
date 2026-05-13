@@ -149,7 +149,7 @@ def _count_chunks_for_submodel(submodel_id: str) -> int:
         return 0
     collection = client.collections.get(collection_name)
     result = collection.aggregate.over_all(
-        filters=wvq.Filter.by_property("submodelId").equal(submodel_id),
+        filters=wvq.Filter.by_property("submodel_id").equal(submodel_id),
         total_count=True,
     )
     return result.total_count or 0
@@ -180,7 +180,7 @@ def _search_sync(
 
     filters = None
     if submodel_id:
-        filters = wvq.Filter.by_property("submodelId").equal(submodel_id)
+        filters = wvq.Filter.by_property("submodel_id").equal(submodel_id)
 
     response = collection.query.near_vector(
         near_vector=vector,
@@ -189,17 +189,29 @@ def _search_sync(
         return_metadata=wvq.MetadataQuery(distance=True),
     )
 
-    results = [
-        {
-            "text": obj.properties.get("text", ""),
-            "source": obj.properties.get("source", ""),
-            "submodelId": obj.properties.get("submodelId", ""),
-            "smElementPath": obj.properties.get("smElementPath", ""),
-            "idShort": obj.properties.get("idShort", ""),
+    results = []
+    for obj in response.objects:
+        props = obj.properties
+        raw_url = props.get("source_url", "")
+        raw_page = props.get("source_page", 0) or 0
+
+        # Build a jump-URL for browser navigation to the specific PDF page.
+        jump_url = f"{raw_url}#page={raw_page}" if raw_url and raw_page > 0 else raw_url
+
+        results.append({
+            "text": props.get("text", ""),
+            "source": props.get("source", "other"),
+            "source_heading": props.get("source_heading", ""),
+            "source_page": raw_page,
+            "source_url": raw_url,
+            "source_filename": props.get("source_filename", ""),
+            "source_jump_url": jump_url,
+            "submodel_id": props.get("submodel_id", props.get("submodelId", "")),
+            "sm_element_path": props.get("sm_element_path", props.get("smElementPath", "")),
+            "id_short": props.get("id_short", props.get("idShort", "")),
+            "content_hash": props.get("content_hash", props.get("contentHash", "")),
             "score": 1 - (obj.metadata.distance or 0),
-        }
-        for obj in response.objects
-    ]
+        })
 
     out: dict = {"results": results}
     if not results and submodel_id:

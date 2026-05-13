@@ -29,6 +29,14 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 COPY app.py config.py handlers.py pdf.py vectorstore.py ./
 
+# Pre-download docling models so the runtime container is offline-capable.
+# Models land in /home/appuser/.cache/docling/models (docling default cache path).
+RUN docling-tools models download
+
+# Skip HuggingFace Hub revalidation at runtime; use the baked cache directly.
+ENV HF_HUB_OFFLINE=1
+ENV DOCLING_ARTIFACTS_PATH=/home/appuser/.cache/docling/models
+
 EXPOSE 8000
 
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "1800", "app:app"]

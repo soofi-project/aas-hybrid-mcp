@@ -13,6 +13,8 @@ WEAVIATE_COLLECTION: str = os.environ["WEAVIATE_COLLECTION"]
 
 # BaSyx
 BASYX_SUBMODEL_REPO: str = os.environ["BASYX_SUBMODEL_REPO"]
+# Public BaSyx URL — user-facing URL for source_url in Weaviate chunks
+BASYX_PUBLIC_URL: str = os.environ["BASYX_PUBLIC_URL"]
 
 # PDF processing
 CHUNK_SIZE: int = int(os.environ["CHUNK_SIZE"])

@@ -20,6 +20,20 @@
 | `self_refine_paper.md` | Self-Refine (Madaan et al. 2023) — Related-work nur, keine Agent-Variante, Single-LLM text refinement, nicht tool-gestützt |
 | `bench_b_evaluation.md` | Bench B — 6-question read-only eval, 4 agent variants, ETFA 2026 §Bench B |
 
+## Tasks
+
+Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteria, References.
+
+| Datei | Thema | Status |
+|---|---|---|
+| `task_reranker_integration.md` | qwen3-reranker-4b (H200) in Weaviate search integrieren | open |
+
+## Konventionen
+
+- **`task_`-prefix:** Actionable work items mit Subtasks, Acceptance Criteria, References
+- **Ohne prefix:** Architektur, Paper-Zusammenfassungen, Entscheidungen, Dokumentationen
+- Tasks schließen → `status: done`, `planned_features.md` + `future_phases.md` entsprechend updaten
+
 ## Regel
 
 Bei neuen Erkenntnissen, Entscheidungen oder mit dem Nutzer ausgearbeiteten Konzepten: **Nachfrage**, ob es in den `memory/` Ordner gehört — entweder in bestehende Datei oder als neue. Keine memory-Files ohne Abstimmung anlegen.

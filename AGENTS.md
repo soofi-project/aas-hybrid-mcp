@@ -104,6 +104,14 @@ This repo has no pre-commit hooks, lint config, typecheck, CI workflows, or form
 - `CLAUDE.md` — phase tracking, key decisions, paper context
 - `QWEN.md` — more detailed architecture + data flow
 - `memory/index.md` — overview of all memory context files. Check first for project knowledge.
+- **Tasks in `memory/task_*.md`:** Actionable work items with Subtasks, Acceptance Criteria, References. `task_`-prefix = todo, no prefix = documentation.
+
+## Task workflow
+
+Before starting implementation work, check `memory/task_*.md` for open tasks. When implementing:
+1. Read the task file for subtasks, acceptance criteria, references
+2. Work through subtasks in order (T1, T2, ...)
+3. On completion: update `status: done` in the task file + update `memory/planned_features.md` / `memory/future_phases.md` accordingly
 
 ## Common gotchas
 
