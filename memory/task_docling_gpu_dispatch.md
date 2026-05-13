@@ -113,8 +113,9 @@ spezifizierten Pfad — exakt wie im embedding-service-Image gehandhabt.
 
 ### T6: Dokumentation + Paper-Bezug
 
-- Phase 9 in `memory/future_phases.md` (auto-memory) mit konkreten Messzahlen ergänzen: CPU baseline X s/PDF, GPU Y s/PDF, Speedup Z×
-- Diese Task-Datei mit T5-Resultaten am Ende ergänzen
+- T5-Resultate als Tabelle am Ende dieser Datei eintragen
+- **`paper/etfa2026/content/06-architecture.tex` §6.2 Document Ingestion** — Platzhalter `[X]` und `[Y]` mit echten Messzahlen aus T5 ersetzen
+- **`memory/future_phases.md` Phase 9** — mit konkreten Messzahlen ergänzen: CPU baseline X s/PDF, GPU Y s/PDF, Speedup Z×
 - **Ausblick fürs Paper** (siehe eigener Abschnitt unten)
 
 ## Acceptance Criteria

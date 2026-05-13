@@ -2,7 +2,7 @@
 name: Task - RAG Metadata Overhaul
 description: Rich metadata für Weaviate chunks: source URL, page, heading, filename, snake_case schema
 type: task
-status: open
+status: in_progress
 priority: high
 depends_on: []
 ---
@@ -16,6 +16,69 @@ keine evidence classification.
 **Ziel:** Jeder chunk hat vollständige source metadata. `source` wird zum fixed category
 string ("document"), alle anderen infos in eigene properties. Snake_case durchgehend
 (Python konvention, konsistent mit vector store standards).
+
+## Status (2026-05-13)
+
+**Verifiziert funktionierend** (per MCP-`search_aas_documents`-Response):
+
+- ✓ `source = "document"` (fixed category) — alle Chunks
+- ✓ `source_heading` — Heading wird korrekt extrahiert (`"NOTICE"`,
+  `"Factory Presets"`, `"Description"`, …); funktioniert nachdem Page-
+  Marker auf eigene Zeile gesetzt wurden (sonst kollidiert er mit der
+  `startswith("#")`-Heading-Detection in MarkdownHeaderTextSplitter und
+  `_extract_heading_for_chunk`)
+- ✓ `source_page` — korrekte Page-Numbers (1, 97, 101, 133, 171, 203, 225,
+  …); funktioniert nachdem Page-Marker vor **jedem** prov-tragenden Item
+  emittiert werden (vorher nur bei Page-Change → Default-1 für
+  Mid-Page-Chunks)
+- ✓ `source_url` — verwendet `BASYX_PUBLIC_URL` (8081), URL-encoded
+  (`[0]` → `%5B0%5D`) — über `urllib.parse.quote(sm_element_path,
+  safe='')`. Vorher: blanke Brackets, broken bei Browser-Klick
+- ✓ `source_filename` = `"attachment"` für BaSyx-Attachments
+- ✓ `source_jump_url` = `{source_url}#page={source_page}` korrekt
+  zusammengebaut
+- ✓ `submodel_id` / `sm_element_path` / `id_short` / `content_hash` —
+  alle snake_case. `id_short` jetzt **leaf** (nicht mehr Full Path —
+  früher dupliziert mit `sm_element_path`); für List-Children leer (per
+  AAS-Metamodell positional adressed, kein eigener idShort)
+
+**Bugs aus der Erstimplementierung von Qwen, die in der Integration
+gefixt werden mussten** (alle in `embedding-service/pdf.py` und
+`handlers.py`):
+
+- ✗→✓ `result.status.is_success()` halluziniert → korrekt:
+  `result.status == ConversionStatus.SUCCESS`
+- ✗→✓ `doc.iterate_items()` Tuple-Unpacking fehlte → `for item, _level
+  in doc.iterate_items()` plus `getattr(item, "prov", None)` für Group-
+  Items ohne `prov`
+- ✗→✓ `TableData.table_rows` halluziniert → korrekt: `TableData.
+  table_cells` mit row/col-Offset-Spans (komplettes Rewrite von
+  `_table_to_markdown` für die cell-basierte API)
+- ✗→✓ Page-Marker inline statt eigene Zeile → broken Heading-Detection
+- ✗→✓ Page-Marker nur bei Page-Change → broken Page-Tracking für Chunks
+  mid-page
+- ✗→✓ URL nicht encoded (`[`, `]`) → broken `source_jump_url`-Klick im
+  Browser
+- ✗→✓ `id_short` = Full Path statt Leaf → Bedeutungs-Kollision mit
+  `sm_element_path`
+
+**Zusätzliche Architektur-Fixes** (über den ursprünglichen Task-Scope
+hinaus, aber notwendig für stabilen Betrieb):
+
+- ✓ docling-Modelle ins Image gebakt (`docling-tools models download`),
+  `HF_HUB_OFFLINE=1`, `DOCLING_ARTIFACTS_PATH=/home/appuser/.cache/
+  docling/models` — verhindert HF-Outbound bei jedem Container-Restart
+- ✓ Named Volume `embedding-docling-cache` in compose für Persistenz
+  über Image-Rebuilds (Vorsicht: bei Modell-Updates muss das Volume
+  manuell gelöscht werden, sonst maskiert es das aktualisierte Image)
+
+**Offener Folge-Punkt — in eigenem Task ausgelagert:**
+
+- `source_jump_url` Klick lädt PDF aktuell herunter (BaSyx sendet
+  `Content-Disposition: attachment`). Originaler Acceptance-Punkt
+  „springt im Browser zur richtigen PDF page" ist erst dann komplett
+  erfüllt, wenn der Nginx-Sidecar das Header umschreibt. Siehe
+  `task_pdf_inline_viewer.md` (depends_on diese Task hier).
 
 ## New Weaviate Schema
 

@@ -157,18 +157,18 @@ def _table_to_markdown(table_data) -> str:
 def _items_to_markdown_with_page_markers(doc: DoclingDocument) -> str:
     """Linear walk of document items, injecting page markers at page boundaries."""
     parts: list[str] = []
-    last_page: int | None = None
 
     for item, _level in doc.iterate_items():
-        # Emit a page marker before every prov-bearing item, not only on page
-        # changes. Otherwise chunks that fall fully within one page have no
-        # marker and `_extract_page` returns the default 1, breaking jump-URLs.
-        # Group items (e.g. list containers) lack `prov`, so guard with getattr.
+        # Emit a page marker before every prov-bearing item, on its own line.
+        # An own-line marker keeps heading lines clean (`## NOTICE` instead of
+        # `<!--page:97-->## NOTICE`), which both `MarkdownHeaderTextSplitter`
+        # and our own `_extract_heading_for_chunk` need — they detect headings
+        # via `line.strip().startswith("#")`. Group items (e.g. list
+        # containers) lack `prov`, so guard with getattr.
         prov = getattr(item, "prov", None)
         if prov:
             page = prov[0].page_no
-            parts.append(f"<!--page:{page}-->")
-            last_page = page
+            parts.append(f"<!--page:{page}-->\n")
 
         md = _render_item_markdown(item)
         if md:

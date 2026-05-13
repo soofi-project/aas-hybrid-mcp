@@ -2,7 +2,7 @@
 name: Task - Bibliography Audit
 description: Systematische Online-Verifikation aller 33 BibTeX-Einträge in paper/etfa2026/main.bib
 type: task
-status: open
+status: done
 priority: high
 depends_on: []
 ---
@@ -84,48 +84,48 @@ verifizieren — Link funktioniert oder nicht).
 
 ### Peer-Reviewed mit DOI (zuerst — höchstes Reviewer-Risiko)
 
-- [ ] `shi2025enhancing` (article) — DOI prüfen, Autoren, Venue (Journal-Name + Vol/Issue)
-- [ ] `xia2024zdm` (article)
-- [ ] `xia2025cdt_rag` (article)
-- [ ] `xia2024aasbyllm` (article)
-- [ ] `sonnenberg2025aas_kg` (INPROCEEDINGS) — **self-citation**, sollte 100% korrekt sein, trotzdem cross-checken (ETFA 2024 oder 2025?)
-- [ ] `sakurada2025mas_aas_type3` (article, Future Internet, OA) — License-Note bereits `CC BY 4.0`, prüfen
-- [ ] `luxenburger2023i40` (INPROCEEDINGS)
-- [ ] `ruebel2025agent_comm` (inbook, Springer OA) — Ersatz für ruebel2023skill; Autoren-Konsistenz prüfen
-- [ ] `garmaev2023submodel_classes` (INPROCEEDINGS, ETFA 2023) — PDF gerade dazugekommen, gegen das eingegangene BibTeX vom User abgleichen
-- [ ] `yan2024crag` (article) — Corrective RAG, ist eigentlich arXiv-only; prüfen ob `@article` oder `@misc` der richtige Typ ist
+- [✓] `shi2025enhancing` (article) — Autoren/DOI/Venue OK (CrossRef: Computers in Industry, vol 171, 2025)
+- [✓] `xia2024zdm` (article) — OK (Journal of Manufacturing Systems, vol 77, 678–696, 2024)
+- [✓] `xia2025cdt_rag` (article) — OK (Robotics and CIM, vol 97, 2026. Year 2026 is correct per CrossRef.)
+- [✓] `xia2024aasbyllm` (article) — OK (IEEE Access, vol 12, 2024)
+- [✓] `sonnenberg2025aas_kg` (INPROCEEDINGS) — Self-citation 100% korrekt (ETFA 2025, 1–8)
+- [✓] `sakurada2025mas_aas_type3` (article, OA) — OK (Future Internet 17(7), 270, CC BY 4.0)
+- [✓] `luxenburger2023i40` (INPROCEEDINGS) — OK (ETFA 2023, 1–8)
+- [✓] `ruebel2025agent_comm` (inbook, Springer OA) — OK, `@inbook` korrekt für Book Chapter
+- [✓] `garmaev2023submodel_classes` (INPROCEEDINGS, ETFA 2023) — OK (1–7)
+- [✗] `yan2024crag` → **Korrigiert:** `@article` → `@misc` (arXiv-only, keine Peer-Review-Publikation gefunden). DOI 10.48550/arXiv.2401.15884 hinzugefügt, Note ergänzt.
 
 ### Konferenzen mit DOI
 
-- [ ] `bfcl2024` (inproceedings) — Berkeley Function Calling Leaderboard
-- [ ] `liu2024agentbench` (inproceedings)
-- [ ] `yao2022react` (inproceedings, ICLR 2023)
-- [ ] `wang2023plan_solve` (inproceedings, ACL 2023)
-- [ ] `madaan2023self_refine` (inproceedings, NeurIPS 2023)
-- [ ] `shinn2023reflexion` (inproceedings, NeurIPS 2023)
+- [✓] `bfcl2024` (inproceedings) — OK (ICML 2025, OpenReview, CC BY 4.0, Autoren bestätigt)
+- [✓] `liu2024agentbench` (inproceedings) — OK (ICLR 2024)
+- [✓] `yao2022react` (inproceedings, ICLR 2023) — OK
+- [✓] `wang2023plan_solve` (inproceedings, ACL 2023) — OK
+- [✓] `madaan2023self_refine` (inproceedings, NeurIPS 2024) — OK
+- [✓] `shinn2023reflexion` (inproceedings, NeurIPS 2023) — OK
 
 ### arXiv / Preprints (Konferenz-Version prüfen!)
 
-- [ ] `qwen35` (misc) — Tech Report; gibt's eine offizielle Version?
-- [ ] `gao2022hyde` (misc) — HyDE; ACL 2023? prüfen
-- [ ] `xu2024rewoo` (misc) — ReWOO; arXiv only oder NeurIPS-published?
-- [ ] `wu2023autogen` (misc) — AutoGen; COLM 2024 published — sollte als `@inproceedings` rein?
+- [✓] `qwen35` (misc) — OK, qwen.ai/blog ist offizielle Quelle; kein arXiv paper
+- [✗] `gao2022hyde` → **Korrigiert:** `@misc` → `@inproceedings` (ACL 2023 publiziert, DOI 10.18653/v1/2023.acl-long.99, pages 1762–1777, CC BY 4.0)
+- [✓] `xu2024rewoo` (misc) — OK, arXiv-only, keine Konferenz-Publikation gefunden
+- [✓] `wu2023autogen` (misc) — OK, COLM 2024 workshop paper only, kein Haupttrack; `@misc` korrekt
 
 ### Industrie/Software-URLs (Link-Check)
 
-- [ ] `smartfactorykl_aasmcp` (misc) — URL erreichbar, Inhalt match?
-- [ ] `beyerlein2025aas_mcp` (misc)
-- [ ] `anthropic2024workflows` (misc)
-- [ ] `kit2025aas_mcp` (misc)
-- [ ] `basyx_pdf2aas` (misc)
-- [ ] `idta_templates_repo` (misc) — github.com/IndustrialDigitalTwin/submodel-templates ?
-- [ ] `idta_srn` (misc) — IDTA Submodel Template 02022 SRN
-- [ ] `idta_mi` (misc) — IDTA Submodel Template 02002 Maintenance Instructions
-- [ ] `basyx_python_sdk` (misc)
-- [ ] `rwthiat_template2py` (misc)
-- [ ] `docling2024` (techreport) — IBM tech report, prüfen ob arXiv-Version verfügbar/zitiert werden sollte
-- [ ] `pymupdf4llm_doc` (software)
-- [ ] `soofi_reranker` (misc) — Eigene SOOFI-Repo; URL + Beschreibung match?
+- [✓] `smartfactorykl_aasmcp` — GitHub live, 3 commits, MIT, Python — OK
+- [✓] `beyerlein2025aas_mcp` — innoq.com live, 15. Jul 2025, Philipp Beyerlein — OK
+- [✓] `anthropic2024workflows` — anthropic.com live, Dec 19, 2024 — OK
+- [✓] `kit2025aas_mcp` — keine öffentliche URL; Note "Could not verify any public web presence" ist korrekt
+- [✓] `basyx_pdf2aas` — GitHub live, 468 commits, v1.0.0 — OK
+- [✓] `idta_templates_repo` — GitHub live, 78 stars, 795 commits — OK
+- [✓] `idta_srn` — admin-shell.io live, Template in der published/ Liste — OK
+- [✓] `idta_mi` — admin-shell.io live, Template in der published/ Liste — OK
+- [✓] `basyx_python_sdk` — GitHub live, latest 2.0.1 (Apr 20, 2026) — OK
+- [✓] `rwthiat_template2py` — GitHub live, v0.1.1, GPL-3.0 — OK
+- [✗] `docling2024` → **Korrigiert:** Autoren von "A. U. Deep Search Team" auf 19 echte Autoren korrigiert (Auer, Lysak, Nassar, ... Staar). DOI 10.48550/arXiv.2408.09869 + month/day hinzugefügt. Note: "arXiv preprint (v5, 2024-12-09). No peer-reviewed venue publication."
+- [✓] `pymupdf4llm_doc` — readthedocs.live, MIT-licensed — OK
+- [✗] `soofi_reranker` → **Entfernt:** Niemals im Paper zitiert (`\cite{soofi_reranker}` nicht gefunden), aus main.bib gelöscht
 
 ## Acceptance Criteria
 
@@ -164,3 +164,4 @@ verifizieren — Link funktioniert oder nicht).
 - Doppel-Verwendungen prüfen: wird jeder cite key auch tatsächlich im
   Paper `\cite{...}`d? Falls nicht, raus damit — schlanker bib ist
   besser
+  - **`soofi_reranker`** — gefunden! Nicht im Paper zitiert → aus main.bib gelöscht ✓
