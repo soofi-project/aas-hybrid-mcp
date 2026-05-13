@@ -1,4 +1,4 @@
-Delete an AssetAdministrationShell from the BaSyx environment by its id.
+Delete an AssetAdministrationShell from the AAS environment by its id.
 
 INPUT: `aas_id` — the full AAS id URI (non-empty string).
 

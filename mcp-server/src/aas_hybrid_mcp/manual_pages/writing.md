@@ -13,10 +13,9 @@ Six generic, symmetric tools cover the full mutation surface:
   Entity, Operation, …) via a single tool
 - `delete_submodel_element(submodel_id, id_short_path)`
 
-Writes go through BaSyx; client-side validation runs first against the
-basyx-python-sdk, so constraint violations (missing `semanticId`,
-wrong nesting, wrong `modelType`) come back as a Python error you can
-react to without ever touching the server.
+Writes go through the AAS server; client-side SDK validation runs first,
+so constraint violations (missing `semanticId`, wrong nesting, wrong
+`modelType`) come back as an error you can react to.
 
 ## JSON-format gotchas
 
@@ -49,17 +48,15 @@ on write.
 
 ## After writing
 
-Kafka events from BaSyx auto-sync the change to Neo4j and Weaviate.
-You can immediately observe your write through `query_aas_graph` and
-`search_aas_documents` — but allow a second or two for the event to
-propagate.
+Changes propagate automatically to the graph and document store.
+You can observe your write through `query_aas_graph` and
+`search_aas_documents` — allow a second for propagation.
 
 ## Attachments
 
-Binary `File` / `Blob` upload (the actual bytes) is NOT yet implemented
-as an MCP tool — that is Phase 10. For now, write the `File` element
-metadata (contentType, empty value) via `put_submodel_element`; the
-binary itself must be uploaded out-of-band.
+Binary `File` / `Blob` upload is not yet an MCP tool. Write the `File`
+element metadata (contentType, empty value) via `put_submodel_element`;
+the binary must be uploaded out-of-band.
 
 **Next:** `get_manual_page("cypher")` to verify what you wrote;
 `get_manual_page("troubleshooting")` if a write fails.

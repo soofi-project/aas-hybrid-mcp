@@ -22,11 +22,18 @@
 
 ## Tasks
 
-Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteria, References.
+Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteria, References. Open tasks in `tasks/open/`, completed in `tasks/closed/`.
 
 | Datei | Thema | Status |
 |---|---|---|
-| `task_reranker_integration.md` | qwen3-reranker-4b (H200) in Weaviate search integrieren | done (2026-05-13) |
+| `tasks/closed/task_reranker_integration.md` | qwen3-reranker-4b (H200) in Weaviate search integrieren | done (2026-05-13) |
+| `tasks/closed/task_prompt_conciseness.md` | Tool Descriptions + Manuals generisch + knapp + agent-tauglich | done (2026-05-13) |
+| `tasks/open/task_hyde.md` | HyDE (Hypothetical Document Embeddings) für RAG queries | pending |
+| `tasks/open/task_query_rewriting.md` | Query Rewriting für verbesserte Retrieval-Relevanz | pending |
+| `tasks/open/task_token_usage_tracking.md` | Token-Usage-Tracking implementieren | open |
+| `tasks/open/task_verbose_fix.md` | Verbose-Output Fix | open |
+| `tasks/open/task_docling_gpu_dispatch.md` | Docling GPU Dispatch | open |
+| `tasks/open/task_agent_test_framework.md` | Agent Test Framework | open |
 
 ## Konventionen
 

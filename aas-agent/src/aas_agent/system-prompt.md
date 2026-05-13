@@ -29,6 +29,10 @@ You MUST validate your results before answering. Follow this loop:
 **Key rule:** Never answer from a single query result without first
 asking yourself: "Does this actually answer the user's question?"
 
+**Evidence rule:** If the answer relies on general knowledge rather than
+tool-call evidence, treat it as low confidence and state what data was
+not found.
+
 # Manual and schema
 
 The MCP server publishes an operator manual, templates index, and graph

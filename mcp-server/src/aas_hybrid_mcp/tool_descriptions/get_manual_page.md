@@ -4,4 +4,4 @@ Return a sub-page of the operator manual. Valid pages:
   writing         — put_*/delete_* tools and JSON gotchas
   troubleshooting — what to do on zero-row results
    recipes         — end-to-end worked examples
-   mapping         — AASX JSON field → Neo4j relationship mapping
+   mapping         — AAS field → graph relationship mapping

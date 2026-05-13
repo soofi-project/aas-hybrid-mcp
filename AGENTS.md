@@ -57,7 +57,7 @@ API keys live in `~/.env.secrets` (git-ignored), referenced via `SECRETS_PATH=~/
 | `aas-agent/src/aas_agent/` | LangGraph agent — prompts in `system-prompt.md`, `agent_plan_prompts/` — **all bind-mounted** |
 | `embedding-service/` | Flask app, PDF extraction, Weaviate vector storage |
 | `aasx/` | Test AASX files (MiR100/250, UR3e/20, CRX10iA, Hall3/4) |
-| `memory/` | Session memory files loaded into context |
+| `memory/tasks/` | Tasks: `open/` (active) + `closed/` (done) |
 | `kafka-connect-rag/` | HTTP Sink Kafka Connect config (custom Dockerfile, `pull_policy: never`) |
 
 **Build the RAG connector with `--build`** — it uses `pull_policy: never` and a version-suffix tag (`kafka-connect-rag:${KAFKA_VERSION}-${RAG_CONNECT_VERSION}`).
@@ -104,14 +104,14 @@ This repo has no pre-commit hooks, lint config, typecheck, CI workflows, or form
 - `CLAUDE.md` — phase tracking, key decisions, paper context
 - `QWEN.md` — more detailed architecture + data flow
 - `memory/index.md` — overview of all memory context files. Check first for project knowledge.
-- **Tasks in `memory/task_*.md`:** Actionable work items with Subtasks, Acceptance Criteria, References. `task_`-prefix = todo, no prefix = documentation.
+- **Tasks in `memory/tasks/open/task_*.md`:** Actionable work items with Subtasks, Acceptance Criteria, References. Completed tasks move to `memory/tasks/closed/`.
 
 ## Task workflow
 
-Before starting implementation work, check `memory/task_*.md` for open tasks. When implementing:
+Before starting implementation work, check `memory/tasks/open/task_*.md` for open tasks. When implementing:
 1. Read the task file for subtasks, acceptance criteria, references
 2. Work through subtasks in order (T1, T2, ...)
-3. On completion: update `status: done` in the task file + update `memory/planned_features.md` / `memory/future_phases.md` accordingly
+3. On completion: update `status: done` in the task file, move it to `memory/tasks/closed/` + update `memory/planned_features.md` / `memory/future_phases.md` accordingly
 
 ## Common gotchas
 

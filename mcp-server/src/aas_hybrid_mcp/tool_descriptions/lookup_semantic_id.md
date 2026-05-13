@@ -17,7 +17,7 @@ Three response classes:
    our license. Communicate this transparently to the user as a
    standardised external reference rather than fabricating semantics.
 
-3. `resolved=false` with `error=...` — the BaSyx repository was
+3. `resolved=false` with `error=...` — the AAS repository was
    unreachable or returned an unexpected status.
 
 Pair with `query_aas_graph`: Cypher returns a `SemanticConcept.id`, this tool

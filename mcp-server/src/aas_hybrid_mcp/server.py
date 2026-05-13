@@ -5,11 +5,11 @@ import logging
 import uvicorn
 from fastmcp import FastMCP
 
+from aas_hybrid_mcp import manual
 from aas_hybrid_mcp.tools import (
     concept_lookup,
     cypher_query,
     document_search,
-    manual,
     schema,
     template_search,
     templates,

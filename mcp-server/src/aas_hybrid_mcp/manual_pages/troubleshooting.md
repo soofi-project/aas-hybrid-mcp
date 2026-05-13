@@ -12,11 +12,9 @@ mode. Before concluding the data is absent, exhaust all of these moves:
    filter, an exact-string match) and re-run with `CONTAINS` /
    case-insensitive comparison or no filter at all to see what is
    actually in the graph.
-3. **List the actual semanticIds.** If you assumed an IDTA-3.0 ID
-   (e.g. `nameplate/3/0/Nameplate`) and got nothing, the graph may
-   carry a ZVEI / older variant
-   (`zvei/nameplate/2/0/Nameplate`). Run the
-   `RETURN DISTINCT sc.id` discovery query from
+3. **List the actual semanticIds.** If you assumed a current IDTA URI
+   and got nothing, the graph may carry an older or alternative URI
+   variant. Run the `RETURN DISTINCT sc.id` discovery query from
    `get_manual_page("cypher")`.
 4. **Re-skim the templates index.** If you assumed a specific template
    carries the answer and the submodel isn't there, a sibling template
@@ -26,9 +24,8 @@ mode. Before concluding the data is absent, exhaust all of these moves:
    `DERIVED_FROM` (and vice-versa for instance-specific records like
    serial number, calibration certificates, delivery protocols — those
    live on the *instance*, not the type).
-5a. **`value: null` on a Nameplate element means MultiLanguageProperty.**
-   Read the text via `(el)-[:HAS_VALUE]->(ls:LangString)` instead —
-   see Recipe E in `get_manual_page("recipes")`.
+5a. **`value: null` on text-carrying elements means MultiLanguageProperty.**
+   Read `.text` / `.language` via `(el)-[:HAS_VALUE]->(:LangString)`.
 6. **List what *is* on the shell.** Run the
    "submodels of a shell with their templates" recipe from
    `get_manual_page("cypher")`; the actual contents will usually point you

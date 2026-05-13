@@ -62,7 +62,7 @@ Integration in `weaviate_client.py`:
 - **T7:** Planungsdoku updaten:
   - `memory/planned_features.md` — HyDE: "Not implemented" → "Implemented"
   - `memory/future_phases.md` — Phase 9 HyDE: 🟦 Planned → ✅ Done
-  - `memory/task_hyde.md` — this file, status → done
+  - `memory/tasks/open/task_hyde.md` — this file, status → done
 
 ## Config
 
