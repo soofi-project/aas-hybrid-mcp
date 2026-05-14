@@ -41,7 +41,7 @@ type: project
 ## Open engineering tasks
 
 ### Pydantic coercion centralization
-- **Where:** `qwen_parser.py`, `agent_plan_nodes.py`, `crag_nodes.py`, `rewoo_nodes.py`, `reflexion_graph_nodes.py`
+- **Where:** `qwen_parser.py`, `agent_plan_nodes.py`, `crag_nodes.py`, `reflexion_graph_nodes.py`
 - **Problem:** Each parse function has its own ad-hoc coercion (`str → list`, `float → literal`, etc.)
 - **Fix:** Extract `_coerce_final_answer`, `_coerce_judgment`, etc. into a single module (e.g. `aas_agent/coercion.py`) with per-schema normalizers reused by all parsers
 

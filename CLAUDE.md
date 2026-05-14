@@ -12,8 +12,8 @@ This file holds only the few things `AGENTS.md` deliberately omits.
   OTel/Langfuse, 6 generic `put_*`/`delete_*` write tools with basyx-python-sdk
   validation
 - ✅ **6.5** test fixtures (Hall3/4 + 7 robot instances + 5 type shells)
-- ✅ **Agent variants live** — 5 Model-IDs selectable per-request:
-  `aas-agent:react` (default), `:plan`, `:crag`, `:reflexion`, `:rewoo`.
+- ✅ **Agent variants live** — 4 Model-IDs selectable per-request:
+  `aas-agent:react` (default), `:plan`, `:crag`, `:reflexion`.
   Open WebUI utility tasks (title/tag/follow-up) bypass the agent and go
   directly to `LLM_BASE_URL` via a second endpoint.
   Details in `memory/agent_variants.md`.
@@ -34,7 +34,7 @@ PDF → AAS extraction, ConceptDescription semantic layer: all in
 
 `memory/index.md` is the authoritative table of contents for all project memory
 files. Load on demand — covers architecture, AAS modeling decisions, template
-compliance, paper-summary digests (react / plan-and-solve / rewoo / reflexion /
+compliance, paper-summary digests (react / plan-and-solve / reflexion /
 crag / multiagent-debate / autogen / self-refine), Bench-B protocol, and paper
 build setup.
 

@@ -61,7 +61,7 @@ am Agent selbst nötig. Metriken kommen aus:
   llm_criteria: "Die Antwort nennt die korrekte max. Geschwindigkeit (1.5 m/s)"
   rewrite_expected:
     should_improve: true
-  variants: ["aas-agent:react", "aas-agent:plan", "aas-agent:crag", "aas-agent:reflexion", "aas-agent:rewoo"]
+  variants: ["aas-agent:react", "aas-agent:plan", "aas-agent:crag", "aas-agent:reflexion"]
   ```
 - `cases.default_variants` in `config.yaml` als fallback wenn nicht pro-case gesetzt
 - `rewrite_expected` fields (optional, for ablation cases):
@@ -118,6 +118,39 @@ am Agent selbst nötig. Metriken kommen aus:
   expected keywords/patterns aus Manuals, `rewrite_expected` blocks für ablation.
   Basierend auf extrahiertem Content: MiR100.md (30p), UR3e.md (238p), UR20.md (217p),
   CRX10iA.md (122p), MiR250.md (213p).
+- **Hard rule — Test-Fragen müssen eindeutig sein** (siehe Sektion "Frage-Disambiguierung" unten).
+
+## Frage-Disambiguierung (Hard Rule)
+
+Test-Fragen müssen so formuliert sein, dass es **genau eine** semantisch korrekte
+Lesart gibt. Sonst misst der Test nicht die Fähigkeit, sondern eine Lottoauswahl
+zwischen mehreren validen Antworten.
+
+**Anti-Beispiel (NICHT verwenden):**
+- `Welche Assets sind in Halle4?` — mehrdeutig zwischen
+  - Identitäts-Lesart: `urn:asset:hall4` (das von `MANAGES_ASSET` verwaltete Hallen-Asset)
+  - Container-Lesart: die enthaltenen Roboter via `Entity → REPRESENTS_ASSET`
+
+  Beide Lesarten sind formal korrekt. Das Wort "Asset" ist AAS-Jargon und triggert die
+  Identitäts-Lesart genauso plausibel wie die Container-Lesart. In Live-Tests
+  (2026-05-14, GPT-5.4-mini) wählten ReAct und Plan die Identitäts-Lesart, Reflexion
+  beide. Keine dieser Antworten ist "falsch".
+
+**Gute Formulierungen für Container/Location-Tests:**
+- `Welche Transportroboter sind in Halle4?` — testet Container-Traversal +
+  AGV-/Mobile-Robot-Klassifikation. Eindeutig, weil "Transportroboter" semantisch
+  weder die Halle noch eine Schale sein kann.
+- `Welche Greifroboter sind in Halle4?` — testet Container-Traversal +
+  Cobot/Manipulator-Klassifikation.
+- `Welche Geräte stehen in Halle4?` — eindeutig Containment, kein AAS-Jargon.
+
+**Allgemeine Regel:** Wenn eine Frage AAS-Vokabular verwendet (`Asset`, `Shell`, `Submodel`),
+prüfen, ob das Wort eine Identitäts-Interpretation erlaubt. Wenn ja, durch
+domänen-natürliches Vokabular ersetzen (`Roboter`, `Maschinen`, `Sensoren`,
+`Geräte`, `Anlagen`).
+
+Diese Regel ist Teil der Test-Case-Validation in T2 — Cases die diese Regel
+verletzen, werden im Loader abgelehnt oder mit Warnung markiert.
 
 ### T6: Config + README
 - `config.yaml` mit defaults:
@@ -128,7 +161,6 @@ am Agent selbst nötig. Metriken kommen aus:
     - "aas-agent:plan"
     - "aas-agent:crag"
     - "aas-agent:reflexion"
-    - "aas-agent:rewoo"
   llm_judge:
     enabled: false
     base_url: ""
@@ -175,15 +207,16 @@ runs (once mit `on`, once mit `off`), MCP-Server restartet zwischen den Läufen 
 - LLM-judge optional: mit/ohne `--llm-judge` flag funktionieren beide
 - Kein hard dependency auf repo-Code: standalone ausführbar
 - Mindestens 5 sinnvolle Test-Cases die reale Queries repräsentieren
-- Alle 5 Agent-Variants testbar (react, plan, crag, reflexion, rewoo)
+- Alle 4 Agent-Variants testbar (react, plan, crag, reflexion)
 - `--rewrite-ablation` läuft zwei Durchläufe (on/off), zeigt Δ-Score pro case
 - `query_rewritten` und `rewritten_query` im TResult für rewrite-tracing
 - `cases_rewrite_ablation.yaml` als separates file mit 10 Worker-Query Cases
+- Alle Test-Cases erfüllen die Hard Rule "Frage-Disambiguierung" — keine semantisch mehrdeutigen Fragen wie `Welche Assets sind in Halle4?`
 
 ## References
 
 - Agent API: `aas-agent/src/aas_agent/api.py` — `/v1/chat/completions`
-- Agent variants: `memory/agent_variants.md` — 5 variants + verbose suffix behavior
+- Agent variants: `memory/agent_variants.md` — 4 variants + verbose suffix behavior
 - Existing ad-hoc tests: `mcp-server/src/test_hierarchical.py`, `test_hierarchical_final.py`
 - Rewrite module: `mcp-server/src/aas_hybrid_mcp/query_rewriter.py`
 - Rewrite ablation cases: `tests/cases_rewrite_ablation.yaml`

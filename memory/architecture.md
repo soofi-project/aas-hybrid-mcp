@@ -102,7 +102,6 @@ flowchart TB
 | `aas-agent:plan` | Plan-and-Reflect: structured planner → executor (bounded ReAct sub-loop) → reflector → finalizer |
 | `aas-agent:crag` | Corrective RAG: executor → relevance evaluator → refine query → retry (up to `CRAG_MAX_REFINEMENTS`) → synthesizer |
 | `aas-agent:reflexion` | Self-improvement: executor → judge → reflect → retry (up to `REFLEXION_MAX_TRIALS`) with verbal feedback |
-| `aas-agent:rewoo` | Reasoning Without Observation: plan all tool calls upfront → execute in parallel (`asyncio.gather`) → synthesize |
 
 ---
 

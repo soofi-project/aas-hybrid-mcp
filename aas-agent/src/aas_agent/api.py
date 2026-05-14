@@ -47,7 +47,6 @@ _MODEL_INFO: dict[str, tuple[str, str]] = {
     "aas-agent:plan":      ("plan_reflect", "system-prompt.md"),
     "aas-agent:crag":      ("crag",         "system-prompt.md"),
     "aas-agent:reflexion": ("reflexion",    "system-prompt.md"),
-    "aas-agent:rewoo":     ("rewoo",        "system-prompt.md"),
 }
 
 # Auto-generate verbose variants for every model
@@ -175,9 +174,6 @@ def _resolve_runner_class(variant: str):
     elif variant == "crag":
         from aas_agent.crag import CragAgentRunner
         return CragAgentRunner
-    elif variant == "rewoo":
-        from aas_agent.rewoo import RewooAgentRunner
-        return RewooAgentRunner
     elif variant == "reflexion":
         from aas_agent.reflexion import ReflexionAgentRunner
         return ReflexionAgentRunner

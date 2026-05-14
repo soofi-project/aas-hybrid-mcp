@@ -17,7 +17,7 @@ aber es gibt qualitative Lücken:
 2. **Halluzinationen ungeprüft** — reflexion Variant: "MiR100" wird als Biomedizin ("microRNA100 in
    miRBase") interpretiert. Der Judge akzeptiert die Antwort ohne Evidenz-Check.
 3. **Reaktiver Reflektor** — driftet in falsche Domänen, hat keine Domänen-Erinnerung.
-4. **Synthesizer ohne Evidenz-Verpflichtung** — crag, rewoo, plan/reflect Finalizer referenzieren
+4. **Synthesizer ohne Evidenz-Verpflichtung** — crag, plan/reflect Finalizer referenzieren
    nicht explizit, dass die Antwort auf Tool-Ergebnissen basieren muss.
 
 ## Subtasks
@@ -60,7 +60,7 @@ aber es gibt qualitative Lücken:
 - Nach dem Key Rule in "Self-validating approach" eingefügt: "If the answer relies on general
   knowledge rather than tool-call evidence, treat it as low confidence and state what data was
   not found."
-- Gilt für ALLE 5 Varianten gleichzeitig — günstigster Hebel
+- Gilt für ALLE 4 Varianten gleichzeitig — günstigster Hebel
 
 ### T6: Plan/Reflect Reflector — success_criteria Vollständigkeit
 **Status:** ✅ Done (2026-05-13)
@@ -97,7 +97,7 @@ die Reihenfolge vorzuschreiben.
 
 ### T9: Test — alle Änderungen verifizieren
 Stack restart: `./down.sh && ./up.sh --vllm` (bind-mount, kein rebuild).
-Alle 5 Varianten (`react`, `plan`, `crag`, `reflexion`, `rewoo`) mit:
+Alle 4 Varianten (`react`, `plan`, `crag`, `reflexion`) mit:
 1. "Welche Assets stehen in Halle 4 und welche Seriennummern haben diese Assets?"
    → Hierarchische Traversal, kein DEPLOYED_IN, Seriennummern vollständig
 2. "Was ist die max. Spindeldrehzahl der MiR100?"

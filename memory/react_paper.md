@@ -60,7 +60,7 @@ Das Paper nutzt 3-6 hand-crafted Trajectories als in-context examples. Zero-Shot
 
 ### Bench-B Eval-Asymmetrie (2026-05-12)
 
-ReAct hat strukturell **keinen separaten Finalizer/Synthesizer-Node** — der `create_react_agent`-Loop produziert die finale Antwort direkt als freien Text. Im Gegensatz dazu liefern plan/crag/reflexion/rewoo strukturierte `FinalAnswer`-Objekte mit `confidence` (high/medium/low) und `unresolved[]`-Listen.
+ReAct hat strukturell **keinen separaten Finalizer/Synthesizer-Node** — der `create_react_agent`-Loop produziert die finale Antwort direkt als freien Text. Im Gegensatz dazu liefern plan/crag/reflexion strukturierte `FinalAnswer`-Objekte mit `confidence` (high/medium/low) und `unresolved[]`-Listen.
 
 **Konsequenz für Bench B:** ReAct kann das `confidence`-Feld nicht ausfüllen — paper-inhärente Asymmetrie, kein Bug. Für die manuelle Grading-Auswertung muss man bei ReAct anhand der Antwort-Substanz selbst klassifizieren (high/medium/low), während die anderen Varianten ihre Self-Assessment liefern.
 

@@ -138,10 +138,6 @@ usage-wert als `__usage__`-token yielden.
 **File:** `aas-agent/src/aas_agent/reflexion.py`
 - Gleiches pattern wie T3
 
-### T5: ReWOO runner usage
-**File:** `aas-agent/src/aas_agent/rewoo.py`
-- Gleiches pattern wie T3
-
 ### T6: API-Layer usage in `_stream_sse`
 **File:** `aas-agent/src/aas_agent/api.py:353-401`
 - Problem: `_stream_sse` hat keinen access zum `trace` objekt vom runner
@@ -170,7 +166,6 @@ usage-wert als `__usage__`-token yielden.
 | Plan/Reflect | planner, executor (loop), reflector, finalizer | 4-8 |
 | CRAG | executor, relevance, refine/uncorrect, synthesizer | 3-5 |
 | Reflexion | executor (loop), judge, reflect, finalizer | 4-7 |
-| ReWOO | plan, synthesize | 2 |
 
 ## Files Affected
 
@@ -181,14 +176,13 @@ usage-wert als `__usage__`-token yielden.
 | `aas-agent/src/aas_agent/agent_plan.py` | T2 | Usage akkumulieren (stream + invoke) |
 | `aas-agent/src/aas_agent/crag.py` | T3 | Usage akkumulieren (stream + invoke) |
 | `aas-agent/src/aas_agent/reflexion.py` | T4 | Usage akkumulieren (stream + invoke) |
-| `aas-agent/src/aas_agent/rewoo.py` | T5 | Usage akkumulieren (stream + invoke) |
 | `aas-agent/src/aas_agent/api.py` | T6, T7 | Hardcoded `0` → real usage, SSE final chunk |
 
 ## Acceptance Criteria
 
 - `/v1/chat/completions` (no stream) → response `usage` hat echte token counts
 - `stream: true` SSE → letztes chunk hat `usage` field (OpenAI-Schema)
-- Alle 5 variants (react, plan, crag, reflexion, rewoo) reporten usage
+- Alle 4 variants (react, plan, crag, reflexion) reporten usage
 - Non-verbose + verbose streams gleichermaßen mit usage
 - `api.py:334` hardcoded `0` entfernt
 - `on_chat_model_end` in allen `astream_events` loops gesammelt

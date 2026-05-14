@@ -2,14 +2,14 @@
 name: Task - ReWOO Variant entfernen
 description: ReWOO Agent-Variante komplett aus Code, Paper, Doku und Tasks entfernen (performt schlecht, Ansatz passt nicht)
 type: task
-status: pending
+status: done
 priority: medium
 depends_on: []
 ---
 
 ## Status
 
-Nicht gestartet. ReWOO liefert schlechte Ergebnisse, plan-then-execute Ansatz passt nicht zum AAS-Hybrid-Setup.
+Erledigt (2026-05-14). Alle Code-Dateien, API-Routing, `.env`, Paper, Doku und Task-Referenzen bereinigt.
 
 ## Ziel
 
