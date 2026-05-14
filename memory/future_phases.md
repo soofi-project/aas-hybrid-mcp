@@ -26,9 +26,11 @@ type: project
 - Bench B ablation axis
 
 ### HyDE (Hypothetical Document Embeddings)
-- Generate a hypothetical answer passage; embed _that_ instead of the raw user query
-- Bench B ablation axis, ref: gao2022hyde
-- Where: embedding-service — new endpoint `/embed_with_hyde` that takes query + system context → generates hypothetical doc → embeds
+**Status:** ❌ Dropped (2026-05-13, commit 6e8b0a4)
+- Removed from paper §08-retrieval-pipeline (section renamed "Retrieval Enhancements", describes rewrite + reranker only)
+- `gao2022hyde` bib entry deleted from `main.bib`
+- `memory/tasks/open/task_hyde.md` deleted
+- Rationale: query rewriting covers the same "expand query semantics" gap with lower latency and no extra embedding endpoint
 
 ## Phase X: Kubernetes Deployment
 **Status:** 🟦 Planned

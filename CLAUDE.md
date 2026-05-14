@@ -17,8 +17,10 @@ This file holds only the few things `AGENTS.md` deliberately omits.
   Open WebUI utility tasks (title/tag/follow-up) bypass the agent and go
   directly to `LLM_BASE_URL` via a second endpoint.
   Details in `memory/agent_variants.md`.
-- 🟦 **Phase 9 — Retrieval ablation**: cross-encoder reranker (Qwen2-Reranker-7B
-  via vLLM), LLM query rewriting, HyDE — see `memory/future_phases.md`
+- ✅ **Phase 9 — Retrieval enhancements committed** (commits d9db611 + 6e8b0a4):
+  cross-encoder reranker (`reranker.py`, qwen3-reranker-4b via vLLM) and LLM
+  query rewriting (`query_rewriter.py`, 30s timeout). HyDE dropped — removed
+  from paper §08 and from `main.bib`. See `memory/future_phases.md`.
 - 🟦 **Phase X — Kubernetes / Helm** packaging
 - 🟦 **Bench B eval running** — 4 variants (react / plan / crag / reflexion)
   × 6 queries, manual grading. Protocol in `memory/bench_b_evaluation.md`

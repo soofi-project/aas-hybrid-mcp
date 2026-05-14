@@ -38,4 +38,6 @@ def register(mcp: FastMCP) -> None:
         }
         if response.get("rewritten_query"):
             out["rewritten_query"] = response["rewritten_query"]
+        if response.get("hint"):
+            out["hint"] = response["hint"]
         return out

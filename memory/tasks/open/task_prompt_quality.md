@@ -63,32 +63,37 @@ aber es gibt qualitative Lücken:
 - Gilt für ALLE 5 Varianten gleichzeitig — günstigster Hebel
 
 ### T6: Plan/Reflect Reflector — success_criteria Vollständigkeit
-**Problem (verifiziert 2026-05-13):** Plan/Reflect-Reflector markiert Schritt als `step_done`,
-obwohl ein Teil der geforderten Daten fehlt (Halle 4-Query: globalAssetId gefunden, aber
-Seriennummern vergessen — der Plan verlangte beide).
+**Status:** ✅ Done (2026-05-13)
 **File:** `aas-agent/src/aas_agent/agent_plan_prompts/reflector.md`
-- Nach den Stop Rules einfügen: "Before marking step_done, verify ALL requested data points
-  from the original step's success_criteria are present. If only partial results exist (e.g.
-  asset IDs but not serial numbers), return `continue` with a hint to fetch the missing data."
+Neue Hard-Rule "Complete coverage before done" ergänzt: jeder im `success_criteria`
+benannte Datenpunkt muss in `evidence_collected` belegt sein, sonst `step_retry` mit
+Hinweis auf den fehlenden Punkt. Paper-Status: domain-neutrale Konsistenzregel, kein
+Plan-and-Solve-Konflikt.
 
 ### T7: Reflexion Executor — Evidenz-Wiederverwendung
-**Problem (verifiziert 2026-05-13):** Trial 2 dupliziert fast alle Tool-Calls aus Trial 1.
-Der Executor ignoriert `feedback_history` und fetcht Daten neu, die bereits in Trial 1
-vorhanden waren (Templates-Index, HierarchicalStructures, Nameplate).
+**Status:** ✅ Done (2026-05-13)
 **File:** `aas-agent/src/aas_agent/reflexion_graph_nodes.py:_EXECUTOR_PROMPT`
-- Hinzufügen: "Reuse evidence from previous trials when available. Check `feedback_history`
-  and prior tool results before calling tools. Only fetch data that is specifically missing
-  from prior attempts."
+Eine Zeile zu Beginn ergänzt: feedback aus Vortrials als short-term memory behandeln,
+keine Re-Calls der dort zitierten Tools, nur fehlende Daten fetchen. Paper-Status:
+direkt aus Reflexion §3 abgeleitet (Actor conditions on short- and long-term memory).
 
-### T8: Executor — `get_templates_index` bevorzugen
-**Problem (verifiziert 2026-05-13):** Plan/Reflect ruft `search_idta_templates` 2× auf,
-beide Male 0 Ergebnisse. `get_templates_index` (deterministisch, vollständig, 1 Call)
-wäre sofort korrekt gewesen.
-**File:** `aas-agent/src/aas_agent/agent_plan_prompts/executor.md`
-- Vor der "How to find the right template" Sektion einfügen: "Prefer `get_templates_index()`
-  (deterministisch, vollständig) als ersten Schritt. `search_idta_templates` (fuzzy, häufig
-  0 Ergebnisse) nur als Fallback nutzen, wenn template-Name unbekannt und begriffliche
-  Suche sinnvoll erscheint."
+### T8: Executor — Tool-Routing für leere Suche
+**Status:** ✅ Done (2026-05-13), umgewidmet auf Tool-Ebene
+**Paper-Begründung:** ReAct-Paper Table 2 nennt "Search return empty" als 23 % der
+ReAct-Fehler ("derails the model reasoning"). Die zwei vom Paper genannten Fixes
+(CoT-SC-Fallback bzw. Finetuning) sind für uns nicht anwendbar (Halluzinationsrisiko
+bzw. out of scope). Stattdessen wurde der Action-Space des Tools informativer
+gemacht — analog zur Wikipedia-API im ReAct-Paper, die bei Fehlsuche "Could not find.
+Similar: [...]" liefert. Kein Tool-Routing im Prompt — paper-fremd wäre, dem LLM
+die Reihenfolge vorzuschreiben.
+
+**Files:**
+- `mcp-server/src/aas_hybrid_mcp/weaviate_client.py`: `_search_templates_sync` liefert
+  bei 0 Treffern (Collection fehlt **oder** kein Semantik-Match) ein `hint`-Feld
+  *"search_idta_templates returned no results. Call get_templates_index() for the
+  complete deterministic catalogue."* Plus Logging für Diagnose.
+- `mcp-server/src/aas_hybrid_mcp/tools/template_search.py`: Hint-Feld durch den
+  MCP-Wrapper propagieren.
 
 ### T9: Test — alle Änderungen verifizieren
 Stack restart: `./down.sh && ./up.sh --vllm` (bind-mount, kein rebuild).

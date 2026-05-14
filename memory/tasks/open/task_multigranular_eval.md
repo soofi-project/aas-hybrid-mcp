@@ -1,9 +1,31 @@
 # Multi-Granular Relevance Evaluation (MG-CRAG)
 
 **Created:** 2026-05-13
-**Status:** open
-**Priority:** medium
-**Depends on:** task_crag_peer_review.md (PDF + citation in place)
+**Status:** **decision pending** — see Decision Gate below
+**Priority:** low (after re-scoping 2026-05-13)
+**Depends on:** PDF arrival (author email pending)
+
+## Decision Gate (added 2026-05-13)
+
+We already have a working CRAG variant (Yan §4.3 three-way action trigger) that is
+implemented, Bench-B-tested, and paper-cited (`yan2024crag,masoumi2026mgcrag`
+together in `06-architecture.tex:57`). MG-CRAG is now positioned in
+`13-future-work.tex` as a natural extension, not a must-do for ETFA 2026.
+
+**Before any implementation work:**
+
+1. **Wait for the MG-CRAG PDF** — author email pending. Without the paper, no
+   faithful port is possible.
+2. **Decide whether to do it at all.** The honest question is whether
+   within-chunk noise actually dominates Bench-B failure modes in our AAS
+   domain. If Bench-B shows current CRAG mostly fails on retrieval-miss
+   (no relevant chunk found) rather than mixed-quality chunks (relevant
+   sentence buried in noise), MG-CRAG's value is marginal here.
+3. **Trigger conditions for "yes, implement":** Bench-B shows a measurable
+   class of failures attributable to chunk-level noise; PDF available; budget
+   for ~2-3 days work outside ETFA submission window.
+4. **Default if undecided:** stays in Future Work, no code changes, paper
+   text already covers it.
 
 ## Motivation
 

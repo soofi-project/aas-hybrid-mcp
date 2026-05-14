@@ -126,7 +126,7 @@ The vLLM Qwen model often returns:
 - **Nodes:** `executor`, `relevance`, `refine`, `synthesize`
 - **Relevance** evaluates retrieved evidence on 0.0–1.0 scale via structured Pydantic schema
 - Below `CRAG_RELEVANCE_THRESHOLD`: generates refined query, retries (up to `CRAG_MAX_REFINEMENTS`)
-- Based on CRAG, validated by MG-CRAG (masoumi2026mgcrag)
+- Based on CRAG three-way action trigger (yan2024crag §4.3); MG-CRAG (masoumi2026mgcrag) cited as peer-reviewed line of work, multi-granular evaluator is future work
 
 ### rewoo
 - **Nodes:** `plan`, `execute`, `synthesize`

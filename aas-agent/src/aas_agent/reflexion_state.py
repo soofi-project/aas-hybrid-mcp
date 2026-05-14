@@ -58,12 +58,20 @@ class FinalAnswer(BaseModel):
 
 
 class TrialRecord(BaseModel):
-    """Record of one reflexion trial."""
+    """Record of one reflexion trial.
+
+    `tool_trajectory` is the structured short-term memory of this trial
+    (Paper §3 line 338-340) — the actual tool calls + observation
+    snippets the actor executed, distinct from the verbal long-term
+    reflection. The next trial's actor consumes it to avoid re-running
+    tools whose results are already known.
+    """
 
     trial: int
     score: float
     verdict: Literal["accept", "revise"]
     summary: str
+    tool_trajectory: list[dict] = Field(default_factory=list)
 
 
 class ReflexionState(TypedDict):
@@ -79,4 +87,5 @@ class ReflexionState(TypedDict):
     accept_threshold: float
     last_answer_text: str  # most recent executor answer (overwritten each trial)
     best_answer_text: str  # highest-scored answer across all trials
+    last_trial_trajectory: list[dict]  # tool calls + result snippets of the trial just finished
     remaining_steps: RemainingSteps

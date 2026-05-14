@@ -342,8 +342,20 @@ def _search_templates_sync(
 
     collection_name = _get_collection_name(IDTA_TEMPLATE_BASE)
 
+    _FALLBACK_HINT = (
+        "search_idta_templates returned no results. "
+        "Call get_templates_index() for the complete deterministic catalogue."
+    )
+
     if not client.collections.exists(collection_name):
-        return {"results": [], "reranker_used": False}
+        log.warning(
+            "search_idta_templates: collection %s does not exist", collection_name
+        )
+        return {
+            "results": [],
+            "reranker_used": False,
+            "hint": _FALLBACK_HINT,
+        }
 
     model = _get_embedding_model()
     vector = model.embed_query(query)
@@ -402,12 +414,19 @@ def _search_templates_sync(
     else:
         results = results[:limit]
 
-    return {
+    out: dict = {
         "results": results,
         "reranker_used": reranker_used,
         "query_rewritten": query_rewritten,
         "rewritten_query": rewritten if query_rewritten else None,
     }
+    if not results:
+        log.info(
+            "search_idta_templates: 0 results for query=%r (collection=%s)",
+            original_query, collection_name,
+        )
+        out["hint"] = _FALLBACK_HINT
+    return out
 
 
 async def search_templates(

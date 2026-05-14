@@ -113,6 +113,8 @@ Before starting implementation work, check `memory/tasks/open/task_*.md` for ope
 2. Work through subtasks in order (T1, T2, ...)
 3. On completion: update `status: done` in the task file, move it to `memory/tasks/closed/` + update `memory/planned_features.md` / `memory/future_phases.md` accordingly
 
+Paper-writing tasks live in the same directory and use the `task_paper_*` prefix (e.g. `task_paper_claim_audit.md`) — do not create a parallel task store under `paper/`.
+
 ## Common gotchas
 
 1. **Changing AASX files after stack is up:** you MUST stop + wipe (`./down.sh` default). Otherwise BaSyx 409s on upload.

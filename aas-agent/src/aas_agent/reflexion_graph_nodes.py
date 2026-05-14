@@ -10,9 +10,12 @@ from pathlib import Path
 from typing import Callable
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph.prebuilt import create_react_agent
+
+_TRAJECTORY_OUTPUT_CHARS = 200
+_TRAJECTORY_ARGS_CHARS = 120
 
 from aas_agent.qwen_parser import QwenOutputParser, _normalize_json_from_qwen
 from aas_agent.reflexion_state import (
@@ -39,6 +42,14 @@ _SHARED_SYNTHESIZER_RULES = (
 _EXECUTOR_PROMPT = """You are an executor for the AAS Maintenance Assistant.
 Retrieve information to answer the user's query using MCP tools.
 Report your findings; do not synthesize the final answer.
+
+When previous trials are listed below, treat them as your memory:
+- "Previous Trial Tool Trajectory" is short-term memory — the actual
+  tool calls and observation snippets from earlier attempts. Do not
+  re-call a tool whose result is already there.
+- "Previous Reflections" is long-term memory — verbal advice from the
+  self-reflection step. Apply it to choose a different approach.
+Fetch only what the latest reflection identifies as missing.
 """
 
 _JUDGE_PROMPT = """You are an evaluator for the AAS Maintenance Assistant. Judge the quality of
@@ -100,6 +111,54 @@ _FINALIZER_PROMPT_FULL = (
 # Executor node
 # ---------------------------------------------------------------------------
 
+def _extract_trajectory(messages: list) -> list[dict]:
+    """Walk a sub-loop's messages and produce the structured short-term memory.
+
+    Pairs each AI tool call with the matching ToolMessage observation so
+    the next trial sees both intent and outcome in compact form.
+    """
+    trajectory: list[dict] = []
+    pending: dict[str, dict] = {}
+    for msg in messages:
+        if isinstance(msg, AIMessage) and getattr(msg, "tool_calls", None):
+            for tc in msg.tool_calls:
+                call_id = tc.get("id") or ""
+                name = tc.get("name", "tool")
+                args = tc.get("args", {})
+                try:
+                    args_str = json.dumps(args, ensure_ascii=False)
+                except (TypeError, ValueError):
+                    args_str = str(args)
+                if len(args_str) > _TRAJECTORY_ARGS_CHARS:
+                    args_str = args_str[:_TRAJECTORY_ARGS_CHARS] + "..."
+                entry = {"tool": name, "args": args_str, "output": ""}
+                trajectory.append(entry)
+                if call_id:
+                    pending[call_id] = entry
+        elif isinstance(msg, ToolMessage):
+            call_id = getattr(msg, "tool_call_id", "")
+            content = msg.content if isinstance(msg.content, str) else str(msg.content)
+            if len(content) > _TRAJECTORY_OUTPUT_CHARS:
+                content = content[:_TRAJECTORY_OUTPUT_CHARS] + "..."
+            if call_id and call_id in pending:
+                pending[call_id]["output"] = content
+            elif trajectory and not trajectory[-1]["output"]:
+                trajectory[-1]["output"] = content
+    return trajectory
+
+
+def _render_trajectory(trajectory: list[dict]) -> str:
+    """Render a trajectory list as compact markdown for prompt injection."""
+    if not trajectory:
+        return ""
+    lines = []
+    for i, step in enumerate(trajectory, 1):
+        lines.append(f"{i}. `{step['tool']}({step['args']})`")
+        if step["output"]:
+            lines.append(f"   → {step['output']}")
+    return "\n".join(lines)
+
+
 async def _run_executor_subloop(
     llm: BaseChatModel,
     tools: list[BaseTool],
@@ -143,12 +202,26 @@ def make_executor_node(
     async def executor_node(state: ReflexionState) -> dict:
         user_request = _last_human_text(state)
 
-        # Build prompt: executor instructions + system prompt + MCP context + feedback
+        # Build prompt: executor instructions + system prompt + MCP context + memory
         prompt_parts = [_EXECUTOR_PROMPT, "\n\n---\n\n", base_system]
+
+        trial_records = state.get("trial_records", [])
+        if trial_records:
+            prompt_parts.append(
+                "\n\n## Previous Trial Tool Trajectory (short-term memory)\n\n"
+            )
+            for tr in trial_records:
+                rendered = _render_trajectory(tr.tool_trajectory)
+                if rendered:
+                    prompt_parts.append(
+                        f"### Trial {tr.trial} (score={tr.score:.2f})\n{rendered}\n\n"
+                    )
 
         feedback_history = state.get("feedback_history", [])
         if feedback_history:
-            prompt_parts.append("\n\n## Previous Attempts & Feedback\n\n")
+            prompt_parts.append(
+                "\n\n## Previous Reflections (long-term memory)\n\n"
+            )
             for fb in feedback_history:
                 prompt_parts.append(str(fb))
                 prompt_parts.append("\n\n")
@@ -164,14 +237,17 @@ def make_executor_node(
             max_iterations=iteration_limit,
         )
 
+        trajectory = _extract_trajectory(msgs)
+
         log.info(
-            "executor trial %d: answer_len=%d messages=%d",
-            state.get("current_trial", 1), len(answer), len(msgs),
+            "executor trial %d: answer_len=%d messages=%d tool_steps=%d",
+            state.get("current_trial", 1), len(answer), len(msgs), len(trajectory),
         )
 
         return {
             "messages": msgs,
             "last_answer_text": answer,
+            "last_trial_trajectory": trajectory,
         }
 
     return executor_node
@@ -231,6 +307,7 @@ def make_judge_node(llm: BaseChatModel) -> Callable:
             score=judgment.score,
             verdict=judgment.verdict,
             summary=answer[:500] if answer else "(empty answer)",
+            tool_trajectory=list(state.get("last_trial_trajectory", [])),
         )
         existing = list(state.get("trial_records", []))
         existing.append(new_record)
