@@ -33,6 +33,25 @@ from aas_agent.http_client import _build_http_client
 from aas_agent.agent_plan_state import Plan, Reflection
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
+from aas_agent.usage import (
+    accumulate_from_event,
+    accumulate_from_messages,
+    empty_usage,
+    encode_usage_sentinel,
+)
+from aas_agent.verbose_stream_utils import (
+    extract_final_text,
+    is_verbose,
+    node_transition_block,
+)
+
+# Top-level langgraph nodes whose entry should appear as a <think> block
+# when streaming verbose. ``advance_step`` is a thin state-update node
+# (no LLM call), included for completeness because it marks a real step
+# boundary in the trace.
+_PLAN_NODES = frozenset(
+    {"planner", "execute_step", "reflector", "advance_step", "finalizer"}
+)
 
 log = logging.getLogger(__name__)
 
@@ -241,6 +260,7 @@ class PlanReflectAgentRunner:
             base_url=self._llm_base_url,
             model=self._llm_model,
             streaming=streaming,
+            stream_usage=True,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
             **llm_kwargs,
@@ -288,11 +308,33 @@ class PlanReflectAgentRunner:
         if graph is None:
             raise RuntimeError("Plan/reflect agent not initialized")
 
+        verbose = is_verbose(extra)
         lc = self._to_langchain_messages(messages)
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
+        usage = empty_usage()
 
         config = {"recursion_limit": self._recursion_limit}
+
+        if not verbose:
+            try:
+                result = await graph.ainvoke(self._initial_state(lc), config=config)
+                accumulate_from_messages(result.get("messages", []), usage)
+                text = extract_final_text(result)
+                if text:
+                    yield text
+                    trace.append(text)
+            except Exception:
+                log.exception("Fatal error in non-verbose plan/reflect invoke")
+                err = "\n\n[stream error — see server logs]\n"
+                trace.append(err)
+                yield err
+            finally:
+                trace.set_usage(usage)
+                yield encode_usage_sentinel(usage)
+                trace.flush()
+            return
+
         in_tool_block = False
 
         try:
@@ -300,6 +342,15 @@ class PlanReflectAgentRunner:
                 self._initial_state(lc), config=config, version="v2"
             ):
                 try:
+                    if accumulate_from_event(event, usage):
+                        continue
+
+                    nt = node_transition_block(event, _PLAN_NODES)
+                    if nt:
+                        trace.append(nt, strip_leading_newlines=True)
+                        yield nt
+                        continue
+
                     kind = event.get("event")
                     name = event.get("name", "")
                     metadata = event.get("metadata") or {}
@@ -375,6 +426,8 @@ class PlanReflectAgentRunner:
         finally:
             if in_tool_block:
                 yield "\n</think>\n\n"
+            trace.set_usage(usage)
+            yield encode_usage_sentinel(usage)
             trace.flush()
 
     async def invoke(
@@ -384,8 +437,8 @@ class PlanReflectAgentRunner:
         conversation_id: str = "",
         chat_id: str | None = None,
         extra: dict | None = None,
-    ) -> str:
-        """Non-streaming variant — returns the finalizer's rendered text."""
+    ) -> tuple[str, dict]:
+        """Non-streaming variant — returns ``(response_text, usage)``."""
         graph = self._select_graph(reasoning_effort)
         if graph is None:
             raise RuntimeError("Plan/reflect agent not initialized")
@@ -393,6 +446,9 @@ class PlanReflectAgentRunner:
         lc = self._to_langchain_messages(messages)
         config = {"recursion_limit": self._recursion_limit}
         result = await graph.ainvoke(self._initial_state(lc), config=config)
+
+        usage = empty_usage()
+        accumulate_from_messages(result.get("messages", []), usage)
 
         response = ""
         for msg in reversed(result.get("messages", [])):
@@ -404,8 +460,9 @@ class PlanReflectAgentRunner:
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
         trace.append(response)
+        trace.set_usage(usage)
         trace.flush()
-        return response
+        return response, usage
 
 
 __all__ = ["PlanReflectAgentRunner"]

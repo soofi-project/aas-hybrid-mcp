@@ -10,6 +10,12 @@ from typing import AsyncIterator
 _TOOL_OUTPUT_CHARS = 3000
 _TOOL_ARGS_CHARS = 800
 
+# Top-level langgraph nodes whose entry should appear as a <think> block
+# when streaming verbose. The prebuilt ReAct agent has two: "agent" (the
+# LLM call) and "tools" (ToolNode). The tool node already produces its own
+# tool-start/tool-end blocks, so we only surface "agent" here.
+_REACT_NODES = frozenset({"agent"})
+
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
@@ -18,6 +24,17 @@ from langgraph.prebuilt import create_react_agent
 from aas_agent.http_client import _build_http_client
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
+from aas_agent.usage import (
+    accumulate_from_event,
+    accumulate_from_messages,
+    empty_usage,
+    encode_usage_sentinel,
+)
+from aas_agent.verbose_stream_utils import (
+    extract_final_text,
+    is_verbose,
+    node_transition_block,
+)
 
 log = logging.getLogger(__name__)
 
@@ -173,6 +190,7 @@ class AgentRunner:
             base_url=self._llm_base_url,
             model=self._llm_model,
             streaming=True,
+            stream_usage=True,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
             **llm_kwargs,
@@ -221,19 +239,51 @@ class AgentRunner:
         if agent is None:
             raise RuntimeError("Agent not initialized")
 
-        verbose = (extra or {}).get("verbose", False)
+        verbose = is_verbose(extra)
         lc_messages = self._to_langchain_messages(messages)
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
+        usage = empty_usage()
 
+        config = {"recursion_limit": self._recursion_limit}
+
+        if not verbose:
+            try:
+                result = await agent.ainvoke({"messages": lc_messages}, config=config)
+                accumulate_from_messages(result.get("messages", []), usage)
+                text = extract_final_text(result)
+                if text:
+                    yield text
+                    trace.append(text)
+            except Exception:
+                log.exception("Fatal error in non-verbose react invoke")
+                err = "\n\n[stream error — see server logs]\n"
+                trace.append(err)
+                yield err
+            finally:
+                trace.set_usage(usage)
+                yield encode_usage_sentinel(usage)
+                trace.flush()
+            return
+
+        # Verbose: tools + LLM tokens + node-entry blocks (prebuilt-react "agent" node).
         in_tool_block = False
         try:
             async for event in agent.astream_events(
                 {"messages": lc_messages},
-                config={"recursion_limit": self._recursion_limit},
+                config=config,
                 version="v2",
             ):
                 try:
+                    if accumulate_from_event(event, usage):
+                        continue
+
+                    nt = node_transition_block(event, _REACT_NODES)
+                    if nt:
+                        trace.append(nt, strip_leading_newlines=True)
+                        yield nt
+                        continue
+
                     kind = event.get("event")
                     if kind == "on_chat_model_stream":
                         chunk = event.get("data", {}).get("chunk")
@@ -241,12 +291,12 @@ class AgentRunner:
                         if isinstance(content, str) and content:
                             trace.append(content)
                             yield content
-                    elif verbose and kind == "on_tool_start":
+                    elif kind == "on_tool_start":
                         in_tool_block = True
                         token = _format_tool_start(event)
                         trace.append(token, strip_leading_newlines=True)
                         yield token
-                    elif verbose and kind == "on_tool_end":
+                    elif kind == "on_tool_end":
                         token = _format_tool_end(event)
                         trace.append(token)
                         yield token
@@ -261,6 +311,8 @@ class AgentRunner:
         finally:
             if in_tool_block:
                 yield "\n</think>\n\n"
+            trace.set_usage(usage)
+            yield encode_usage_sentinel(usage)
             trace.flush()
 
     async def invoke(
@@ -270,8 +322,8 @@ class AgentRunner:
         conversation_id: str = "",
         chat_id: str | None = None,
         extra: dict | None = None,
-    ) -> str:
-        """Non-streaming invocation — returns full response text."""
+    ) -> tuple[str, dict]:
+        """Non-streaming invocation — returns ``(response_text, usage)``."""
         agent = self._select_agent(reasoning_effort)
         if agent is None:
             raise RuntimeError("Agent not initialized")
@@ -282,6 +334,9 @@ class AgentRunner:
             config={"recursion_limit": self._recursion_limit},
         )
 
+        usage = empty_usage()
+        accumulate_from_messages(result.get("messages", []), usage)
+
         response = ""
         for msg in reversed(result.get("messages", [])):
             if hasattr(msg, "content") and msg.content:
@@ -291,8 +346,9 @@ class AgentRunner:
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
         trace.append(response)
+        trace.set_usage(usage)
         trace.flush()
-        return response
+        return response, usage
 
 
 def _format_tool_start(event: dict) -> str:

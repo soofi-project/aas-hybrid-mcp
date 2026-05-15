@@ -23,6 +23,17 @@ from aas_agent.reflexion_graph import build_reflexion_graph
 from aas_agent.reflexion_state import TrialRecord
 from aas_agent.trace import ConversationLogger
 from aas_agent.agent import _format_tool_end, _format_tool_start
+from aas_agent.usage import (
+    accumulate_from_event,
+    accumulate_from_messages,
+    empty_usage,
+    encode_usage_sentinel,
+)
+from aas_agent.verbose_stream_utils import node_transition_block
+
+# Top-level langgraph nodes whose entry is rendered as a <think> block
+# when streaming verbose. Matches the routing in ``reflexion_graph.py``.
+_REFLEXION_NODES = frozenset({"executor", "judge", "reflect", "finalizer"})
 
 log = logging.getLogger(__name__)
 
@@ -137,6 +148,7 @@ class ReflexionAgentRunner:
             base_url=self._llm_base_url,
             model=self._llm_model,
             streaming=streaming,
+            stream_usage=True,
             model_kwargs=model_kwargs,
             extra_body=extra_body,
             **llm_kwargs,
@@ -187,15 +199,17 @@ class ReflexionAgentRunner:
         initial_state = self._initial_state(lc)
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
+        usage = empty_usage()
 
         try:
             if (extra or {}).get("verbose", False):
                 config = {"recursion_limit": int(self._recursion_limit)}
-                async for token in _stream_reflexion_verbose(graph, initial_state, config, trace):
+                async for token in _stream_reflexion_verbose(graph, initial_state, config, trace, usage):
                     yield token
             else:
                 config = {"recursion_limit": int(self._recursion_limit)}
                 result = await graph.ainvoke(initial_state, config=config)
+                accumulate_from_messages(result.get("messages", []), usage)
                 for msg in reversed(result.get("messages", [])):
                     if isinstance(msg, AIMessage) and isinstance(msg.content, str) and msg.content.strip():
                         text = msg.content.strip()
@@ -208,6 +222,8 @@ class ReflexionAgentRunner:
             yield err
             trace.append(err)
         finally:
+            trace.set_usage(usage)
+            yield encode_usage_sentinel(usage)
             trace.flush()
 
     async def invoke(
@@ -217,7 +233,8 @@ class ReflexionAgentRunner:
         conversation_id: str = "",
         chat_id: str | None = None,
         extra: dict | None = None,
-    ) -> str:
+    ) -> tuple[str, dict]:
+        """Non-streaming invocation — returns ``(response_text, usage)``."""
         graph = self._select_graph(reasoning_effort)
         if graph is None:
             raise RuntimeError("Reflexion agent not initialized")
@@ -226,6 +243,9 @@ class ReflexionAgentRunner:
         initial_state = self._initial_state(lc)
         config = {"recursion_limit": int(self._recursion_limit)}
         result = await graph.ainvoke(initial_state, config=config)
+
+        usage = empty_usage()
+        accumulate_from_messages(result.get("messages", []), usage)
 
         response = ""
         for msg in reversed(result.get("messages", [])):
@@ -240,21 +260,31 @@ class ReflexionAgentRunner:
         trace = ConversationLogger(self._log_dir, conversation_id or "unknown", chat_id=chat_id)
         trace.write_header(messages, self._llm_model, extra=extra)
         trace.append(response)
+        trace.set_usage(usage)
         trace.flush()
-        return response
+        return response, usage
 
 
 __all__ = ["ReflexionAgentRunner"]
 
 
 async def _stream_reflexion_verbose(
-    graph, initial_state: dict, config: dict, trace
+    graph, initial_state: dict, config: dict, trace, usage: dict
 ) -> AsyncIterator[str]:
     """Verbose stream for Reflexion — events as antml:thinking blocks."""
     in_tool_block = False
     try:
         async for event in graph.astream_events(initial_state, config=config, version="v2"):
             try:
+                if accumulate_from_event(event, usage):
+                    continue
+
+                nt = node_transition_block(event, _REFLEXION_NODES)
+                if nt:
+                    trace.append(nt, strip_leading_newlines=True)
+                    yield nt
+                    continue
+
                 kind = event.get("event")
                 name = event.get("name", "")
                 metadata = event.get("metadata") or {}
@@ -316,4 +346,4 @@ async def _stream_reflexion_verbose(
     finally:
         if in_tool_block:
             yield "\n</think>\n\n"
-        trace.flush()
+        # Outer stream() flushes — extra flush here would emit a _2.md duplicate.

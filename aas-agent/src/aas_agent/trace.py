@@ -55,6 +55,7 @@ class ConversationLogger:
         self._path: Path | None = None
         self._parts: list[str] = []
         self._after_header = False
+        self._usage: dict | None = None
 
     def _resolve_path(self, messages: list[dict], turn_num: int, now: datetime) -> Path | None:
         if self._log_dir is None:
@@ -98,6 +99,32 @@ class ConversationLogger:
             self._after_header = False
         self._parts.append(token)
 
+    def set_usage(self, usage: dict | None) -> None:
+        """Store the per-turn token totals; rendered as the final footer."""
+        if usage is None:
+            self._usage = None
+            return
+        # copy so later mutations don't affect what we'll write
+        self._usage = {
+            "input_tokens": int(usage.get("input_tokens", 0) or 0),
+            "output_tokens": int(usage.get("output_tokens", 0) or 0),
+            "total_tokens": int(usage.get("total_tokens", 0) or 0),
+        }
+
+    def get_usage(self) -> dict | None:
+        return self._usage
+
+    def _usage_footer(self) -> str:
+        u = self._usage or {}
+        i = int(u.get("input_tokens", 0) or 0)
+        o = int(u.get("output_tokens", 0) or 0)
+        t = int(u.get("total_tokens", 0) or 0)
+        if i == 0 and o == 0 and t == 0:
+            return ""
+        return (
+            f"\n\n---\n*Tokens — input: {i}, output: {o}, total: {t}*\n"
+        )
+
     def flush(self) -> None:
         if self._path is None or not self._parts:
             return
@@ -110,7 +137,10 @@ class ConversationLogger:
                     f"{self._path.stem}_{i}{self._path.suffix}"
                 )
                 i += 1
+            footer = self._usage_footer()
             with target.open("w", encoding="utf-8") as f:
                 f.write("".join(self._parts))
+                if footer:
+                    f.write(footer)
         except Exception:
             log.exception("Failed to write conversation log to %s", self._path)

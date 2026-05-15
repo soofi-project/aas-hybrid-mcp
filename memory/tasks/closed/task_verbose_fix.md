@@ -2,7 +2,7 @@
 name: Task - Verbose Markers Fix
 description: Angleiche verbose/non-verbose Verhalten aller Agent-Variants
 type: task
-status: open
+status: done
 priority: medium
 ---
 
@@ -69,6 +69,10 @@ beides. Ziel: alle 4 Varianten konsistent machen.
 | `aas-agent/src/aas_agent/agent.py` | T2, T4 |
 | `aas-agent/src/aas_agent/crag.py` | T3 |
 | `aas-agent/src/aas_agent/reflexion.py` | T3 |
+
+## Status (2026-05-15)
+
+**Erledigt.** `agent.py`, `agent_plan.py`, `crag.py`, `reflexion.py` verwenden jetzt die gemeinsam genutzten Utilities aus `verbose_stream_utils.py` für Non-Verbose-Endausgaben, Verbose-Thinking-Blöcke und Node-Transitions. Compose bind-mounts das Modul, sodass ein Container-Restart genügt. Stack-Test (`./down.sh && ./up.sh --vllm`) bestätigt: Alle Varianten streamen non-verbose nur die finale Antwort; verbose zeigt Tool-IO plus Knotenwechsel. Fehler 500 wegen fehlendem Moduls ist behoben.
 
 ## Acceptance Criteria
 

@@ -25,6 +25,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 
 from aas_agent.mcp_client import MCPClientManager
+from aas_agent.usage import (
+    empty_usage,
+    try_decode_usage_sentinel,
+    usage_to_openai,
+)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -314,7 +319,7 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
             media_type="text/event-stream",
         )
 
-    text = await runner.invoke(messages, conversation_id=completion_id, chat_id=client_id, extra=extra or None)
+    text, usage = await runner.invoke(messages, conversation_id=completion_id, chat_id=client_id, extra=extra or None)
     return {
         "id": completion_id,
         "object": "chat.completion",
@@ -327,7 +332,7 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
                 "finish_reason": "stop",
             }
         ],
-        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        "usage": usage_to_openai(usage),
     }
 
 
@@ -355,10 +360,18 @@ async def _stream_sse(
     client_id: str | None,
     extra: dict | None = None,
 ):
+    usage = empty_usage()
     try:
         async for token in runner.stream(messages, conversation_id=completion_id, chat_id=client_id, extra=extra):
             if not isinstance(token, str):
                 token = str(token)
+            # Runners yield a ``__usage__:{...}`` sentinel in their finally
+            # block. Capture it and skip emitting as visible content — usage
+            # is reported in the OpenAI-style chunk just before [DONE].
+            decoded = try_decode_usage_sentinel(token)
+            if decoded is not None:
+                usage = decoded
+                continue
             chunk = {
                 "id": completion_id,
                 "object": "chat.completion.chunk",
@@ -394,6 +407,16 @@ async def _stream_sse(
             "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
         }
         yield f"data: {json.dumps(done_chunk)}\n\n"
+        # Final usage chunk (OpenAI sends this when stream_options.include_usage=true).
+        usage_chunk = {
+            "id": completion_id,
+            "object": "chat.completion.chunk",
+            "created": created,
+            "model": model,
+            "choices": [],
+            "usage": usage_to_openai(usage),
+        }
+        yield f"data: {json.dumps(usage_chunk)}\n\n"
         yield "data: [DONE]\n\n"
 
 
