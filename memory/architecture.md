@@ -6,7 +6,7 @@ type: project
 
 ## Overview
 
-BaSyx loads `.aasx` files → publishes Kafka events. Two Kafka Connect pipelines consume them: `kafka-connect-neo4j` builds a Neo4j graph (structure), `kafka-connect-rag` → `embedding-service` → extracts PDFs → chunks → embeds → stores in Weaviate (vectors). LangGraph agents call 16 MCP tools on port 8110 to query both stores and perform CRUD via BaSyx REST. All services on single bridge network `aas-network`.
+BaSyx loads `.aasx` files → publishes Kafka events. Two Kafka Connect pipelines consume them: `kafka-connect-neo4j` baut den Neo4j-Wissensgraphen, `kafka-connect-rag` → `embedding-service` extrahiert PDFs → chunking → Embeddings → Weaviate. Die Retrieval-Strecke läuft heute **Rewrite → Embed → Vector Search → optionaler Reranker**, bevor Ergebnisse zurück an den Agent gehen. LangGraph-Varianten rufen 15 MCP-Tools auf Port 8110 auf, um Graph + Vektorspeicher zu lesen und CRUD via BaSyx-REST auszuführen. Alle Services hängen auf dem Bridge-Netz `aas-network`.
 
 ---
 
@@ -28,8 +28,8 @@ flowchart TB
     end
     
     subgraph sub_outbound ["(b) Outbound Query/Write Flow"]
-        U[Worker / Open WebUI] --> A2[aas-agent API<br/>6 variants]
-        A2 --> M2[MCP Server<br/>16 tools]
+        U[Worker / Open WebUI] --> A2[aas-agent API<br/>4 variants (+verbose)]
+        A2 --> M2[MCP Server<br/>15 tools]
         M2 -->|graph / schema| F
         M2 -->|vector search| H
         M2 -->|CRUD| BS[BaSyx REST]
@@ -43,19 +43,27 @@ flowchart TB
 
 ## Service Inventory
 
-| Port | Service | Role |
+| Port(s) | Service | Rolle |
 |---|---|---|
-| 8090 | Open WebUI | Chat frontend; talks to aas-agent API only |
-| 8120 | aas-agent | FastAPI, OpenAI-compatible API; 6 LangGraph agent variants |
-| 8110 | AAS Hybrid MCP | FastMCP server; 16 tools across graph, vector, CRUD, templates, manual |
-| 7474 | Neo4j Browser | AAS knowledge graph; read-only Cypher via MCP |
-| 8070 | Weaviate HTTP | Vector store: manual chunks + template specs |
-| 8000 | Embedding Service `/health` | Flask: PDF extraction (Docling), chunking, embedding, Weaviate write |
-| 8099 | BaSyx GUI | AAS repository UI; REST API for CRUD via MCP |
-| 8081 | BaSyx AAS Environment | BaSyx management UI |
-| 6274 | MCP Inspector | MCP protocol debugging UI |
-| 2181 | Zookeeper | Kafka coordination |
-| 9092 | Kafka | Event bus for BaSyx → Neo4j/Embedding |
+| 9093 | Kafka (single-node KRaft) | Event-Bus für BaSyx → Kafka Connect |
+| 8086 | AKHQ | Kafka UI / Topic-Inspection |
+| 8085 | kafka-connect-rag | HTTP-Sink → Embedding-Service |
+| 8084 | kafka-connect-neo4j | Cypher-Sink → Neo4j |
+| 8083 | AAS Registry | Registry-API für AAS-Shells |
+| 8082 | Submodel Registry | Registry-API für Submodelle |
+| 9100 | AAS Discovery | Discovery-Endpoint (BaSyx) |
+| 8081 | BaSyx AAS Environment | AAS-Repository & REST-API |
+| 8099 | AAS GUI | BaSyx-Frontend |
+| 8091 | basyx-viewer-proxy | NGINX Proxy für Inline-PDF-Viewer |
+| 8000 | Embedding-Service | Flask: Docling → Embeddings → Weaviate |
+| 8070 / 50051 | Weaviate HTTP / gRPC | Vector Store + gRPC Ingest |
+| 7474 / 7687 | Neo4j Browser / Bolt | Graph UI & Treiber-Port |
+| 8110 | AAS Hybrid MCP | FastMCP-Server mit 15 Tools |
+| 8120 | aas-agent | LangGraph-API (OpenAI-kompatibel) |
+| 8090 | Open WebUI | Chat-Frontend mit Agent-Auswahl |
+| 6274 / 6277 | MCP Inspector | MCP-Debugging-UI |
+
+Kafka läuft ohne separaten ZooKeeper-Container; KRaft übernimmt die Controller-Rolle.
 
 ---
 
@@ -79,13 +87,14 @@ flowchart TB
 
 1. **User Input**: Worker asks maintenance question in Open WebUI
 2. **Agent Routing**: `api.py` routes to variant based on `model` field (`aas-agent:react`, `aas-agent:plan`, etc.)
-3. **Tool Execution**: Agent calls MCP tools:
-   - `query_aas_graph()` → Neo4j (read-only Cypher, 1000-row cap)
-   - `search_aas_documents()` → Weaviate (vector search, optional `submodel_id` filter)
-   - `get_graph_schema()` → full node/relationship catalog for query generation
-   - `get_manual_index()`/`get_manual_page()` → bind-mounted manual pages
-   - `search_idta_templates()`/`get_template()`/`get_templates_index()` → Weaviate + filesystem JSON
-    - `lookup_semantic_id()` → BaSyx CD-Repository API (IRDI → IEC 61360)
+3. **Tool Execution**: Der Agent nutzt die MCP-Tools zielgerichtet:
+   - `query_aas_graph(cypher, params?)` → Neo4j (read-only, 1000 Zeilen Limit, `/Submodel`-Suffix wird normalisiert)
+   - `search_aas_documents(query, submodel_id?, limit?, asset_name?, doc_language?)` → Weaviate (Vector Search mit optionalem Scope, liefert `reranker_used`, `query_rewritten`, `rewritten_query`, `diagnostic`, `chunk_count`)
+   - `search_idta_templates(query, template_name?, limit?)` → Weaviate (Template-Vektorsuche, gleicher Rewrite/Reranker-Flow)
+   - `get_graph_schema()` → kompletter Node-/Relationship-Katalog für Cypher-Generierung
+   - `get_templates_index()` / `get_template(name)` → Filesystem-JSON (Index + einzelnes Template) inkl. gematchter Graph-SemanticIds
+   - `get_manual_index()` / `get_manual_page()` → bind-mount Operator-Handbuch
+   - `lookup_semantic_id(id)` → BaSyx Concept-Description Repository (IEC 61360)
 4. **Write Operations** (`put_*`/`delete_*`):
    - Metamodel validation via `basyx-python-sdk` deserialization
    - Template conformance check via generated Python classes
@@ -94,34 +103,37 @@ flowchart TB
 
 ---
 
-## Agent Variants (6)
+## Agent Variants (4 Basismodelle + `*-verbose`)
 
-| Variant | Description |
-|---|---|
-| `aas-agent:react` | Baseline: ReAct tool-calling loop via `create_react_agent`; self-validating prompt built-in |
-| `aas-agent:plan` | Plan-and-Reflect: structured planner → executor (bounded ReAct sub-loop) → reflector → finalizer |
-| `aas-agent:crag` | Corrective RAG: executor → relevance evaluator → refine query → retry (up to `CRAG_MAX_REFINEMENTS`) → synthesizer |
-| `aas-agent:reflexion` | Self-improvement: executor → judge → reflect → retry (up to `REFLEXION_MAX_TRIALS`) with verbal feedback |
+Alle Modell-IDs existieren als Basismodell (`aas-agent:react` etc.) und automatisch generierter `*-verbose` Alias (identische Graph-Topologie, aber Streaming mit zusätzlichen Debug-Details).
+
+| Model ID | Variant | Beschreibung |
+|---|---|---|
+| `aas-agent:react` | `AgentRunner` | ReAct-Loop via LangGraph (`create_react_agent`), Standard für `AGENT_DEFAULT_MODEL` |
+| `aas-agent:plan` | `PlanReflectAgentRunner` | `planner → executor → reflector → finalizer`, begrenzte ReAct-Subloops pro Schritt |
+| `aas-agent:crag` | `CragAgentRunner` | `executor → relevance → (refine → executor) → synthesizer`, Multi-Query mit Re-Ranking |
+| `aas-agent:reflexion` | `ReflexionAgentRunner` | `executor → judge → (reflect → executor) → finalizer`, Trial-basiertes Selbstfeedback |
 
 ---
 
-## MCP Tools (16)
+## MCP Tools (15)
 
-| Category | Tool | Purpose |
+| Kategorie | Tool | Zweck |
 |---|---|---|
-| **Graph** | `query_aas_graph(cypher, params)` | Read-only Cypher over Neo4j AAS graph (1000-row cap) |
-| **Graph** | `get_graph_schema()` | Full node/relationship catalog for Cypher generation |
-| **Document** | `search_aas_documents(query, submodel_id?, limit?)` | Vector search with optional submodel-scope filter |
-| **Manual** | `get_manual_index()` | List available manual pages |
-| **Manual** | `get_manual_page(name)` | Load specific manual page on demand |
-| **Template** | `search_idta_templates(query, name?, limit?)` | Natural-language template discovery (Weaviate) |
-| **Template** | `get_templates_index()` | List all template specs (filesystem JSON) |
-| **Template** | `get_template(name)` | Exact structural template lookup (filesystem JSON) |
-| **Semantic** | `lookup_semantic_id(id)` | Resolve IRDI → IEC 61360 concept (BaSyx CD-Repository) |
-| **CRUD** | `put_aas(aas_json)` | Create/update an AAS |
-| **CRUD** | `delete_aas(id)` | Remove an AAS |
-| **CRUD** | `put_submodel(aas_id, sm_json)` | Create/update a submodel (w/ template conformance check) |
-| **CRUD** | `delete_submodel(aas_id, sm_id)` | Remove a submodel |
-| **CRUD** | `put_submodel_element(sm_id, id_path, elem_json)` | Generic: covers all SubmodelElement subtypes |
-| **CRUD** | `delete_submodel_element(sm_id, id_path)` | Remove a submodel element |
-| **Time** | `get_current_utc_time()` | Current timestamp for log entries (agent-side) |
+| **Graph** | `query_aas_graph(cypher, params?)` | Read-only Cypher (1000 Zeilen Limit, `/Submodel`-Suffix wird automatisch entfernt) |
+| **Graph** | `get_graph_schema()` | Vollständiger Node-/Relationship-Katalog inkl. Beispielqueries |
+| **Document** | `search_aas_documents(query, submodel_id?, limit?, asset_name?, doc_language?)` | Vektorsuche mit Rewrite + optionalem Reranker; Response liefert `reranker_used`, `query_rewritten`, `rewritten_query`, `diagnostic`, `chunk_count` |
+| **Manual** | `get_manual_index()` | Liste verfügbarer Manual-Seiten |
+| **Manual** | `get_manual_page(name)` | Einzelne Manual-Seite abrufen |
+| **Template** | `search_idta_templates(query, template_name?, limit?)` | Template-Vektorsuche (gleicher Rewrite/Reranker-Flow) |
+| **Template** | `get_templates_index()` | JSON-Index aller Templates inkl. gematchter `graphSemanticIds` |
+| **Template** | `get_template(name)` | Strukturelles Template-JSON laden |
+| **Semantic** | `lookup_semantic_id(id)` | IRDI/IRI → IEC-61360-Content via BaSyx |
+| **CRUD** | `put_aas(aas_json)` | AssetAdministrationShell anlegen/ersetzen (SDK-validiert) |
+| **CRUD** | `delete_aas(id)` | AAS löschen |
+| **CRUD** | `put_submodel(aas_id, sm_json)` | Submodel schreiben (SDK + Template-Validator) |
+| **CRUD** | `delete_submodel(aas_id, sm_id)` | Submodel löschen |
+| **CRUD** | `put_submodel_element(sm_id, id_path, elem_json)` | Beliebiges SubmodelElement validiert schreiben |
+| **CRUD** | `delete_submodel_element(sm_id, id_path)` | SubmodelElement entfernen |
+
+Die LangGraph-Runner bringen zusätzlich das Hilfstool `get_current_utc_time()` mit; es wird agentseitig bereitgestellt und ist kein MCP-Endpunkt.

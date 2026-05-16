@@ -17,23 +17,33 @@ cp .env.secrets.example ~/.env.secrets   # edit with your API key(s)
 
 ## Architecture (one-paragraph refresher)
 
-BaSyx loads `.aasx` files from `aasx/` → publishes Kafka events. Two Kafka Connect pipelines consume them: `kafka-connect-neo4j` builds a Neo4j graph (structure), `kafka-connect-rag` → `embedding-service` → extracts PDFs → chunks → embeds → stores in Weaviate (vectors). The MCP server (port 8110) queries both. A LangGraph agent (port 8120) calls MCP tools and serves an OpenAI-compatible API for Open WebUI (port 8090). All services on single bridge network `aas-network`.
+BaSyx lädt `.aasx`-Dateien aus `aasx/` und veröffentlicht Kafka-Events. Zwei Kafka-Connect-Pipelines konsumieren sie: `kafka-connect-neo4j` baut den Neo4j-Wissensgraph, `kafka-connect-rag` → `embedding-service` extrahiert PDFs → chunking → Embeddings → Weaviate. Die Retrieval-Strecke läuft Rewrite → Embedding → Vector Search → optionaler Reranker, bevor Ergebnisse an den Agent zurückgehen. Der MCP-Server (Port 8110) stellt 15 Tools bereit. Der LangGraph-Agent (Port 8120) bietet vier Basisvarianten (`react`, `plan`, `crag`, `reflexion`) plus automatische `*-verbose` Aliase und exponiert eine OpenAI-kompatible API für Open WebUI (Port 8090). Sämtliche Services liegen auf dem Bridge-Netz `aas-network`.
 
 **Detailed architecture + diagrams: `memory/architecture.md`**
 
 ## Service ports (the ones you need)
 
-| Port | Service |
+| Port(s) | Service |
 |---|---|
+| 9093 | Kafka (single-node KRaft) |
+| 8086 | AKHQ (Kafka UI) |
+| 8085 | kafka-connect-rag |
+| 8084 | kafka-connect-neo4j |
+| 8083 | AAS Registry |
+| 8082 | Submodel Registry |
+| 9100 | AAS Discovery |
+| 8081 | BaSyx AAS Environment |
+| 8099 | BaSyx GUI |
+| 8091 | basyx-viewer-proxy |
+| 8000 | Embedding Service (`/health`) |
+| 8070 / 50051 | Weaviate HTTP / gRPC |
+| 7474 / 7687 | Neo4j Browser / Bolt |
 | 8110 | **AAS Hybrid MCP** (streamable-http) |
 | 8120 | AAS Agent (OpenAI-compatible API) |
 | 8090 | Open WebUI |
-| 7474 | Neo4j Browser |
-| 8070 | Weaviate HTTP |
-| 8000 | Embedding Service (`/health`) |
-| 6274 | MCP Inspector |
-| 8099 | BaSyx GUI |
-| 8081 | BaSyx AAS Environment |
+| 6274 / 6277 | MCP Inspector |
+
+Kafka läuft ohne separaten ZooKeeper-Container; die Controller-Rolle übernimmt KRaft.
 
 ## Secrets are outside the repo
 
@@ -46,6 +56,12 @@ API keys live in `~/.env.secrets` (git-ignored), referenced via `SECRETS_PATH=~/
 - Slug is model part only (after `:`) — provider is stripped. `openai:text-embedding-3-small` and `ollama:text-embedding-3-small` share a collection.
 - Rebuild after changing: `./up.sh --build`
 - PDF variant controlled by `EMBEDDING_VARIANT`: `fast` (pymupdf4llm, ~50 MB) or `precise` (docling ML, ~3 GB). Default is `fast`.
+
+## Retrieval enhancements
+
+- **Query rewriting** (`mcp-server/src/aas_hybrid_mcp/query_rewriter.py`): aktiviert, sobald `QUERY_REWRITE_MODE=on`. Requests an `/chat/completions` rewrite before embedding. `search_aas_documents` akzeptiert zusätzliche Parameter `asset_name` und `doc_language`, damit der Rewrite redundante Asset-Bezüge entfernt und ggf. auf die Zielsprache umstellt. Konfiguriert über `QUERY_REWRITE_URL`, `QUERY_REWRITE_MODEL`, `QUERY_REWRITE_TIMEOUT`. `.env.vllm` setzt diese Variablen für den H200-Ablauf.
+- **Cross-encoder reranker** (`mcp-server/src/aas_hybrid_mcp/reranker.py`): zieht `RERANKER_CANDIDATE_LIMIT` Kandidaten aus Weaviate und sortiert sie per Cohere-kompatiblem `/rerank` Endpoint, wenn `RERANKER_MODE=vllm`. Fallback auf Distanz-Sortierung, falls der Dienst nicht erreichbar ist.
+- **Tool-Responses**: `search_aas_documents` liefert `reranker_used`, `query_rewritten`, `rewritten_query`, `diagnostic`, `chunk_count` (bei Submodel-Filter). `search_idta_templates` liefert `reranker_used`, `query_rewritten`, `rewritten_query`, `hint`. Beide Tools setzen `query_rewritten=false`, wenn Rewrite deaktiviert ist.
 
 ## Key directories
 
@@ -79,7 +95,7 @@ Six generic write tools: `put_aas`, `put_submodel`, `put_submodel_element`, `del
 
 ## Agent variants
 
-Variants are selectable **per-conversation** via OpenAI model name (`aas`, `aas:plan`, `aas:crag`, etc.). `api.py` lazily initializes each runner on first request. Shared MCP client, tools, and context loaded once at startup. `AGENT_VARIANT` env var is deprecated. **Full details in `memory/agent_variants.md`** — model ID → variant routing, graph topology, budget env vars, and paper mapping. Keep that file in sync when adding/changing variants or budget parameters. `AGENT_INJECT_MANUAL` and `AGENT_INJECT_SCHEMA` control whether system prompt gets manual/schema injected at startup vs. agent fetching on demand.
+Variants are selectable **per-conversation** via OpenAI model name (`aas-agent:react`, `aas-agent:plan`, `aas-agent:crag`, `aas-agent:reflexion`). Für jedes Basismodell gibt es automatisch ein `*-verbose` Alias mit identischem Runner, aber detaillierter Streaming-Ausgabe. `api.py` lazily initializes each runner on first request. Shared MCP client, tools, and context loaded once at startup. `AGENT_VARIANT` env var is deprecated. **Full details in `memory/agent_variants.md`** — model ID → variant routing, graph topology, budget env vars, and paper mapping. Keep that file in sync when adding/changing variants or budget parameters. `AGENT_INJECT_MANUAL` and `AGENT_INJECT_SCHEMA` control whether system prompt gets manual/schema injected at startup vs. agent fetching on demand.
 
 **Variants must be comparable:** every runner must combine `system-prompt.md` + `mcp_context` as its `base_system`. The variant-specific prompt layer adds topology/strategy instructions (plan, judge, reflect, etc.), but the core directives ("Act, don't ask permission", idShort anti-pattern, two entry points, output style) must never be dropped. If one variant deviates, the others will fail silently on the same queries. See `reflexion.py`, `crag.py`, `agent_plan.py`, `agent.py`.
 
