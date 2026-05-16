@@ -1,0 +1,63 @@
+# Naming-Stress test family — placeholder, requires fixture work.
+#
+# STATUS: stub. Cannot run until task_read_validation_gap.md T2 ships
+# a renamed type-shell fixture (e.g. aasx/MiR100_Type_stressed.aasx with
+# idShort='MobilePlatformV3', id='urn:fabrik:device:9f2a-7c1'). The asset's
+# semantic properties (semanticId for MaxLinearSpeed, etc.) stay intact —
+# only idShort/id are renamed so the substring-lookup heuristic breaks.
+#
+# Once the fixture exists, these cases exercise the realistic deployment
+# scenario where naming is not aligned to product names. The agent must
+# route via semanticId / DERIVED_FROM, not idShort substring CONTAINS.
+
+cases:
+  - name: stressed_speed_by_name
+    query: "Wie schnell ist die MobilePlatformV3?"
+    asset: MobilePlatformV3
+    expected:
+      keywords: ["1,5"]
+      pattern: "1[.,]5\\s*m/s"
+    forbidden_cypher_patterns:
+      # Legit entry-point via name uses {idShort: 'MobilePlatformV3'} equality,
+      # NOT CONTAINS. Substring lookup with 'mir100' would yield zero rows here
+      # because the renamed fixture has no 'mir100' in idShort/id.
+      - "(?i)\\bidShort\\b\\s+CONTAINS\\s*['\"]?mir100"
+      - "(?i)\\.id\\s+CONTAINS\\s*['\"]?mir100"
+    llm_criteria: >
+      The answer must state the renamed fixture's max speed (still 1.5 m/s
+      since the underlying TechnicalDataAGV submodel is unchanged). The agent
+      must have used either {idShort: 'MobilePlatformV3'} equality or
+      DERIVED_FROM the MiR100_Type — substring lookup with 'mir100' would
+      fail here because the renamed shell hides the original name.
+    tags: [naming_stress, read_validation_gap, requires_fixture]
+
+  - name: stressed_speed_by_capability
+    query: "Welche mobilen Roboter können mit mehr als 1 m/s fahren?"
+    expected:
+      keywords: ["MobilePlatformV3"]
+    forbidden_cypher_patterns:
+      - "(?i)\\bidShort\\b\\s+CONTAINS"
+      - "(?i)\\.id\\s+CONTAINS"
+      - "(?i)\\.assetType\\s+CONTAINS"
+    llm_criteria: >
+      Pure capability-based query — must route via semanticId classification
+      (TechnicalDataAGV / MobileRobot ConceptDescription) and a numeric
+      filter on MaxLinearSpeed. No substring-lookup paths allowed at all.
+    tags: [naming_stress, read_validation_gap, requires_fixture]
+
+  - name: stressed_speed_by_urn
+    query: "Wie schnell kann der Roboter mit Asset-ID 'urn:fabrik:device:9f2a-7c1' fahren?"
+    expected:
+      keywords: ["1,5"]
+      pattern: "1[.,]5\\s*m/s"
+    forbidden_cypher_patterns:
+      # CONTAINS on the URN is still forbidden — equality match {id: '...'}
+      # is the correct pattern when the user supplies the full URN.
+      - "(?i)\\.id\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.id\\s*\\)\\s+CONTAINS"
+    llm_criteria: >
+      User supplied an explicit URN. Correct lookup is equality:
+      MATCH (a:Asset {globalAssetId: 'urn:fabrik:device:9f2a-7c1'})  or
+      MATCH (aas:AssetAdministrationShell {id: '...'}). Substring CONTAINS
+      on the URN is forbidden — URNs are opaque identifiers.
+    tags: [naming_stress, read_validation_gap, requires_fixture]

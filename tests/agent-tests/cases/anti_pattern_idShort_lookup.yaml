@@ -1,0 +1,61 @@
+# Anti-Pattern smoke-test family: enforces cypher.md Anti-Patterns #3 + #4.
+#
+# Motivation: in our fixtures the idShort/id naming is strict, so the agent's
+# wrong substring-lookup happens to work. This case catches the wrong METHOD
+# even when the OUTCOME looks fine. See:
+#   - mcp-server/src/aas_hybrid_mcp/manual_pages/cypher.md (Anti-Pattern #4)
+#   - memory/tasks/open/task_read_validation_gap.md
+#   - memory/tasks/open/task_paper_read_validation_anecdote.md
+#
+# Forbidden Cypher patterns (any hit zeros score + fails the case):
+#   - `idShort CONTAINS ...`  ← Anti-Pattern #4 (domain reasoning by name)
+#   - `toLower(...idShort).CONTAINS`  ← case-insensitive variant
+#   - `.id CONTAINS ...`      ← URN substring lookup (same problem class)
+#   - `.assetType CONTAINS`   ← Anti-Pattern #3 (assetType usually null)
+#
+# Concrete trigger (2026-05-15, ReAct):
+#   tests/agent-tests/results/run_2026-05-15T18-06-32Z.json :: mir100_max_speed
+#   The agent generated:
+#     WHERE toLower(aas.idShort)    CONTAINS 'mir100'
+#        OR toLower(asset.assetType) CONTAINS 'mir100'
+#        OR toLower(aas.id)          CONTAINS 'mir100'
+
+cases:
+  - name: mir100_max_speed_no_substring_lookup
+    query: "Wie schnell kann der MiR100 maximal fahren?"
+    asset: MiR100
+    expected:
+      keywords: ["1,5"]
+      pattern: "1[.,]5\\s*m/s"
+    forbidden_cypher_patterns:
+      - "(?i)\\bidShort\\b\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.idShort\\s*\\)\\s+CONTAINS"
+      - "(?i)\\.id\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.id\\s*\\)\\s+CONTAINS"
+      - "(?i)\\.assetType\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.assetType\\s*\\)\\s+CONTAINS"
+    llm_criteria: >
+      The answer must state the MiR100 maximum speed (1.5 m/s) and the
+      agent must have arrived there via semantic lookup (DERIVED_FROM,
+      HAS_SEMANTIC_ID, ConceptDescription) — NOT by substring-matching
+      'mir100' in idShort/id/assetType (forbidden by cypher.md Anti-
+      Pattern #4).
+    tags: [anti_pattern, paper_anecdote, read_validation_gap]
+
+  - name: ur3e_payload_no_substring_lookup
+    query: "Was ist die maximale Nutzlast des UR3e?"
+    asset: UR3e
+    expected:
+      keywords: ["3"]
+      pattern: "3\\s*kg"
+    forbidden_cypher_patterns:
+      - "(?i)\\bidShort\\b\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.idShort\\s*\\)\\s+CONTAINS"
+      - "(?i)\\.id\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.id\\s*\\)\\s+CONTAINS"
+      - "(?i)\\.assetType\\s+CONTAINS"
+      - "(?i)toLower\\s*\\([^)]*\\.assetType\\s*\\)\\s+CONTAINS"
+    llm_criteria: >
+      The answer must state UR3e payload (3 kg) via semantic lookup, NOT
+      via substring matching 'ur3e' in idShort/id/assetType.
+    tags: [anti_pattern, paper_anecdote, read_validation_gap]

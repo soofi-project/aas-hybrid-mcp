@@ -1,0 +1,80 @@
+# Containment-Pattern test family for Hall 4.
+#
+# Hall 4 physically contains three robots according to its
+# HierarchicalStructures submodel:
+#   - MiR100_001   (mobile / transport)
+#   - UR3e_002     (collaborative manipulator)
+#   - CRX10iA_001  (collaborative manipulator)
+#
+# Forbidden token `urn:asset:hall4` is the AAS shell-to-asset self-reference.
+# A correct containment-answer must not include it; including it means the
+# agent picked the identity-reading (MANAGES_ASSET) over the container-reading
+# (HAS_SUBMODEL → HAS_ELEMENT* → Entity → REPRESENTS_ASSET).
+#
+# Drives the pre/post-fix benchmark for the paper modeling-vs-pragmatics
+# anecdote — see task_paper_modeling_vs_pragmatics_anecdote.md.
+
+cases:
+  - name: containment_transport_hall4
+    query: "Welche Transportroboter sind in Halle 4?"
+    asset: Hall4
+    expected:
+      keywords: ["MiR100_001"]
+      forbidden: ["urn:asset:hall4"]
+    llm_criteria: >
+      The answer must list MiR100_001 as the transport/mobile robot in Hall 4.
+      It must NOT include the hall itself (urn:asset:hall4) or stationary
+      manipulators (UR3e_002, CRX10iA_001) as transport robots.
+    tags: [containment, paper_anecdote]
+
+  - name: containment_cobots_hall4
+    query: "Welche kollaborativen Roboter sind in Halle 4?"
+    asset: Hall4
+    expected:
+      keywords: ["UR3e_002", "CRX10iA_001"]
+      forbidden: ["urn:asset:hall4"]
+    llm_criteria: >
+      The answer must list both UR3e_002 and CRX10iA_001 as the collaborative
+      manipulators in Hall 4. It must NOT include the hall itself
+      (urn:asset:hall4) or the mobile robot MiR100_001.
+    tags: [containment, paper_anecdote]
+
+  - name: containment_devices_hall4
+    query: "Welche Geräte stehen in Halle 4?"
+    asset: Hall4
+    expected:
+      keywords: ["MiR100_001", "UR3e_002", "CRX10iA_001"]
+      forbidden: ["urn:asset:hall4"]
+    llm_criteria: >
+      The answer must list all three robots in Hall 4: MiR100_001, UR3e_002,
+      CRX10iA_001. It must NOT include the hall itself (urn:asset:hall4).
+    tags: [containment, paper_anecdote]
+
+  # Ambiguous calibration case — kept tagged so the loader does not reject it.
+  # Pre-fix: most variants are expected to give the identity-reading
+  # (urn:asset:hall4); post-fix all should give the container-reading.
+  - name: containment_ambiguous_assets_hall4
+    query: "Welche Assets sind in Halle 4?"
+    asset: Hall4
+    expected:
+      keywords: ["MiR100_001", "UR3e_002", "CRX10iA_001"]
+      forbidden: ["urn:asset:hall4"]
+    llm_criteria: >
+      Even when phrased with the AAS jargon term 'Assets', the worker means
+      the physically contained devices, not the hall's own asset
+      self-reference. Correct answer lists MiR100_001, UR3e_002, CRX10iA_001
+      and does NOT include urn:asset:hall4.
+    tags: [containment, paper_anecdote, ambiguous_calibration]
+
+  # Identity regression — the pragmatics fix must not break the legitimate
+  # identity-reading. This question explicitly asks for MANAGES_ASSET.
+  - name: identity_hall4_regression
+    query: "Welches Asset repräsentiert die Schale Halle 4?"
+    asset: Hall4
+    expected:
+      keywords: ["urn:asset:hall4"]
+    llm_criteria: >
+      This question asks for the identity-reading (MANAGES_ASSET): which
+      asset does the AAS shell urn:aas:hall4 represent? Correct answer is
+      urn:asset:hall4. The robots in the hall are NOT a valid answer here.
+    tags: [identity, regression]

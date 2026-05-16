@@ -1,0 +1,28 @@
+# Smoke-test cases for the framework itself — simple spec-lookup queries
+# whose correct answers are well-known from the type-AAS technical-data
+# submodels. Used to validate runner + evaluator before relying on harder
+# containment cases.
+
+cases:
+  - name: mir100_max_speed
+    query: "Wie schnell kann der MiR100 maximal fahren?"
+    asset: MiR100
+    expected:
+      keywords: ["1.5"]
+      pattern: "1[.,]5\\s*m/s"
+    llm_criteria: >
+      The answer must state the MiR100 maximum speed (1.5 m/s) with the
+      correct unit. A km/h conversion (5.4 km/h) is also acceptable as a
+      supplement but the m/s figure must appear.
+    tags: [spec_lookup, smoke]
+
+  - name: ur3e_payload
+    query: "Was ist die maximale Nutzlast des UR3e?"
+    asset: UR3e
+    expected:
+      keywords: ["3"]
+      pattern: "3\\s*kg"
+    llm_criteria: >
+      The answer must state the UR3e payload as 3 kg. Other UR models
+      (UR20, UR10e) must not be confused with the UR3e.
+    tags: [spec_lookup, smoke]

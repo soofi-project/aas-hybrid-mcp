@@ -1,0 +1,192 @@
+{
+  "records": [
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "query": "Wie schnell kann der MiR100 maximal fahren?",
+      "repetition": 0,
+      "result": {
+        "query": "Wie schnell kann der MiR100 maximal fahren?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "Ich muss zuerst den MiR100 Roboter im AAS-System finden und dann nach seinen technischen Spezifikationen suchen.\n\nZuerst rufe ich die Templates-Index und Graph-Schema ab, wie in den Anweisungen empfohlen:\n\n\n\n\n\n\n\n\n\nIch sehe einen relevanten Template: \"Technical Data for Automated Guided Vehicles\". Jetzt suche ich den MiR100 im Graphen:\n\n\n\n\n\n\n\n\n\nIch habe den MiR100 gefunden - es gibt ein Type-Shell (MiR100_Type) und ein Instance-Shell (MiR100_001). Ich suche jetzt nach dem technischen Daten-Submodell mit der Geschwindigkeit. Die technische Daten für AGVs sollten im Template \"Technical Data for Automated Guided Vehicles\" sein.\n\n\n\n\n\n\n\n\n\nPerfekt! Es gibt ein Submodell \"TechnicalDataAGV\" mit der korrekten semanticId. Jetzt hole ich mir die Struktur dieses Templates, um zu wissen, wie die Geschwindigkeit gespeichert ist:\n\n\n\n\n\n\n\n\n\nIch sehe die Struktur. Die Geschwindigkeits-Eigenschaften befinden sich unter `SpecificDescriptions` → `TechnicalParameters`. Es gibt mehrere Geschwindigkeits-Eigenschaften:\n- `SpeedMaxEmptyAsSpecified` - Maximale Geschwindigkeit leer (wie spezifiziert)\n- `SpeedMaxEmptyAsOperated` - Maximale Geschwindigkeit leer (wie betrieben)\n- `SpeedMaxWithMaxLoadAsSpecified` - Maximale Geschwindigkeit mit voller Last (wie spezifiziert)\n- `SpeedMaxWithMaxLoadAsOperated` - Maximale Geschwindigkeit mit voller Last (wie betrieben)\n\nIch query jetzt diese Werte aus dem Graphen:\n\n\n\n\n\n\n\n\n\nGemäß den technischen Daten im AAS des MiR100 beträgt die **maximale Geschwindigkeit**:\n\n- **1,5 m/s** (ohne Last, wie spezifiziert)\n- **1,0 m/s** (mit voller Last von 100 kg, wie spezifiziert)\n\nDie Werte stammen aus dem technischen Datenblatt des MiR100 AGV im Type-AAS.",
+        "duration_s": 9.035,
+        "tool_calls": [
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'mir100' OR toLower(aas.id) CONTAINS 'mir100' OR toLower(asset.globalAssetId) CONTAINS 'mir100'\nRETURN aas.id AS aasId, aas.idShort AS aasIdShort, asset.globalAssetId",
+              "params": {}
+            },
+            "result_preview": "{\"rows\":[{\"aasId\":\"urn:aas:mir100:type\",\"aasIdShort\":\"MiR100_Type\",\"asset.globalAssetId\":\"urn:asset:mir100:type\"},{\"aasId\":\"urn:aas:mir100:001\",\"aasIdShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:ass"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: $aasId})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": {
+                "aasId": "urn:aas:mir100:type"
+              }
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalDataAGV\",\"sm.id\":\"urn:submodel:mir100:type:technicaldataagv\",\"templateSemanticId\":\"https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0\"},{\"sm.idShort\":\"N"
+          },
+          {
+            "name": "get_template",
+            "args": {
+              "name": "Technical Data for Automated Guided Vehicles"
+            },
+            "result_preview": "{\n  \"name\": \"Technical Data for Automated Guided Vehicles\",\n  \"version\": \"1.0.1\",\n  \"idShort\": \"TechnicalDataAGV\",\n  \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0\",\n"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: $submodelId})-[:HAS_ELEMENT*]->(p:Property)\nWHERE p.idShort IN ['SpeedMaxEmptyAsSpecified', 'SpeedMaxEmptyAsOperated', 'SpeedMaxWithMaxLoadAsSpecified', 'SpeedMaxWithMaxLoadAsOperated', 'SpeedMin']\nRETURN p.idShort, p.value, p.valueType",
+              "params": {
+                "submodelId": "urn:submodel:mir100:type:technicaldataagv"
+              }
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"SpeedMaxEmptyAsSpecified\",\"p.value\":\"1.5\",\"p.valueType\":\"xs:double\"},{\"p.idShort\":\"SpeedMaxWithMaxLoadAsSpecified\",\"p.value\":\"1.0\",\"p.valueType\":\"xs:double\"}],\"total\":2,\"truncat"
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 93752,
+          "completion_tokens": 883,
+          "total_tokens": 94635
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "llm_score": null,
+        "keyword_hits": [
+          "1,5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "llm_reasoning": null,
+        "cypher_violations": [
+          {
+            "pattern": "(?i)toLower\\s*\\([^)]*\\.idShort\\s*\\)\\s+CONTAINS",
+            "tool_call_index": 1,
+            "cypher_excerpt": "S_ASSET]->(asset:Asset) WHERE toLower(aas.idShort) CONTAINS 'mir100' OR toLower(aas.id) C"
+          },
+          {
+            "pattern": "(?i)toLower\\s*\\([^)]*\\.id\\s*\\)\\s+CONTAINS",
+            "tool_call_index": 1,
+            "cypher_excerpt": "idShort) CONTAINS 'mir100' OR toLower(aas.id) CONTAINS 'mir100' OR toLower(asset.glo"
+          }
+        ],
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "query": "Was ist die maximale Nutzlast des UR3e?",
+      "repetition": 0,
+      "result": {
+        "query": "Was ist die maximale Nutzlast des UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "Die Nutzlast steht wahrscheinlich im TechnicalData-Submodel. Ich prüfe dort nach.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLaut den Technischen Daten im AAS des UR3e beträgt die **maximale Nutzlast 3 kg**.\n\n(Zusatz: Die Reichweite des Roboters beträgt 500 mm, er wiegt 11,1 kg und verfügt über 6 Achsen.)",
+        "duration_s": 6.246,
+        "tool_calls": [
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' OR toLower(aas.id) CONTAINS 'ur3e'\nRETURN aas.idShort, aas.id"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\"},{\"aas.idShort\":\"UR3e_001\",\"aas.id\":\"urn:aas:ur3e:001\"},{\"aas.idShort\":\"UR3e_002\",\"aas.id\":\"urn:aas:ur3e:002\"}],\"total\":3,\"truncated\":f"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: $aasId})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": {
+                "aasId": "urn:aas:ur3e:type"
+              }
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"templateSemanticId\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplate\"},{\"sm.idShort\":\"HandoverDocumentation\",\"sm.id\":"
+          },
+          {
+            "name": "get_template",
+            "args": {
+              "name": "Digital nameplate"
+            },
+            "result_preview": "{\n  \"name\": \"Digital nameplate\",\n  \"version\": \"3.0.1\",\n  \"idShort\": \"Nameplate\",\n  \"semanticId\": \"https://admin-shell.io/idta/nameplate/3/0/Nameplate\",\n  \"description\": \"Contains the nameplate informa"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: $smId})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": {
+                "smId": "urn:submodel:ur3e:type:technicaldata"
+              }
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\""
+          },
+          {
+            "name": "lookup_semantic_id",
+            "args": {
+              "id": "0173-1#02-ABR536#003"
+            },
+            "result_preview": "{\"id\":\"0173-1#02-ABR536#003\",\"resolved\":false,\"reason\":\"no local definition (likely an external reference)\"}"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 103025,
+          "completion_tokens": 543,
+          "total_tokens": 103568
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "llm_score": null,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "llm_reasoning": null,
+        "cypher_violations": [
+          {
+            "pattern": "(?i)toLower\\s*\\([^)]*\\.idShort\\s*\\)\\s+CONTAINS",
+            "tool_call_index": 1,
+            "cypher_excerpt": "setAdministrationShell) WHERE toLower(aas.idShort) CONTAINS 'ur3e' OR toLower(aas.id) CON"
+          },
+          {
+            "pattern": "(?i)toLower\\s*\\([^)]*\\.id\\s*\\)\\s+CONTAINS",
+            "tool_call_index": 1,
+            "cypher_excerpt": "s.idShort) CONTAINS 'ur3e' OR toLower(aas.id) CONTAINS 'ur3e' RETURN aas.idShort, aa"
+          }
+        ],
+        "notes": []
+      }
+    }
+  ],
+  "summary_by_variant": {
+    "react": {
+      "runs": 2,
+      "pass_pct": 0.0,
+      "avg_score": 0.0,
+      "avg_dur": 7.640216150000924
+    }
+  }
+}
