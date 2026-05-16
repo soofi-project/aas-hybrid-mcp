@@ -1,12 +1,16 @@
-"""PDF → Markdown extractor for papers_downloaded/
+"""PDF → Markdown extractor for paper/papers_downloaded/
 
 Usage:
-    python extract_markdown.py                              # all PDFs without markdown
-    python extract_markdown.py path/to/paper.pdf           # single PDF
-    python extract_markdown.py --short-name foo paper.pdf  # custom output name
+    python extract_markdown.py                                # all PDFs in default base-dir
+    python extract_markdown.py path/to/paper.pdf              # single PDF (any path)
+    python extract_markdown.py --short-name foo paper.pdf     # custom output name
+    python extract_markdown.py --base-dir /other/path         # bulk mode, custom dir
 
-Output format: single .md file per PDF with ### Page N sections, matching the
-existing convention in this directory.
+Script lives in `.claude/skills/paper-download/` (bundled with the skill for
+layered determinism — see SKILL.md). Default --base-dir resolves to
+`<repo-root>/paper/papers_downloaded/` by walking up from the script location.
+
+Output: single .md file per PDF with ### Page N sections, written next to the PDF.
 
 Dependencies: pip install pymupdf4llm
 """
@@ -155,13 +159,36 @@ def extract(pdf_path, short_name=None):
     return "\n".join(parts), len(pages)
 
 
+def _default_base_dir():
+    """Resolve default bulk-mode base-dir: <repo-root>/paper/papers_downloaded/
+
+    Walks up from this script's location looking for a sibling `paper/papers_downloaded/`
+    directory. Returns absolute path or None if not found.
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cur = script_dir
+    for _ in range(6):  # walk up at most 6 levels
+        candidate = os.path.join(cur, "paper", "papers_downloaded")
+        if os.path.isdir(candidate):
+            return candidate
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            break
+        cur = parent
+    return None
+
+
 def main():
-    parser = argparse.ArgumentParser(description="PDF → Markdown extractor for papers_downloaded/")
+    parser = argparse.ArgumentParser(description="PDF → Markdown extractor for paper/papers_downloaded/")
     parser.add_argument("pdf", nargs="?", default=None, help="Path to a single PDF (omit to process all)")
     parser.add_argument("-o", "--short-name", default=None, help="Custom short name for output .md file")
+    parser.add_argument("--base-dir", default=None, help="Bulk-mode base directory (default: <repo-root>/paper/papers_downloaded/)")
     args = parser.parse_args()
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = args.base_dir or _default_base_dir()
+    if not args.pdf and base_dir is None:
+        print("Error: could not auto-detect paper/papers_downloaded/. Pass --base-dir explicitly.", file=sys.stderr)
+        sys.exit(1)
 
     if args.pdf:
         # Single PDF mode

@@ -96,7 +96,7 @@ Ausgabe: pro Eintrag in dieser Task-Datei abhaken (✅ / 🔧 fix needed / ❌ r
 
 1. DOI / IEEE-Xplore-Link sammeln (User liefert; Claude kann nicht hinter Paywall)
 2. PDF herunterladen → `paper/papers_downloaded/<bibkey>/<bibkey>.pdf`
-3. `python paper/papers_downloaded/extract_markdown.py <bibkey>` ausführen
+3. `python .claude/skills/paper-download/extract_markdown.py <bibkey>` ausführen
 4. BibTeX-Eintrag in `main.bib` einfügen (Sektion entsprechend dem Thema)
 5. In dieser Task-Datei abhaken + notieren wo im Paper zitiert wird
 
