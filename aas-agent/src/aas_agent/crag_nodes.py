@@ -331,10 +331,13 @@ def _parse_relevance_with_items(content: str) -> _PerItemRelevance | None:
     item_scores = []
     for item in item_scores_raw:
         if isinstance(item, dict) and "item_idx" in item and "score" in item:
-            item_scores.append({
-                "item_idx": int(item["item_idx"]),
-                "score": float(item["score"]),
-            })
+            try:
+                item_scores.append({
+                    "item_idx": int(item["item_idx"]),
+                    "score": float(item["score"]),
+                })
+            except (ValueError, TypeError):
+                continue
 
     if not item_scores:
         return None
