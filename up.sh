@@ -13,6 +13,12 @@ echo "  AAS Hybrid MCP - Starting Stack"
 echo "========================================"
 echo ""
 
+# Ensure IDTA templates submodule is present (one-time init; skipped if already populated)
+if [ ! -f "idta_templates/README.md" ]; then
+    echo "[INFO] Initializing idta_templates submodule..."
+    git submodule update --init idta_templates
+fi
+
 # Load environment variables
 source .env 2>/dev/null || true
 

@@ -26,6 +26,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Ensure IDTA templates submodule is present (one-time init; skipped if already populated)
+if [ ! -f "idta_templates/README.md" ]; then
+    echo "[INFO] Initializing idta_templates submodule..."
+    git submodule update --init idta_templates
+fi
+
 SLUGS="qwen35-08b qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-122b qwen35-397b qwen36-27b qwen36-35b"
 
 MODEL=${1:-}

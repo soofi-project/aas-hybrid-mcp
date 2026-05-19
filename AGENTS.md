@@ -4,6 +4,7 @@
 
 ```bash
 cp .env.secrets.example ~/.env.secrets   # edit with your API key(s)
+git submodule update --init              # fetch IDTA templates (one-time; up.sh does this automatically)
 ./up.sh --build                           # first time: build images
 ./up.sh                                   # start stack
 ./down.sh                                 # stop + wipe mongo/kafka/neo4j (keep weaviate)
