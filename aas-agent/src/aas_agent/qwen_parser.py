@@ -114,6 +114,21 @@ def _normalize_json_from_qwen(text: str) -> dict | None:
         except (json.JSONDecodeError, TypeError):
             pass
 
+    # Last resort: fix missing commas between adjacent JSON values (common Qwen
+    # defect where a newline separates two fields without a comma).
+    comma_fixed = re.sub(r'(["\d\]\}]|true|false|null)(\s*\n\s*)(")', r'\1,\2\3', text)
+    if comma_fixed != text:
+        data = QwenOutputParser.try_parse_json(comma_fixed)
+        if data is None:
+            md_json = QwenOutputParser.try_parse_markdown_json(comma_fixed)
+            if md_json:
+                try:
+                    data = json.loads(md_json)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        if data is not None:
+            return _normalize_keys(data)
+
     return None
 
 
