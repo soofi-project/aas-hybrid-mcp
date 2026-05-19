@@ -382,8 +382,16 @@ class LLMJudge:
                 )
                 resp.raise_for_status()
                 data = resp.json()
+        except httpx.HTTPStatusError as e:
+            body = ""
+            try:
+                body = e.response.text[:500]
+            except Exception:
+                pass
+            msg = f"LLM judge HTTP error: {e!r} (body: {body})"
+            raise RuntimeError(msg) from e
         except httpx.HTTPError as e:
-            return 0.0, f"LLM judge HTTP error: {e!r}"
+            raise RuntimeError(f"LLM judge transport error: {e!r}") from e
 
         text = (
             data.get("choices", [{}])[0]

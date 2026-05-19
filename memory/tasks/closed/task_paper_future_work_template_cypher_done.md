@@ -5,7 +5,7 @@ description: Paper Future-Work-Hypothese: Lohnt sich eine Zwischensprache (IR/DS
   match_submodel? Drei Ansaetze vergleichen (pre-compiled snippets, DSL, JSON-only),
   Read + Write abdecken, kleinere LLMs entlasten.
 type: task
-status: open
+status: closed
 priority: medium
 ---
 

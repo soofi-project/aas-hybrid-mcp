@@ -2,7 +2,7 @@
 name: Task – Paper: Satz zu with_structured_output in Implementierungssektion
 description: Einen Satz zur API-seitigen Schema-Enforcement via with_structured_output in die Paper-Implementierungssektion einfügen.
 type: task
-status: open
+status: closed
 priority: medium
 ---
 

@@ -2,7 +2,7 @@
 name: Task - ImplAAS 2025 Citations + Bib Sweep (ETFA 2026)
 description: Add missing ImplAAS-2025 papers to main.bib + papers_downloaded/, then walk through every existing BibTeX entry step by step for hygiene & relevance
 type: task
-status: open
+status: closed
 priority: high
 ---
 
@@ -16,6 +16,27 @@ Audit der `main.bib` für die ETFA-2026-ImplAAS-Einreichung. Zwei Stoßrichtunge
 2. **Schritt-für-Schritt-Review aller bestehenden Bib-Einträge** — Hygiene, Vollständigkeit,
    Venue-Korrektheit, Page-Ranges, Workshop-Flags, ob jeder Eintrag im Paper tatsächlich
    verwendet wird.
+
+## Fortschritt (2026-05-19)
+
+### T4 Bib-Sweep — ✅ ERLEDIGT
+- `madaan2023self_refine` → ❌ entfernt (war nicht \cite{}-t)
+- `xia2024zdm` → 🔧 umbenannt zu `shi2024zdm` (Erstautor ist Shi)
+- `xia2025cdt_rag` → 🔧 umbenannt zu `shi2025cdt_rag`
+- 7 @misc-Einträge: `year`-Feld ergänzt
+- `wang2023plan_solve`: pages=2609–2634 + DOI=10.18653/v1/2023.acl-long.147 ergänzt
+- `chan2023harms`: pages=651–666 ergänzt
+- `yan2024crag`, `wu2023autogen`: `note={arXiv preprint}` ergänzt
+- Alle anderen bestehenden Einträge: ✅ (gecitet, Pflichtfelder OK)
+
+### T1 Pflicht-Zitate — teilweise ✅
+- `farkas2025aas_lowcode` ✅ — vollständiger Eintrag via OpenAlex DOI: 10.1109/ETFA65518.2025.11205785; cite in §4 Related Work eingefügt
+- `buettner2025aas_learning` 🔧 Stub (Autorenvornamen + DOI fehlen) — cite in §4 AAS Type 3-Paragraph eingefügt; **PDF nötig** (ETFA25-000345 auf IEEE Xplore)
+- `stolze2025aas_events` 🔧 Stub (Autorenvornamen + DOI fehlen) — cite in §7 Ingestion Plugin eingefügt; **PDF nötig** (ETFA25-000321 auf IEEE Xplore)
+
+### Offen
+- Büttner + Stolze: volle Autorennamen + DOI über IEEE Xplore verifizieren, PDFs downloaden, `extract_markdown.py` ausführen
+- T2 (Gneuss et al.) + T3 (Comparison-Paper): nicht in OpenAlex indexiert, User muss Links/PDFs liefern
 
 ## Scope
 

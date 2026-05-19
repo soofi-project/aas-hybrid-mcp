@@ -1,6 +1,6 @@
 ---
-name: Task – Paper-Eval „Modellgröße × Validator" — ReAct-only, N=20
-description: ReAct-only Eval über Qwen3.5 0.8B→397B + Qwen3.6-27B/35B; N=20 pro Suite; Bench B (Retrieval) + Bench C (Write-Path); Reflexion aus Eval ausgeschlossen (same-model self-eval, §12 begründet).
+name: Task – Paper-Eval „Modellgröße × Validator" — ReAct-only, N=10
+description: ReAct-only Eval über Qwen3.5 0.8B→397B + Qwen3.6-27B/35B; N=10 pro Suite; Bench B (Retrieval) + Bench C (Write-Path); Reflexion aus Eval ausgeschlossen (same-model self-eval, §12 begründet).
 type: task
 status: open
 priority: high
@@ -45,18 +45,18 @@ Zwei Achsen: **Qwen3.5** (Skalierung, primäre Forschungsfrage) + **Qwen3.6** (G
 | Qwen3.5-122B-A10B-FP8 | 10B active (MoE) | `qwen35-122b` | lokal H200 | Großes lokales On-prem |
 | Qwen3.5-397B-A17B-FP8 | 17B active (MoE) | `qwen35-397b` | Cortecs (€0.6/M in, €3.6/M out) | Obere Schranke / Open-Source-Frontier |
 
-### Qwen3.6 — Generations-Achse (2 Punkte)
+### Qwen3.6 — Aktuelle Generation (2 Zusatzpunkte, kein eigener Vergleichs-Anspruch)
 
 | Modell | Active | Deployment | Rolle |
 |---|---|---|---|
-| Qwen3.6-27B-FP8 | 27B dense | lokal H200 | Generationsvergleich auf 27B (passt zum 3.5-Midpoint) |
-| Qwen3.6-35B-A22B-FP8 | 22B active (MoE) | lokal H200 | Generationsvergleich auf ~35B |
+| Qwen3.6-27B-FP8 | 27B dense | lokal H200 | Aktuelle Generation bei 27B — ergänzender Datenpunkt |
+| Qwen3.6-35B-A3B-FP8 | 3B active (MoE) | lokal H200 | Speed-Story: MoE mit Inferenzkosten eines ~3B Dense-Modells |
 
-Qwen3.6 hat nur zwei Modelle (27B dense + 35B MoE) — die asymmetrische Größe ist durch Verfügbarkeit erzwungen. Im Paper ein Satz als Fußnote.
+**Framing im Paper:** Kein "Generationsvergleich" als eigene Forschungsfrage. Qwen3.6 wird als "wir haben auch die aktuellste Modellreihe gecheckt" gerahmt. Der 35B-A3B-Datenpunkt ist für die Deployment-/Edge-Argumentation interessant: 3B active params → Inferenzgeschwindigkeit eines 3B Dense-Modells, aber mit dem Parameterreservoir eines 35B-Modells. Im Paper ein Satz als Ergänzung zur Skalierungs-Diskussion.
 
 **Bestehende Bench-B-Daten (Qwen3.6-27B, N=3, 5 Containment-Cases):** Diese sind *nicht* direkt wiederverwendbar als Qwen3.6-27B-Datenpunkt im neuen Eval-Grid — die 5 Containment-Cases sind ein Subset der B1-B6-Queries, aber das Protokoll muss vor der Wiederverwendung explizit geprüft werden (offene Frage unter § Offene Fragen).
 
-**FP8 für alle Modelle:** Alle lokal laufenden Modelle werden mit W8A8-FP8-Quantisierung über vLLM geserved. Methodische Begründung: FP8 ist im Wesentlichen verlustfrei gegenüber BF16 \cite{kurtic2025bf16} — die Eval-Ergebnisse sind damit über alle Modelle direkt vergleichbar. Task [[task-paper-fp8-quantization-cite]] setzt das Cite in die Eval-Sektion.
+**FP8 wo verfügbar:** Modelle mit offiziellem FP8-Checkpoint (Qwen3.5 ab 27B, Qwen3.6 27B + 35B-A3B) laufen in W8A8-FP8 via vLLM. Kleinere Modelle ohne FP8-Checkpoint (Qwen3.5 0.8B–9B) laufen in BF16. Methodische Begründung: W8A8-FP8 ist im Wesentlichen verlustfrei gegenüber BF16 \cite{kurtic2025bf16} — beide Varianten gelten als methodisch äquivalent. Task [[task-paper-fp8-quantization-cite]] setzt das Cite in die Eval-Sektion (done).
 
 **MoE-Caveat:** 122B, 397B und 3.6-35B sind MoE, der Rest dense. Im Paper:
 „Total parameters reported; active-parameter counts at inference marked separately for MoE models."
@@ -66,11 +66,11 @@ Qwen3.6 hat nur zwei Modelle (27B dense + 35B MoE) — die asymmetrische Größe
 - Plan-and-Reflect: Citation (`wang2023plan_solve`) zu weit gedehnt, kein sauberer Beitrag ohne eigene Eval
 - CRAG: out-of-scope per [[task-paper-crag-removal-and-reframe]]
 
-**Eval-Budget:** 1 Pattern × 9 Modelle × N=20 = **~1620 Runs** (Bench B + Bench C kombiniert).
-Cortecs-Kosten (nur 397B, N=20, Bench B+C): ~30–50 €. Judge-Kosten (gpt-4o-mini-2024-07-18): ~5–10 $.
+**Eval-Budget:** 1 Pattern × 9 Modelle × N=10 = **~810 Runs** (Bench B + Bench C kombiniert).
+Cortecs-Kosten (nur 397B, N=10, Bench B+C): ~15–25 €. Judge-Kosten (gpt-4o-mini-2024-07-18): ~3–5 $.
 H200-Runs: sequenziell, je ~15–30 Min Reload-Zeit pro Modellwechsel.
-Begründung N=20: coarse frequency estimation möglich (±22pp CI bei N=20); Suite-Aggregat 6 Cases × 20 = 120 Obs. — stärker als N=10 ohne 5× Mehraufwand von N=100.
-Script: `tests/agent-tests/run_all.sh` — ReAct-only, N=20 für alle Paper-Eval-Suiten.
+Begründung N=10: Existence-Framing — 6 Cases × 10 = 60 Obs. pro Suite reicht für Capability-Floor-Aussagen; kein Anspruch auf präzise Frequenzschätzung.
+Script: `tests/agent-tests/run_all.sh` — ReAct-only, N=10 für alle Paper-Eval-Suiten.
 
 ## Subtasks
 

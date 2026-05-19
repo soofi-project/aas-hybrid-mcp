@@ -2,7 +2,7 @@
 name: Task – FP8-Quantisierung im Paper zitieren
 description: kurtic2025bf16 (ACL 2025) an den richtigen Stellen im Paper einbauen — Methodik-Satz + Limitations-Caveat für alle Eval-Modelle
 type: task
-status: open
+status: closed
 priority: medium
 ---
 
