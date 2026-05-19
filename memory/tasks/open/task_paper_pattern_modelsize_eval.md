@@ -1,6 +1,6 @@
 ---
-name: Task – Paper-Pivot „Pattern × Modellgröße" — Eval-Setup + Modell-Achse
-description: Pattern-Survival × Modellgröße-Eval; Qwen3.5-Familie 2B→397B (Skalierungs-Achse) + Qwen3.6-27B/35B (Generations-Achse); alle Modelle FP8 via vLLM; CRAG out-of-scope.
+name: Task – Paper-Eval „Modellgröße × Validator" — ReAct-only, N=20
+description: ReAct-only Eval über Qwen3.5 0.8B→397B + Qwen3.6-27B/35B; N=20 pro Suite; Bench B (Retrieval) + Bench C (Write-Path); Reflexion aus Eval ausgeschlossen (same-model self-eval, §12 begründet).
 type: task
 status: open
 priority: high
@@ -61,13 +61,16 @@ Qwen3.6 hat nur zwei Modelle (27B dense + 35B MoE) — die asymmetrische Größe
 **MoE-Caveat:** 122B, 397B und 3.6-35B sind MoE, der Rest dense. Im Paper:
 „Total parameters reported; active-parameter counts at inference marked separately for MoE models."
 
-**Patterns:** ReAct, Plan-and-Solve, Reflexion. **CRAG out-of-scope**
-(separater Task [[task-paper-crag-removal-and-reframe]] für Paper-Anpassung).
+**Pattern:** Nur **ReAct**. Plan-and-Reflect und Reflexion aus Eval ausgeschlossen:
+- Reflexion: same-model self-eval konfundiert Ergebnisse (§12 Limitations begründet das)
+- Plan-and-Reflect: Citation (`wang2023plan_solve`) zu weit gedehnt, kein sauberer Beitrag ohne eigene Eval
+- CRAG: out-of-scope per [[task-paper-crag-removal-and-reframe]]
 
-**Eval-Budget:** 3 Patterns × 9 Modelle × 6 Queries × N=10 = **1620 Runs**.
-Cortecs-Kosten (nur 397B, N=10): ~13–20 €. Judge-Kosten (gpt-4o-mini-2024-07-18, 1620 Calls): ~2–5 $.
+**Eval-Budget:** 1 Pattern × 9 Modelle × N=20 = **~1620 Runs** (Bench B + Bench C kombiniert).
+Cortecs-Kosten (nur 397B, N=20, Bench B+C): ~30–50 €. Judge-Kosten (gpt-4o-mini-2024-07-18): ~5–10 $.
 H200-Runs: sequenziell, je ~15–30 Min Reload-Zeit pro Modellwechsel.
-Begründung N=10: Existence-Framing im Paper; effektive N auf Suite-Ebene ist 6 Cases × 10 = 60 Obs./Variant — ausreichend für Suite-Aggregat-Claims. Per-Case-Zahlen in Tabellen als illustrativ kennzeichnen.
+Begründung N=20: coarse frequency estimation möglich (±22pp CI bei N=20); Suite-Aggregat 6 Cases × 20 = 120 Obs. — stärker als N=10 ohne 5× Mehraufwand von N=100.
+Script: `tests/agent-tests/run_all.sh` — ReAct-only, N=20 für alle Paper-Eval-Suiten.
 
 ## Subtasks
 

@@ -50,7 +50,7 @@ python run_tests.py \
 # LLM_BASE_URL must NOT include /v1 — the framework appends /v1/chat/completions.
 # For OpenAI: set LLM_BASE_URL=https://api.openai.com and OPENAI_API_KEY.
 # For local H200: set LLM_BASE_URL=http://<host>:<port> and LLM_MODEL=<alias>.
-LLM_BASE_URL=https://api.openai.com LLM_MODEL=gpt-4o-2024-11-20 \
+LLM_BASE_URL=https://api.openai.com LLM_MODEL=gpt-4o-mini-2024-07-18 \
 python run_tests.py \
   --judge-only results/qwen35-27b_bench_b_N10.json \
   --llm-judge \
@@ -64,6 +64,28 @@ Repeat Phase 1 + 2 for each model slug.
 ```
 qwen35-08b → qwen35-2b → qwen35-4b → qwen35-9b → qwen35-27b → qwen35-122b
 → qwen36-27b → qwen36-35b → qwen35-397b (Cortecs, last)
+```
+
+### 3 — Alle Suites auf einmal (run_all.sh)
+
+`run_all.sh` führt alle 7 Suites für ein Modell durch (N=10 je Suite). Es sourct
+automatisch `~/.env.secrets` für den LLM-Judge-Key.
+
+```bash
+# Direkt (blockierend):
+cd tests/agent-tests
+./run_all.sh qwen35-27b
+
+# Async über SSH mit nohup (Session kann danach geschlossen werden):
+nohup bash tests/agent-tests/run_all.sh qwen35-27b \
+  > logs/run_all_qwen35-27b.out 2>&1 &
+echo $!   # PID merken
+
+# Fortschritt verfolgen:
+tail -f logs/run_all_qwen35-27b.out
+
+# Abbrechen:
+kill <PID>
 ```
 
 ### Prerequisites

@@ -5,7 +5,9 @@
 #
 # $1 = model slug (used in export filenames)
 # Results land in tests/agent-tests/results/
-# N=30: sufficient for frequency claims (±16pp CI); existence claims clear at N=10.
+# N=20: paper eval uses ReAct only; N=20 gives ~60 obs/suite (20×3 configs or 20×6 queries)
+#        sufficient for existence claims and coarse frequency estimates.
+# N=10: smoke/regression tests where exact frequencies are not claimed.
 
 set -e
 
@@ -19,48 +21,54 @@ fi
 
 MODEL=$1
 
-# --- Paper Eval (N=10, all 3 variants) ---
+# --- Paper Eval — Bench B: Retrieval ablation ---
 python run_tests.py \
   --cases cases/bench_b.yaml \
-  --variants aas-agent:react aas-agent:plan aas-agent:reflexion \
-  --repetitions 10 \
-  --export results/${MODEL}_bench_b_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_bench_b_N20.json
 
-# --- Containment Hall 4 (N=10) ---
+# --- Containment Hall 4 ---
 python run_tests.py \
   --cases cases/containment_hall4.yaml \
-  --repetitions 10 \
-  --export results/${MODEL}_containment_hall4_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_containment_hall4_N20.json
 
-# --- Asset Specs / Smoke Tests (N=10) ---
+# --- Asset Specs ---
 python run_tests.py \
   --cases cases/asset_specs.yaml \
-  --repetitions 10 \
-  --export results/${MODEL}_asset_specs_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_asset_specs_N20.json
 
-# --- Anti-Pattern idShort Lookup (N=10) ---
+# --- Anti-Pattern idShort Lookup ---
 python run_tests.py \
   --cases cases/anti_pattern_idShort_lookup.yaml \
-  --repetitions 10 \
-  --export results/${MODEL}_anti_pattern_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_anti_pattern_N20.json
 
-# --- SRN Write-Path Bypass (N=10) ---
+# --- SRN Write-Path Bypass ---
 python run_tests.py \
   --cases cases/srn_bypass.yaml \
-  --repetitions 10 \
-  --export results/${MODEL}_srn_bypass_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_srn_bypass_N20.json
 
-# --- SRN Autonomous Creation — Variant B (typed tool, N=10) ---
+# --- SRN Autonomous Creation — Variant B (typed tool) ---
 python run_tests.py \
   --cases cases/srn_autonomous.yaml \
-  --repetitions 10 \
-  --export results/${MODEL}_srn_autonomous_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_srn_autonomous_N20.json
 
-# --- SRN Ablation — Variant A (generic tools, N=10) ---
+# --- SRN Ablation — Variant A (generic tools) ---
 python run_tests.py \
   --cases cases/srn_ablation_variant_a.yaml \
-  --repetitions 10 \
-  --export results/${MODEL}_srn_ablation_variant_a_N10.json
+  --variants aas-agent:react \
+  --repetitions 20 \
+  --export results/${MODEL}_srn_ablation_variant_a_N20.json
 
 # --- Naming Stress (requires renamed fixture from task_read_validation_gap T2) ---
 # python run_tests.py \
