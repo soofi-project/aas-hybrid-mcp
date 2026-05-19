@@ -64,8 +64,8 @@ Qwen3.6 hat nur zwei Modelle (27B dense + 35B MoE) — die asymmetrische Größe
 **Patterns:** ReAct, Plan-and-Solve, Reflexion. **CRAG out-of-scope**
 (separater Task [[task-paper-crag-removal-and-reframe]] für Paper-Anpassung).
 
-**Eval-Budget:** 3 Patterns × 9 Modelle × 6 Queries × N=10 = **1620 Runs**.
-Cortecs-Kosten (nur 397B, N=10): ~13–20 €. Judge-Kosten (gpt-4o-2024-11-20, 1620 Calls): ~17 $.
+**Eval-Budget:** 3 Patterns × 9 Modelle × 6 Queries × N=30 = **4860 Runs**.
+Cortecs-Kosten (nur 397B, N=30): ~40–60 €. Judge-Kosten (gpt-4o-mini-2024-07-18, 4860 Calls): ~5–15 $.
 H200-Runs: sequenziell, je ~15–30 Min Reload-Zeit pro Modellwechsel.
 
 ## Subtasks
@@ -111,23 +111,19 @@ qwen35-08b → qwen35-2b → qwen35-4b → qwen35-9b → qwen35-27b → qwen35-1
 ```bash
 # Aus tests/agent-tests/ ausführen
 ./eval-model.sh <slug>          # Stack auf neues Modell umschalten
-python run_tests.py \
-  --cases cases/bench_b.yaml \
-  --repetitions 10 \
-  --export results/<slug>_bench_b_N10.json
+./run_all.sh <slug>             # alle Suites, N=30, OPENAI_API_KEY aus ~/.env.secrets
 ```
 
 **Phase 2 — LLM-Judge (nachträglich, lokal, kein Agent-Traffic):**
 ```bash
-# OPENAI_API_KEY muss gesetzt sein
-LLM_BASE_URL=https://api.openai.com LLM_MODEL=gpt-4o-2024-11-20 \
+# OPENAI_API_KEY wird via run_all.sh aus ~/.env.secrets gezogen
 python run_tests.py \
-  --judge-only results/<slug>_bench_b_N10.json \
+  --judge-only results/<slug>_bench_b_N30.json \
   --llm-judge \
-  --export results/<slug>_bench_b_N10_judged.json
+  --export results/<slug>_bench_b_N30_judged.json
 ```
 
-Judge-Modell: **gpt-4o-2024-11-20** (gepinnt für Reproduzierbarkeit; im Paper dokumentiert).
+Judge-Modell: **gpt-4o-mini-2024-07-18** (independent judge, family-unabhängig von Qwen; gepinnt für Reproduzierbarkeit; im Paper dokumentieren).
 Vollständiger Workflow: `tests/agent-tests/README.md` → Sektion „Paper eval".
 
 ### T4 — Cypher-vs-JSON-Hypothese empirisch prüfen
@@ -148,7 +144,7 @@ aus [[task-paper-future-work-template-cypher]]. Konkret:
 - Tabelle mit Erfolgsquoten pro Modell × Pattern — zwei Blöcke: Qwen3.5 (Skalierung) + Qwen3.6 (Generation)
 - Generations-Interpretationslinie: „Größe ist nicht alles — neuere Modelle schlagen ältere bei gleicher Parameterzahl"
 - Existence-Framing (nicht Frequency-Estimation)
-- Caveats: MoE-vs-dense, N=3, eine einzige Modellfamilie, Qwen3.6 nur 2 Punkte
+- Caveats: MoE-vs-dense, N=30, eine einzige Modellfamilie, Qwen3.6 nur 2 Punkte
 - Hook auf SOOFI-400B-Folgeprojekt als praktischer Anwendungsfall
 - Limitation: nur Qwen-Familie — Verallgemeinerung auf Llama/DeepSeek offen
 - FP8-Methodology-Satz mit \cite{kurtic2025bf16} (delegiert an [[task-paper-fp8-quantization-cite]])
@@ -165,7 +161,7 @@ aus [[task-paper-future-work-template-cypher]]. Konkret:
 
 ## Non-Goals
 
-- Kein N>10 — höhere Wiederholungszahl nicht durch Cortecs-Budget gedeckt
+- Kein N>30 — ±16pp CI ausreichend für Frequenz-Claims im Workshop-Paper; Cortecs-Kosten bei 397B vertretbar
 - Kein Vergleich gegen ChatGPT/Claude — würde Data-Sovereignty-Story
   verwässern und zwei Achsen confounden
 - Kein Cross-Family-Vergleich (Llama/DeepSeek) — Limitation, nicht Aufgabe
