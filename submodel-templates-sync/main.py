@@ -129,14 +129,24 @@ def clone_repo(target: Path) -> Path:
 
 
 def get_repo_hash(repo_dir: Path) -> str:
-    """Return the HEAD commit SHA of the cloned repo."""
-    result = subprocess.run(
-        ["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout.strip()
+    """Return the HEAD commit SHA of the cloned repo.
+
+    Falls back to "local" when the directory is not a git repository
+    (e.g. a plain bind-mount via TEMPLATES_LOCAL_PATH without git metadata).
+    In that case the Weaviate idempotency check always runs the full sync on
+    first use, then skips it on subsequent restarts once "local" is stored.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        log.info("Directory %s is not a git repo; using hash 'local'", repo_dir)
+        return "local"
 
 
 # ---------------------------------------------------------------------------
