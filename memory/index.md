@@ -29,8 +29,9 @@ Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteri
 
 | Datei | Thema | Status |
 |---|---|---|
-| `tasks/open/task_variant_faithfulness_audit.md` | Varianten gegen Paper-Originale prüfen; CRAG akut (40% Pass) | open |
-| `tasks/open/task_crag_parser_int_e0_bug.md` | CRAG-Parser-Crash `int('E0')` in `crag_nodes.py:335` | open |
+| `tasks/open/task_paper_pattern_modelsize_eval.md` | Paper-Pivot: Pattern × Modellgröße (Qwen 3.5 2B→397B); Setup-Swap auf 3.5-27B-FP8 | open |
+| `tasks/open/task_paper_crag_removal_and_reframe.md` | CRAG aus Paper raus; Bench-B als 27B-Datenpunkt der Skalierungs-Studie umrahmen | open |
+| `tasks/open/task_variant_faithfulness_audit.md` | Varianten gegen Paper-Originale prüfen — auf ReAct/Plan/Reflexion reduzieren (CRAG-Teil entfällt durch Pivot) | open |
 | `tasks/open/task_n30_evaluation_run.md` | N=30 serieller Run für Paper-Tabelle + statistische KIs | open |
 | `tasks/open/task_container_location_traversal_prompt_fix.md` | Pragmatik-Regel: Containment ≠ MANAGES_ASSET-Selbstreferenz | open |
 | `tasks/open/task_paper_claim_audit.md` | ETFA-Claim-Audit: jede Aussage belegen | open |
@@ -42,18 +43,17 @@ Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteri
 
 | Datei | Thema | Status |
 |---|---|---|
-| `tasks/open/task_framework_stream_error_bucket.md` | Stream-Error-Traces aus CRAG klassifizieren (Infra vs. Content) | open |
-| `tasks/open/task_crag_failure_deep_dive.md` | CRAG-Failures Ursache klären (Parser/Infra vs. Reasoning) | open |
+| `tasks/open/task_paper_fp8_quantization_cite.md` | FP8-Cite (kurtic2025bf16) in Eval-Sektion + Bib-Check | open |
 | `tasks/open/task_read_validation_gap.md` | Read-Validierungs-Lücke: Agent liest falsche Werte | open |
 | `tasks/open/task_write_tool_validation_gap.md` | Write-Tool-Validierungslücke dokumentieren | open |
 | `tasks/open/task_paper_layered_determinism_thesis.md` | Layered-Determinism-These im Paper ausarbeiten | open |
 | `tasks/open/task_paper_read_validation_anecdote.md` | Read-Validation-Anekdote für Paper formulieren | open |
 | `tasks/open/task_paper_modeling_vs_pragmatics_anecdote.md` | Modeling-vs-Pragmatics-Anekdote für Paper ausarbeiten | open |
 | `tasks/open/task_agent_test_framework.md` | Externes Agent-Testframework für `/v1/chat/completions` | open |
-| `tasks/open/task_crag_peer_review.md` | MG-CRAG Journal-PDF beschaffen | open |
+| `tasks/open/task_skills_create.md` | Claude-Code-Skills anlegen (paper, paper-download, task-workflow) | open |
 | `tasks/open/task_docling_gpu_dispatch.md` | Docling-Pipeline auf GPU-Offload & messen | open |
 | `tasks/open/task_paper_data_quality_assumption.md` | Datenqualitäts-Annahme im Paper verankern | open |
-| `tasks/open/task_paper_future_work_template_cypher.md` | Future Work: IDTA-Templates zu Cypher vorkompilieren | open |
+| `tasks/open/task_paper_future_work_template_cypher.md` | Future Work: AAS Query IR — JSON-Traversal vs. DSL vs. pre-compiled Cypher (Read + Write) | open |
 | `tasks/open/task_paper_readme_repo.md` | Paper-fähiges README + GitHub-Mirror vorbereiten | open |
 | `tasks/open/task_paper_style_review.md` | Reviewer-Stil-Review durch Agent fahren | open |
 | `tasks/open/task_prompt_quality.md` | Prompt-Qualität & Grounding-Heuristiken nachschärfen | open |
@@ -62,7 +62,6 @@ Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteri
 
 | Datei | Thema | Status |
 |---|---|---|
-| `tasks/open/task_multigranular_eval.md` | MG-CRAG-Multigranular-Evaluator (Entscheidung nach PDF) | decision pending |
 | `tasks/open/task_paper_cortecs_frontier_eval.md` | Cortecs-Budget-Einsatz für Frontier-Modell-Eval | open |
 | `tasks/open/task_paper_iterative_optimization_loop.md` | Iterativer Optimierungs-Loop für Paper-Eval | open |
 | `tasks/open/task_paper_outlook_trained_in_manuals.md` | Outlook: trainiertes Modell in Manuals | open |
@@ -71,17 +70,13 @@ Actionable work items — prefix `task_`, enthalten Subtasks, Acceptance Criteri
 
 | Datei | Thema |
 |---|---|
-| `tasks/closed/task_bibliography_audit.md` | Bibliographie-Audit (DFKI/ETFA Paperquellen) |
-| `tasks/closed/task_cleanup_unused_papers.md` | Ungenutzte Paper aus `papers_downloaded/` räumen |
-| `tasks/closed/task_download_missing_papers.md` | Fehlende Paper nachladen & metadata pflegen |
-| `tasks/closed/task_pdf_inline_viewer.md` | PDF-Viewer Proxy für BaSyx bereitstellen |
-| `tasks/closed/task_prompt_conciseness.md` | Tool- & Manual-Texte kürzen, generisch halten |
-| `tasks/closed/task_query_rewriting.md` | Query-Rewrite-Pipeline (Ma et al. 2023) umgesetzt |
-| `tasks/closed/task_rag_metadata_overhaul.md` | RAG-Metadaten vereinheitlichen & enrichen |
-| `tasks/closed/task_remove_rewoo.md` | ReWOO-Variante entfernen (entlastet Agenten) |
-| `tasks/closed/task_reranker_integration.md` | qwen3-Reranker in Weaviate-Suche integrieren |
-| `tasks/closed/task_token_usage_tracking.md` | Token-Usage-Tracking (Status im File noch "open") |
-| `tasks/closed/task_verbose_fix.md` | Verbose-Streaming fixen (Agent-Output) |
+| `tasks/closed/retrieval_enhancements_done.md` | Reranker + Query Rewriting + Metadata + PDF Viewer (Phase 9) |
+| `tasks/closed/bibliography_done.md` | Bib-Audit, Downloads, Korrekturen, Archivierung |
+| `tasks/closed/agent_cleanup_done.md` | ReWOO entfernt, Verbose Streaming, Token Tracking, Prompt Conciseness |
+| `tasks/closed/crag_diagnosis_done.md` | CRAG-Diagnose nicht weiterverfolgt — out of paper scope nach Pivot 2026-05-16 |
+| `tasks/closed/crag_peer_review_done.md` | MG-CRAG Peer-Review nicht weiterverfolgt — out of paper scope nach Pivot 2026-05-16 |
+| `tasks/closed/crag_parser_int_e0_bug_done.md` | CRAG-Parser-Bug nicht gefixt — out of paper scope nach Pivot 2026-05-16 |
+| `tasks/closed/multigranular_eval_done.md` | MG-CRAG-Implementierung nicht gemacht — out of paper scope nach Pivot 2026-05-16 |
 
 ## Konventionen
 

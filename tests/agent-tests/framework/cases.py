@@ -27,6 +27,9 @@ class ExpectedSpec(BaseModel):
     keywords: list[str] = Field(default_factory=list)
     pattern: str | None = None
     forbidden: list[str] = Field(default_factory=list)
+    # Tool-call checks: tool that must have been called, and expected args (partial match).
+    tool_called: str | None = None
+    tool_args: dict[str, Any] | None = None
 
 
 class Case(BaseModel):
@@ -44,6 +47,9 @@ class Case(BaseModel):
     # (e.g., cypher.md Anti-Patterns #3 + #4 — no idShort/id substring
     # lookup) deterministically rather than via prompt-engineering.
     forbidden_cypher_patterns: list[str] = Field(default_factory=list)
+
+    # Tools that must NOT have been called at all during the run.
+    forbidden_tools: list[str] = Field(default_factory=list)
 
     @field_validator("name", "query")
     @classmethod

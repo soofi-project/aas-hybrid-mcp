@@ -1,0 +1,24 @@
+# Eval model override — appends .env.model as last env_file to each service.
+#
+# Docker Compose merges env_file lists across override files (sequences are
+# concatenated); .env.model is read last, so its LLM_MODEL / LLM_BASE_URL /
+# QUERY_REWRITE_* values override whatever .env.vllm set.
+#
+# Usage: ./eval-model.sh <model-slug>   — do NOT use this file directly
+
+services:
+  submodel-templates-sync:
+    env_file:
+      - .env.model
+
+  embedding-service:
+    env_file:
+      - .env.model
+
+  aas-hybrid-mcp:
+    env_file:
+      - .env.model
+
+  aas-agent:
+    env_file:
+      - .env.model

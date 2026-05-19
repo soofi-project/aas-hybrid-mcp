@@ -1,4 +1,18 @@
-**Before first use: plan `get_graph_schema()` and `get_templates_index()` in parallel** — they return the relationship labels and semantic IDs you need to write correct Cypher. Don't guess either from memory.
+**Required before first use — call all three in parallel:**
+- `get_manual_page("cypher")` — query patterns and anti-patterns (mandatory)
+- `get_graph_schema()` — relationship labels and node properties
+- `get_templates_index()` — semantic IDs for submodel templates
+
+Do not skip these calls. Guessing Cypher patterns from memory produces anti-patterns that work on clean fixture data but fail silently in production.
+
+**Anti-pattern — never use CONTAINS or =~ on idShort or id for asset lookup:**
+```
+-- WRONG (breaks on any non-trivial naming):
+WHERE toLower(aas.idShort) CONTAINS 'mir100'
+-- CORRECT: exact match as entry point, then traverse by semanticId
+WHERE aas.idShort = $idShort
+```
+See cypher.md anti-patterns #3 and #4 for the full list.
 
 Execute a read-only Cypher query against the AAS knowledge graph.
 

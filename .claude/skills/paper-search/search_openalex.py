@@ -23,6 +23,10 @@ import sys
 import urllib.parse
 import urllib.request
 
+# Fix Windows console encoding (cp1252 can't handle Unicode dashes, quotes, etc.)
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
+
 OPENALEX_BASE = "https://api.openalex.org"
 USER_AGENT = "aas-hybrid-mcp/paper-search (gerhard.sonnenberg@googlemail.com)"
 MAILTO = "gerhard.sonnenberg@googlemail.com"

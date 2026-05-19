@@ -18,9 +18,9 @@ This page indexes the rest of the manual.
 ## Four rules that catch the most failures
 
 1. **Before your first `query_aas_graph` call, call `get_templates_index()`
-   — but only ONCE per session.** Check the conversation history first: if a
-   prior `<think>` block already shows its result, use those semanticIds
-   directly. Do not call it again on every turn.
+   — but only ONCE per conversation.** If you already retrieved the templates
+   index earlier in this conversation, use those semanticIds directly.
+   Do not call it again on every turn.
 2. `params` for `query_aas_graph` is an OBJECT, not a JSON string.
    `{}`, not `"{}"`.
 3. Use semanticIds VERBATIM from `get_templates_index()` or graph discovery.

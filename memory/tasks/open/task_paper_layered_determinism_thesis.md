@@ -117,6 +117,23 @@ abstimmen.
   diskutieren („für Pragmatik-Disambiguierung ist Prompt akzeptabel
   weil deterministische Detektion legitime Cases brechen würde").
 
+**Unterschiedliche Evidenzstärke der drei Anekdoten — explizit im Paper machen:**
+
+Die drei Anekdoten argumentieren nicht gleich stark für Layered Determinism.
+Dieser Unterschied ist eine Stärke, keine Schwäche — er zeigt wo die Grenze
+zwischen "Prompt reicht" und "Validator nötig" liegt:
+
+| Anekdote | Fix-Ebene | Evidenz-Typ |
+|---|---|---|
+| Write (Validator-Bypass) | Deterministischer Schema-Validator (BaSyx-SDK) | Harte Evidenz: Validator greift bei `put_submodel`, Element-Calls umgehen ihn faktisch |
+| Read (falsche Werte) | Deterministischer Wert-Abgleich | Harte Evidenz: Agent meldet falschen Wert trotz korrektem Tool-Ergebnis |
+| Pragmatics (Container-Lesart) | Prompt-Regel | Grenzfall: Prompt-Regel ist akzeptable Lösung, weil deterministischer Check valide Identitätsfragen brechen würde. Falls Agent nach expliziter Regel *noch immer* falsch antwortet → zusätzliche Evidenz für Validator-Ebene |
+
+Im Paper Write + Read als harte Belege präsentieren. Pragmatics als aufschlussreichen
+Grenzfall: er zeigt, dass die These nicht "Prompts sind immer unzureichend" lautet,
+sondern "Prompts sind unzureichend wo deterministisch prüfbare Domänen-Invarianten
+verletzt werden". Pragmatische Sprachinterpretation fällt nicht darunter.
+
 ### T4 — Related-Work-Sektion ergänzen
 
 Eintrag in `paper/etfa2026/content/02-related-work.tex` oder vergleichbar:

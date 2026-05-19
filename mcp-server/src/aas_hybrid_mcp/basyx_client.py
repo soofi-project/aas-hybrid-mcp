@@ -162,6 +162,16 @@ async def delete_submodel_element(submodel_id: str, id_short_path: str) -> dict:
     return {"status": "ok", "idShortPath": id_short_path}
 
 
+async def get_submodel(submodel_id: str) -> dict | None:
+    """Fetch a Submodel by id. Returns the raw submodel dict, or None on 404."""
+    client = _get_sm_client()
+    r = await client.get(f"/submodels/{_b64url(submodel_id)}")
+    if r.status_code == 404:
+        return None
+    _raise_for_status_with_body(r)
+    return r.json()
+
+
 async def get_concept_description(cd_id: str) -> dict | None:
     """Fetch a ConceptDescription by id. Returns the raw CD dict, or None on 404."""
     client = _get_cd_client()

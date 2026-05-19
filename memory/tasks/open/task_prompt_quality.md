@@ -8,7 +8,7 @@ priority: medium
 
 ## Summary
 
-Nach Prompt-Conciseness-Audit (task_prompt_conciseness.md): die kürzeren Prompts funktionieren,
+Nach Prompt-Conciseness-Audit (agent_cleanup_done.md): die kürzeren Prompts funktionieren,
 aber es gibt qualitative Lücken:
 
 1. **DEPLOYED_IN ist Rauschen** — im Graph-Schema als `[:DEPLOYED_IN]->(:Repository)` überall.
@@ -130,5 +130,5 @@ Keine neuen Umgebungsvariablen.
 - Plan/Reflect: `aas-agent/src/aas_agent/agent_plan_prompts/reflector.md`
 - System-Prompt: `aas-agent/src/aas_agent/system-prompt.md`
 - Cypher-Manual: `mcp-server/src/aas_hybrid_mcp/manual_pages/cypher.md`
-- Vorheriges Audit: `memory/tasks/closed/task_prompt_conciseness.md`
+- Vorheriges Audit: `memory/tasks/closed/agent_cleanup_done.md`
 - Through-Runs: `interaction-protocol/2026-05-13T15-01-04Z__6e52ddf1a69d/` (5 Varianten, Halle 4)

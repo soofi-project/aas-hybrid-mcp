@@ -50,7 +50,6 @@ log = logging.getLogger(__name__)
 _MODEL_INFO: dict[str, tuple[str, str]] = {
     "aas-agent:react":     ("react",        "system-prompt.md"),
     "aas-agent:plan":      ("plan_reflect", "system-prompt.md"),
-    "aas-agent:crag":      ("crag",         "system-prompt.md"),
     "aas-agent:reflexion": ("reflexion",    "system-prompt.md"),
 }
 
@@ -176,9 +175,6 @@ def _resolve_runner_class(variant: str):
     if variant == "plan_reflect":
         from aas_agent.agent_plan import PlanReflectAgentRunner
         return PlanReflectAgentRunner
-    elif variant == "crag":
-        from aas_agent.crag import CragAgentRunner
-        return CragAgentRunner
     elif variant == "reflexion":
         from aas_agent.reflexion import ReflexionAgentRunner
         return ReflexionAgentRunner

@@ -122,6 +122,17 @@ Generierung:
 - Größenordnung: hundert bis paar tausend Beispiele — Fine-Tune-Level,
   nicht Pre-Training.
 
+**Wichtiges Argument (2026-05-19):** Trainingsbeispiele für Layer 1
+müssen **nicht automatisiert** entstehen. 50–200 menschlich geschriebene
+Q&A-Paare reichen für Domain-Adaptation. Das ist kein Aufwandsproblem —
+es ist ein **Designvorteil**: ein Domänenexperte schreibt die Beispiele,
+behält volle Kontrolle, und der Trainingssatz hat verifizierbare Provenienz
+(kein Hallu-Risiko durch LLM-generierte Trainingsdata). Teilautomatisierung
+(z.B. Validator-Rejections als Kandidaten, menschlich bestätigt) ist
+möglich, aber nicht notwendig. Passt direkt zur SOOFI-Datensouveränitäts-
+Story: transparente, menschlich kuratierte Trainingsdaten für
+domänenspezifische Feinabstimmung.
+
 Das ist Detail-Outlook und kann auch ins Follow-up-Paper. Im ETFA-Paper
 nur erwähnen falls Platz.
 

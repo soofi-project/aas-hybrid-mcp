@@ -1,0 +1,21 @@
+# Ablation Variant A — "Prompts as Hints" baseline.
+#
+# Generic write tools are active; create_service_request_notification is NOT
+# available. The system prompt instructs the agent to use put_submodel for
+# whole-submodel writes, but no typed tool enforces structure.
+#
+# Usage:
+#   ./up.sh --vllm -f docker-compose.yml -f docker-compose.vllm.yml -f docker-compose.variant-a.yml
+#
+# See memory/tasks/open/task_write_tools_ablation_study.md for the ablation design.
+
+services:
+  aas-hybrid-mcp:
+    environment:
+      WRITE_TOOLS_MODE: generic
+
+  aas-agent:
+    environment:
+      AGENT_SYSTEM_PROMPT_DIR: /app/prompts/variant-a
+    volumes:
+      - ./aas-agent/src/aas_agent/prompts/variant-a:/app/prompts/variant-a:ro

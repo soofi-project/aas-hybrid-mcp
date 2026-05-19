@@ -78,6 +78,31 @@ Aus T1+T2: drei Buckets:
 Bei substantieller Überarbeitung einer Section: lokaler Reviewer-Pass auf das Diff,
 damit neue Schwächen nicht durchrutschen.
 
+### T5: 8-Seiten-Compliance-Pass (nach Fertigstellung des Inhalts)
+
+**Erst wenn der Inhalt stabil ist** — kein Sinn vorher, da Sections noch wachsen.
+
+**Content-Analyse (größter Hebel):**
+Alle `.tex`-Dateien sequentiell lesen; pro Section schätzen wie viel
+eingespart werden kann (in % / Zeilen) durch:
+- Redundanz zwischen Introduction, Related Work und Conclusion
+- Füllphrasen mit niedriger Informationsdichte
+  (z. B. „It is important to emphasize", „As mentioned above", „In this paper we")
+- Abbildungen/Tabellen zu groß für ihren Informationsgehalt
+
+Ausgabe: priorisierte Sparliste (Section | Schätzung | Beispiel) — erst listen, dann mit User priorisieren, dann ändern.
+
+**LaTeX-Micro-Pass (geringer Hebel, Feinschliff):**
+Orphan Lines ("Schusterjungen") aufspüren — einzelne Wörter oder Satzenden
+die alleine eine neue Zeile belegen. Sätze umformulieren um die Zeile einzusparen.
+Kann 3–8 Zeilen bringen, also letzter Schritt vor Submission.
+
+**Template-Check (Einmalcheck, trivial):**
+Sicherstellen dass `IEEEtran.cls` korrekt eingebunden ist:
+- Referenzen in 8pt (statt 10pt Haupttext) — automatisch via Template
+- Vornamen als Initialen + „et al." ab dem 4. Autor — automatisch via IEEEtran
+Falls das bereits stimmt: kein Handlungsbedarf.
+
 ## Acceptance Criteria
 
 - `paper/etfa2026/style_review.md` existiert mit zeilengenauen Kommentaren

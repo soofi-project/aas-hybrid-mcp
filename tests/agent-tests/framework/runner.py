@@ -52,6 +52,7 @@ class TResult:
             "variant": self.variant,
             "model_id": self.model_id,
             "response": self.response,
+            "final_answer": extract_final_answer(self.raw_stream) if self.raw_stream else (self.response or ""),
             "duration_s": round(self.duration_s, 3),
             "tool_calls": [
                 {"name": t.name, "args": t.args, "result_preview": t.result[:200]}
@@ -61,6 +62,27 @@ class TResult:
             "usage": self.usage,
             "error": self.error,
         }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "TResult":
+        tool_calls = [
+            ToolCall(name=t["name"], args=t.get("args", {}), result=t.get("result_preview", ""))
+            for t in d.get("tool_calls", [])
+        ]
+        obj = cls(
+            query=d["query"],
+            variant=d["variant"],
+            model_id=d["model_id"],
+            response=d.get("response", ""),
+            duration_s=d.get("duration_s", 0.0),
+            tool_calls=tool_calls,
+            usage=d.get("usage", {}),
+            error=d.get("error"),
+        )
+        # Restore raw_stream from final_answer so LLMJudge.grade() works correctly.
+        # extract_final_answer() on a string without </think> blocks returns it unchanged.
+        obj.raw_stream = d.get("final_answer", d.get("response", ""))
+        return obj
 
 
 class AgentTester:

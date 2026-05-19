@@ -1,0 +1,90 @@
+# Bench B — 6 industrial queries for the Pattern × Modellgröße paper eval.
+#
+# Ground truth: memory/bench_b_evaluation.md
+# Used by: ./eval-model.sh <slug> + python run_tests.py --cases cases/bench_b.yaml
+#          --variants aas-agent:react aas-agent:plan aas-agent:reflexion
+#          --repetitions 3 --llm-judge --export results/<slug>_bench_b_N3.json
+#
+# Query types:
+#   B1-B2: graph-traversal (Cypher-affin) — containment + fleet lookup
+#   B3:    attribute filter (TechnicalData payload query)
+#   B4-B5: document retrieval (manual/PDF content)
+#   B6:    cross-asset comparison (max payload across fleet)
+
+cases:
+  - name: bench_b_B1_hall3_contents
+    query: "Which devices are located in Hall 3?"
+    expected:
+      keywords: ["MiR250_001", "MiR250_002", "UR3e_001", "UR20_001"]
+      forbidden: ["urn:asset:hall3"]
+    llm_criteria: >
+      The answer must identify all four devices physically located in Hall 3:
+      MiR250_001, MiR250_002, UR3e_001, and UR20_001.
+      It must NOT include the hall itself (urn:asset:hall3) as a result.
+    tags: [bench_b, paper_eval, graph_traversal]
+
+  - name: bench_b_B2_autonomous_transport_fleet
+    query: "Which autonomous transport robots do we have and where are they located?"
+    expected:
+      keywords: ["MiR100_001", "MiR250_001", "MiR250_002"]
+    llm_criteria: >
+      The answer must identify all three autonomous mobile robots (AMRs):
+      MiR100_001 (Hall 4), MiR250_001 (Hall 3), MiR250_002 (Hall 3).
+      Location must be correct for each robot.
+      Stationary manipulators (UR20, UR3e, CRX10iA) must not be listed as transport robots.
+    tags: [bench_b, paper_eval, graph_traversal]
+
+  - name: bench_b_B3_heavy_transport_robot
+    query: "Which transport robot can carry more than 200 kg?"
+    expected:
+      keywords: ["MiR250"]
+    llm_criteria: >
+      The answer must identify MiR250 (MiR250_001 and/or MiR250_002) as the robots
+      capable of carrying more than 200 kg (rated at 250 kg).
+      MiR100 (rated 100 kg) must NOT be listed as meeting the >200 kg criterion.
+      The answer should reference the payload/load capacity attribute.
+    tags: [bench_b, paper_eval, attribute_filter]
+
+  - name: bench_b_B4_mir250_emergency_stop
+    query: "What does the operator manual of the mir 250 say about emergency stops?"
+    expected:
+      keywords: ["emergency stop", "MiR250"]
+    llm_criteria: >
+      The answer must contain substantive content from the MiR250 manual about
+      emergency stops — at minimum one of:
+      (a) the stop category (category 0 / STO contactors / SS1 brake),
+      (b) the release sequence (release E-stop button, Resume button flashes blue,
+          press Resume),
+      (c) the relevant manual page range (p.83-85) or equivalent content.
+      A generic answer without manual content counts as failure.
+    tags: [bench_b, paper_eval, document_retrieval]
+
+  - name: bench_b_B5_hall4_red_status_light
+    query: >
+      The transport robot in Hall 4 has a red status light —
+      what does it mean and how do I fix it?
+    expected:
+      keywords: ["MiR100_001"]
+      forbidden: ["MiR250"]
+    llm_criteria: >
+      The answer must first correctly identify the robot in Hall 4 as MiR100_001
+      (NOT MiR250 — MiR250 units are in Hall 3).
+      It must then provide troubleshooting content from the MiR100 manual about
+      the LED bar / status light, covering at least one of:
+      emergency stop procedure, protective stop, diagnostic steps, or camera check.
+      Identifying the wrong robot (MiR250) is an automatic failure regardless of
+      the troubleshooting content quality.
+    tags: [bench_b, paper_eval, document_retrieval]
+
+  - name: bench_b_B6_heaviest_payload_comparison
+    query: "Which of our robots can carry the heaviest load?"
+    expected:
+      keywords: ["MiR250", "250"]
+    llm_criteria: >
+      The answer must identify MiR250 as the robot with the highest payload capacity
+      (250 kg), and should compare it against the other robots in the fleet.
+      The agent must retrieve payload data from at least two different robots
+      (cross-asset comparison) — an answer that names MiR250 without consulting
+      other robots' specs is only partially correct.
+      The payload value (250 kg) must be mentioned.
+    tags: [bench_b, paper_eval, cross_asset_comparison]

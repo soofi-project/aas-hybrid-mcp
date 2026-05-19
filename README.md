@@ -100,7 +100,9 @@ Weaviate embeddings (PDF chunks via docling) are expensive to compute, so they l
 | Kafka (external) | localhost:9093 | Kafka broker |
 | Kafka Connect Neo4j | localhost:8084 | Neo4j connector REST API |
 | Kafka Connect RAG | localhost:8085 | HTTP Sink connector REST API |
-| **AAS Hybrid MCP** | **localhost:8110** | **Hybrid MCP Server (Phase 2)** |
+| **AAS Hybrid MCP** | **localhost:8110** | **Hybrid MCP Server** |
+| AAS Agent | [localhost:8120](http://localhost:8120) | LangGraph agent (OpenAI-compatible API) |
+| Open WebUI | [localhost:8090](http://localhost:8090) | Chat UI (connects to AAS Agent) |
 | MCP Inspector | [localhost:6274](http://localhost:6274) | MCP debugging tool |
 
 ## Embedding Configuration
@@ -152,6 +154,20 @@ aas-hybrid-mcp/
 ```
 
 The Neo4j Kafka Connect plugin is used as a pre-built Docker image (`dfkibasys/aas-neo4j-kafka-connect-plugin`) — no Java code in this repo.
+
+## Testing
+
+The agent test framework drives the AAS Agent variants over HTTP, collects tool-call
+metrics, and grades responses (regex + optional LLM judge).
+
+```bash
+# from tests/agent-tests/
+python run_tests.py --cases cases/containment_hall4.yaml
+```
+
+See **[tests/agent-tests/README.md](tests/agent-tests/README.md)** for the full CLI
+reference, the recommended two-phase eval workflow (agent runs first, LLM judge
+separately), and the ETFA 2026 Bench-B protocol.
 
 ## License
 

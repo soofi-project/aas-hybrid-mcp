@@ -131,6 +131,20 @@ Before starting implementation work, check `memory/tasks/open/task_*.md` for ope
 
 Paper-writing tasks live in the same directory and use the `task_paper_*` prefix (e.g. `task_paper_claim_audit.md`) — do not create a parallel task store under `paper/`.
 
+## Implementation gate — ask before building
+
+**Never start implementation without an explicit go-ahead from the user.**
+
+Planning a task, discussing an idea, or creating a task file is NOT permission to implement. The user often wants to think through an approach or refine scope before deciding whether to build. Wait for an unambiguous signal ("ja mach", "bitte umsetzen", "implement it", "go ahead") before writing code, editing configs, modifying the stack, or making paper edits.
+
+Default posture for any new idea:
+1. **Discuss** — understand the concept, surface unknowns, ask clarifying questions.
+2. **Plan / Task** — draft the task file, describe the approach, estimate effort.
+3. **Wait** — do not proceed to step 4 until the user explicitly approves.
+4. **Implement** — only after explicit approval.
+
+This applies to: code changes, Docker/config edits, AASX changes, paper section rewrites, BibTeX edits. It does NOT apply to read-only operations (file reads, searches, grep, git log).
+
 ## Common gotchas
 
 1. **Changing AASX files after stack is up:** you MUST stop + wipe (`./down.sh` default). Otherwise BaSyx 409s on upload.

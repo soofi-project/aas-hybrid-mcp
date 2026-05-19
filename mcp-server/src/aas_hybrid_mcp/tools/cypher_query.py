@@ -5,7 +5,7 @@ import re
 
 from fastmcp import FastMCP
 
-from aas_hybrid_mcp import neo4j_client
+from aas_hybrid_mcp import cypher_validator, neo4j_client
 from aas_hybrid_mcp.tool_descriptions import load as load_description
 
 MAX_ROWS = 1000
@@ -94,6 +94,17 @@ def register(mcp: FastMCP) -> None:
         cypher, cypher_rewrites = _strip_suffix_in_cypher(cypher)
         params, param_rewrites = _strip_suffix_in_params(params)
 
+        vr = cypher_validator.validate(cypher)
+        if not vr.allowed:
+            return {
+                "error": "forbidden_pattern",
+                "violations": [
+                    {"rule": v.rule, "hint": v.hint, "match": v.match}
+                    for v in vr.violations
+                ],
+                "hint": "Rewrite without CONTAINS/=~ on idShort/id. Call get_manual_page('cypher') and get_templates_index() to learn the correct pattern before retrying.",
+            }
+
         try:
             rows = await neo4j_client.read_query(cypher, params)
         except Exception as e:
@@ -111,4 +122,9 @@ def register(mcp: FastMCP) -> None:
                 "cypher_literals": cypher_rewrites,
                 "params": param_rewrites,
             }
+        if vr.violations:
+            result["_warnings"] = [
+                {"rule": v.rule, "hint": v.hint, "match": v.match}
+                for v in vr.violations
+            ]
         return result

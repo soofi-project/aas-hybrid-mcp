@@ -36,6 +36,18 @@ log = logging.getLogger(__name__)
 TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", "/data/templates"))
 _GENERATED_DIR = TEMPLATES_DIR / "generated"
 
+# When true: put_submodel is rejected if the payload has no semanticId or if no
+# validator class is registered for that semanticId.  Default off so existing
+# deployments without registered templates are unaffected.
+_require_val = os.environ.get("REQUIRE_TEMPLATE_VALIDATOR")
+if _require_val is None:
+    raise RuntimeError(
+        "REQUIRE_TEMPLATE_VALIDATOR is not set. "
+        "Add it to your .env file: true (reject submodels without a registered validator) "
+        "or false (metamodel-only validation, permissive)."
+    )
+REQUIRE_TEMPLATE_VALIDATOR = _require_val.lower() == "true"
+
 # semanticId → Submodel subclass, populated at first call to _registry().
 _registry_cache: dict[str, type] | None = None
 
@@ -137,12 +149,24 @@ def validate_conformance(submodel_obj: Submodel) -> Optional[str]:
     """
     semantic_id = _extract_semantic_id(submodel_obj)
     if not semantic_id:
-        # No semanticId declared — skip template check.
+        if REQUIRE_TEMPLATE_VALIDATOR:
+            return (
+                "Submodel is missing a semanticId. "
+                "Add a 'semanticId' field with the IDTA template URI for this submodel type "
+                "(e.g. from get_template() or get_templates_index())."
+            )
         return None
 
     cls = _registry().get(semantic_id)
     if cls is None:
-        # No generated class for this semanticId — metamodel-only validation applies.
+        if REQUIRE_TEMPLATE_VALIDATOR:
+            supported = sorted(_registry().keys())
+            supported_str = ", ".join(supported) if supported else "(none loaded yet)"
+            return (
+                f"No validator registered for semanticId '{semantic_id}'. "
+                f"Supported semanticIds: {supported_str}. "
+                "Use get_templates_index() to find the correct semanticId for this submodel type."
+            )
         log.debug("No template class for semanticId %s — skipping conformance check", semantic_id)
         return None
 

@@ -4,7 +4,7 @@ description: Verlagere CPU-bound PDF→Markdown-Konvertierung auf einen GPU-Serv
 type: task
 status: open
 priority: medium
-depends_on: [task_rag_metadata_overhaul]
+depends_on: [retrieval_enhancements_done]
 ---
 
 ## Summary

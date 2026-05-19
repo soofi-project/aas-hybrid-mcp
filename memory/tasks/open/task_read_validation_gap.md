@@ -54,24 +54,18 @@ Das ist analog zu den anderen Validation-Gap-Befunden:
 
 ## Subtasks
 
-### T1 — MCP-Side Cypher-Validator
+### T1 — MCP-Side Cypher-Validator ✅ DONE (2026-05-18)
 
-`mcp-server/src/aas_hybrid_mcp/cypher_validator.py` (neu):
+`mcp-server/src/aas_hybrid_mcp/cypher_validator.py` implementiert:
 
 - Regex-basierter Pre-Check vor Cypher-Execution in `query_aas_graph`.
-- Verbotene Patterns (default):
-  - `\btoLower\([^)]*\.id(Short)?\)\s+CONTAINS\b`
-  - `\b[a-zA-Z_]\w*\.idShort\s+(CONTAINS|=~)\b`
-  - `\b[a-zA-Z_]\w*\.id\s+(CONTAINS|=~)\b` (URN substring lookup — same problem)
-  - `\b[a-zA-Z_]\w*\.assetType\s+(CONTAINS|=)\b`
+- 4 Regeln: `toLower_id_contains`, `idShort_contains_or_regex`, `id_contains_or_regex`, `assetType_match`
 - Mode toggle via env `STRICT_READ_VALIDATION` (default `off`):
-  - `off` → silent, query runs as-is (current behavior)
-  - `warn` → query runs, response carries `_warnings: [{rule, line, ...}]`
-  - `strict` → response is a structured error: `{"error": "forbidden_pattern", "rule": "...", "hint": "see cypher.md #4"}`, no Cypher execution
-- Test-Coverage: unit tests in `mcp-server/src/tests/test_cypher_validator.py`
-  mit positive + negative samples (legitimate `idShort` as entry point
-  must NOT be flagged: e.g. `WHERE aas.idShort = 'MiR100_Type'` is fine,
-  it's the CONTAINS / regex form that's forbidden).
+  - `off` → no-op
+  - `warn` → query runs, `_warnings` im Response
+  - `strict` → `{"error": "forbidden_pattern", "violations": [...], "hint": "..."}`, kein Neo4j-Call
+- 24 Unit-Tests in `mcp-server/src/tests/test_cypher_validator.py` — alle grün
+- `docker-compose.yml` trägt `STRICT_READ_VALIDATION: "off"` (kommentiert als Eval-Hebel)
 
 ### T2 — Naming-Stress-Fixtures
 
@@ -108,18 +102,37 @@ dass die idShort-Heuristik bricht:
 - Der konkrete Befund vom 2026-05-15 als Smoke-Case mit
   `forbidden_cypher_patterns` und expliziter Doku in Kommentaren.
 
-### T4 — Pre/Post-Bench fahren
+### T4 — Eval-Strategie: Validator-Rejection-Log als Messung
 
-- Baseline: `STRICT_READ_VALIDATION=off`, alle Naming-Stress + Anti-Pattern
-  Cases × 4 Variants × N≥3 Wiederholungen. Erwartung: in unseren
-  unstressed Fixtures läufts trotz Anti-Pattern; in stressed Fixtures
-  scheitert es.
-- Mode `warn`: Erwartung wie Baseline, aber `_warnings` im Response → Agent
-  sollte (idealerweise) bei der zweiten Iteration korrigieren.
-- Mode `strict`: Erwartung — Agent muss von Anfang an semanticId-Path
-  nehmen; Erfolgsrate auf stressed Fixtures sollte steigen.
-- Rohdaten in `tests/agent-tests/results/` archivieren.
-- Auswerten: Per-Variant Erfolgsrate × Mode × Fixture-Set.
+**Pre-Validator-Zustand ist bereits dokumentiert** (kein separater Baseline-Run nötig):
+
+| Run | Zeitstempel | Variante | Erster Lookup | CONTAINS? |
+|-----|------------|----------|--------------|-----------|
+| 1 | 2026-05-18T11:59 | react | direkt query_aas_graph | ✗ |
+| 2 | 2026-05-18T12:18 | react | query nach get_graph_schema + get_templates_index | ✗ |
+| 3 | 2026-05-18T12:33 | react | direkt query_aas_graph | ✗ |
+
+3/3 Runs, 100% CONTAINS-Rate auf dem ersten Asset-Lookup. Existence-Claim ist belegt.
+
+**Der Validator ist selbst die Messung.** `STRICT_READ_VALIDATION=strict` ist
+deterministisch — jede Rejection ist ein harter Befund, kein stochastisches Ergebnis.
+
+Eval-Plan:
+1. Validator implementieren (T1), `STRICT_READ_VALIDATION=strict` setzen
+2. Dieselbe Query ("Wie schnell kann der MiR100 maximal fahren?") N=3 × react laufen lassen
+3. Rejection-Log auswerten: wie viele Queries wurden geblockt? Hat sich der Agent danach selbst korrigiert?
+4. Optional: `naming_stress`-Fixture (T2) zeigen dass `STRICT_READ_VALIDATION=off` dort lautlos falsch antwortet
+
+Auswertung für Paper (2 Sätze + Tabelle):
+
+| Mode | Anti-Pattern-Queries | Geblockt | Agent korrigiert |
+|------|---------------------|----------|-----------------|
+| off  | x/N                 | 0/N      | —               |
+| strict | x/N              | x/N      | y/N             |
+
+**Kein Multi-Modell-Sweep hier** — der gehört zu `task_paper_pattern_modelsize_eval`
+(Qwen 3.5: 2B/9B/27B/122B/397B). Der Validator-Befund gilt mit 27B als Existenz-Beleg;
+Modellgrößen-Abhängigkeit ist eine separate Frage.
 
 ### T5 — Paper-Einbindung
 

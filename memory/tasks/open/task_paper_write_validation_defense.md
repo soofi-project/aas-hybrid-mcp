@@ -224,18 +224,26 @@ Den **dritten Kanal** (MCP `put_submodel`) sparen wir — der ist tautologisch
 
 ### T2: Code-Änderungen — Response-Schema + Cleanup
 
-Egal wie T1 ausgeht, das **Reporting**-Refactor ist sinnvoll:
+**Stand 2026-05-18 (teilweise umgesetzt):**
 
-- `put_submodel` Response um strukturiertes `validation`-Feld erweitern
-  (siehe Reframe 3)
-- `template_validator.validate_conformance` Rückgabe um Typ erweitern:
-  nicht `Optional[str]`, sondern z. B.
-  `{"status": "passed" | "failed" | "skipped", "detail": "..."}`
-- `put_aas` und `put_submodel_element` Response analog erweitern (nur
-  Metamodel-Status)
-- Silent fallback entfernen — `skipped` ist jetzt explizit im Response
-- Tool-Descriptions (`tool_descriptions/put_*.md`) auf neues Schema
-  aktualisieren
+`REQUIRE_TEMPLATE_VALIDATOR`-Flag in `template_validator.py` eingebaut:
+- Gesetzt: kein semanticId → Error; semanticId ohne Validator → Error mit supported-Liste
+- Nicht gesetzt: Runtime-Error (kein Default, muss explizit konfiguriert sein)
+- Fehlermeldungen sind agenten-tauglich: verweisen auf `get_templates_index()` und listen registrierte semanticIds auf
+
+**Semantik-Änderung gegenüber ursprünglichem Plan:**
+`skipped: no class for <semanticId>` existiert bei `REQUIRE_TEMPLATE_VALIDATOR=true` nicht mehr —
+stattdessen harter Fehler. `skipped` bleibt nur bei `REQUIRE_TEMPLATE_VALIDATOR=false` (permissiver Mode).
+In §9/§12 muss das klar unterschieden werden: permissiver Mode für generische Deployments,
+strikter Mode für bekannte Use-Cases.
+
+**Noch offen:**
+- `put_submodel` Response gibt noch kein strukturiertes `validation`-Feld zurück
+  (`{"stored": true, "validation": {"metamodel": "passed", "template_conformance": "..."}}`)
+- `template_validator.validate_conformance` gibt noch `Optional[str]` zurück, kein typisiertes Result-Objekt
+- `put_aas` und `put_submodel_element` haben noch kein explizites Metamodel-Status-Feld im Response
+
+Diese drei Punkte sind für Paper-Reframe 3 (Explicit Validation Reporting) noch zu implementieren.
 
 Cleanup-Entscheidung **nach T1**:
 - Falls T1 zeigt „Validator fängt Klassen, die BaSyx nicht fängt": Code

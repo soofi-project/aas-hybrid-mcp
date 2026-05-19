@@ -1,6 +1,6 @@
 """Shared helpers for verbose / non-verbose streaming across agent variants.
 
-All four runners (react / plan-reflect / crag / reflexion) implement the same
+All three runners (react / plan-reflect / reflexion) implement the same
 contract on top of an OpenAI-compatible streaming endpoint:
 
 - **Non-verbose**: a single yield carrying the final answer text.
