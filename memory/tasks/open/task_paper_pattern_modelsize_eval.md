@@ -35,13 +35,15 @@ Zwei Achsen: **Qwen3.5** (Skalierung, primäre Forschungsfrage) + **Qwen3.6** (G
 
 ### Qwen3.5 — Skalierungs-Achse
 
-| Modell | Active | Deployment | Rolle |
-|---|---|---|---|
-| Qwen3.5-2B-FP8 | 2B dense | lokal H200 | Untere Schranke („alle Patterns brechen") |
-| Qwen3.5-9B-FP8 | 9B dense | lokal H200 | Edge-Kandidat |
-| Qwen3.5-27B-FP8 | 27B dense | lokal H200 | Skalierungs-Midpoint |
-| Qwen3.5-122B-A10B-FP8 | 10B active (MoE) | lokal H200 | Großes lokales On-prem |
-| Qwen3.5-397B-A17B-FP8 | 17B active (MoE) | Cortecs (€0.6/M in, €3.6/M out) | Obere Schranke / Open-Source-Frontier |
+| Modell | Active | Slug | Deployment | Rolle |
+|---|---|---|---|---|
+| Qwen3.5-0.6B-FP8 | 0.6B dense | `qwen35-08b` | lokal H200 | Capability-Floor (erwartet: alle Patterns brechen) |
+| Qwen3.5-2B-FP8 | 2B dense | `qwen35-2b` | lokal H200 | Untere Grenze |
+| Qwen3.5-4B-FP8 | 4B dense | `qwen35-4b` | lokal H200 | Zwischen 2B und 9B |
+| Qwen3.5-9B-FP8 | 9B dense | `qwen35-9b` | lokal H200 | Edge-Kandidat |
+| Qwen3.5-27B-FP8 | 27B dense | `qwen35-27b` | lokal H200 | Skalierungs-Midpoint |
+| Qwen3.5-122B-A10B-FP8 | 10B active (MoE) | `qwen35-122b` | lokal H200 | Großes lokales On-prem |
+| Qwen3.5-397B-A17B-FP8 | 17B active (MoE) | `qwen35-397b` | Cortecs (€0.6/M in, €3.6/M out) | Obere Schranke / Open-Source-Frontier |
 
 ### Qwen3.6 — Generations-Achse (2 Punkte)
 
@@ -62,8 +64,9 @@ Qwen3.6 hat nur zwei Modelle (27B dense + 35B MoE) — die asymmetrische Größe
 **Patterns:** ReAct, Plan-and-Solve, Reflexion. **CRAG out-of-scope**
 (separater Task [[task-paper-crag-removal-and-reframe]] für Paper-Anpassung).
 
-**Eval-Budget:** 3 Patterns × 7 Modelle × 6 Queries × N=3 = **378 Runs**.
-Cortecs-Kosten (nur 397B): grob €10-15. H200-Runs: sequenziell, je ~15-30 Min Reload-Zeit pro Modellwechsel.
+**Eval-Budget:** 3 Patterns × 9 Modelle × 6 Queries × N=10 = **1620 Runs**.
+Cortecs-Kosten (nur 397B, N=10): ~13–20 €. Judge-Kosten (gpt-4o-2024-11-20, 1620 Calls): ~17 $.
+H200-Runs: sequenziell, je ~15–30 Min Reload-Zeit pro Modellwechsel.
 
 ## Subtasks
 
@@ -100,21 +103,31 @@ Dann eine einzelne B1-Query manuell schicken und auf valide Antwort prüfen.
 
 **Reihenfolge** (H200-Lade-Overhead minimieren, kleine Modelle zuerst):
 ```
-qwen35-2b → qwen35-9b → qwen35-27b → qwen35-122b → qwen36-27b → qwen36-35b
-→ qwen35-397b (Cortecs, letzter Run, kein H200-Reload nötig)
+qwen35-08b → qwen35-2b → qwen35-4b → qwen35-9b → qwen35-27b → qwen35-122b
+→ qwen36-27b → qwen36-35b → qwen35-397b (Cortecs, letzter Run)
 ```
 
-**Pro Modell** (54 Runs = 3 Patterns × 6 Queries × N=3):
+**Pro Modell — Phase 1 (Agent-Runs, kein Judge, inkrementell gespeichert):**
 ```bash
-./eval-model.sh <slug>
-python tests/agent-tests/run_tests.py \
-  --cases tests/agent-tests/cases/bench_b.yaml \
-  --variants aas-agent:react aas-agent:plan aas-agent:reflexion \
-  --repetitions 3 --llm-judge \
-  --export tests/agent-tests/results/<slug>_bench_b_N3.json
+# Aus tests/agent-tests/ ausführen
+./eval-model.sh <slug>          # Stack auf neues Modell umschalten
+python run_tests.py \
+  --cases cases/bench_b.yaml \
+  --repetitions 10 \
+  --export results/<slug>_bench_b_N10.json
 ```
 
-Auswertung: Erfolgs-Quote + avg Tool-Calls + avg Zeit pro Modell × Pattern.
+**Phase 2 — LLM-Judge (nachträglich, lokal, kein Agent-Traffic):**
+```bash
+# OPENAI_API_KEY muss gesetzt sein
+LLM_BASE_URL=https://api.openai.com LLM_MODEL=gpt-4o-2024-11-20 \
+python run_tests.py \
+  --judge-only results/<slug>_bench_b_N10.json \
+  --llm-judge \
+  --export results/<slug>_bench_b_N10_judged.json
+```
+
+Judge-Modell: **gpt-4o-2024-11-20** (gepinnt für Reproduzierbarkeit; im Paper dokumentiert).
 Vollständiger Workflow: `tests/agent-tests/README.md` → Sektion „Paper eval".
 
 ### T4 — Cypher-vs-JSON-Hypothese empirisch prüfen
@@ -152,7 +165,7 @@ aus [[task-paper-future-work-template-cypher]]. Konkret:
 
 ## Non-Goals
 
-- Kein N>3 — Budget und Existence-Framing reichen für Workshop-Paper
+- Kein N>10 — höhere Wiederholungszahl nicht durch Cortecs-Budget gedeckt
 - Kein Vergleich gegen ChatGPT/Claude — würde Data-Sovereignty-Story
   verwässern und zwei Achsen confounden
 - Kein Cross-Family-Vergleich (Llama/DeepSeek) — Limitation, nicht Aufgabe
@@ -163,7 +176,7 @@ aus [[task-paper-future-work-template-cypher]]. Konkret:
 
 - **Bench-B-Daten-Wiederverwendung:** Sind die 5 Containment-Cases aus `containment_hall4_baseline_N3.json` ein vollständiges Subset von B1-B6? Falls ja und Protokoll stimmt (gleiche Nudge-Regel, gleiche Multi-Turn-Grenze), können die Qwen3.6-27B-Läufe als Datenpunkt eingebettet werden — sonst neuer Run nötig.
 - Reichen B1-B6 für die Skalierungs-Aussage, oder braucht es Queries mit gestaffelter Schwierigkeit?
-- Sollte 4B (zwischen 2B und 9B) zusätzlich gefahren werden, falls 2B vollständig versagt und 9B vollständig funktioniert? Entscheidung datengetrieben nach erstem Lauf.
+- 4B und 0.6B (08b) wurden aufgenommen — Skalierungs-Achse ist jetzt vollständig.
 - Thinking-Mode konstant `false` halten (`AGENT_DEFAULT_THINKING`), nicht als Variable mitvariieren — Confound vermeiden.
 
 ## References
