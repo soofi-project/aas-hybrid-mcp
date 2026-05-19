@@ -61,6 +61,15 @@ def _repair_json_string(text: str) -> str | None:
     except json.JSONDecodeError:
         pass
 
+    # Fix missing commas between adjacent JSON values (common Qwen output defect).
+    # Matches: `"value"\n  "key"` or `true\n  "key"` or `]\n  "key"` etc.
+    base = re.sub(r'(["\d\]\}]|true|false|null)(\s*\n\s*)(")', r'\1,\2\3', base)
+    try:
+        json.loads(base)
+        return base
+    except json.JSONDecodeError:
+        pass
+
     # Close unclosed braces/brackets (max 20 added chars to avoid infinite loop)
     repaired = base
     for _ in range(20):
