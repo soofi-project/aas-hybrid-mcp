@@ -7,7 +7,7 @@
 
 set -eu
 
-OPEN_WEBUI_URL="${1:-http://open-webui:8080}"
+OPEN_WEBUI_URL="${1:-http://open-web-ui:8080}"
 MODEL_JSON="/app/model.json"
 HEALTH_URL="${OPEN_WEBUI_URL}/health"
 
