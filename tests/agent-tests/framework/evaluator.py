@@ -344,18 +344,20 @@ class LLMJudge:
         '{{"score": <float 0..1>, "reasoning": "<one sentence>"}}'
     )
 
-    def __init__(self, base_url: str, model: str, timeout_s: float = 60.0) -> None:
+    def __init__(self, base_url: str, model: str, timeout_s: float = 60.0, api_key: str = "") -> None:
         if not base_url or not model:
             raise ValueError("LLMJudge requires base_url and model")
         self._base = base_url.rstrip("/")
         self._model = model
         self._timeout = timeout_s
+        self._api_key = api_key or "dummy"
 
     @classmethod
     def from_config(cls, cfg: dict[str, Any]) -> "LLMJudge":
         base = cfg.get("base_url") or os.environ.get("LLM_BASE_URL", "")
         model = cfg.get("model") or os.environ.get("LLM_MODEL", "")
-        return cls(base_url=base, model=model)
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+        return cls(base_url=base, model=model, api_key=api_key)
 
     async def grade(self, case: Case, result: TResult) -> tuple[float, str]:
         criterion = case.llm_criteria or "The answer must directly address the user's question with correct, complete information."
@@ -376,7 +378,7 @@ class LLMJudge:
                 resp = await client.post(
                     f"{self._base}/v1/chat/completions",
                     json=payload,
-                    headers={"Authorization": "Bearer dummy"},
+                    headers={"Authorization": f"Bearer {self._api_key}"},
                 )
                 resp.raise_for_status()
                 data = resp.json()

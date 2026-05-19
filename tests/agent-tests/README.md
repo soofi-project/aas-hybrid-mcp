@@ -47,6 +47,10 @@ python run_tests.py \
   --export results/qwen35-27b_bench_b_N10.json
 
 # Phase 2: LLM judge on the finished JSON (no agent calls)
+# LLM_BASE_URL must NOT include /v1 — the framework appends /v1/chat/completions.
+# For OpenAI: set LLM_BASE_URL=https://api.openai.com and OPENAI_API_KEY.
+# For local H200: set LLM_BASE_URL=http://<host>:<port> and LLM_MODEL=<alias>.
+LLM_BASE_URL=https://api.openai.com LLM_MODEL=gpt-4o-2024-11-20 \
 python run_tests.py \
   --judge-only results/qwen35-27b_bench_b_N10.json \
   --llm-judge \

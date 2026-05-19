@@ -387,9 +387,16 @@ services:
       WEAVIATE_GRPC_PORT: 50051
       TEMPLATES_OUTPUT_DIR: /data/templates
       CD_REPO_URL: http://aas-environment:8081
+      # Optional: set TEMPLATES_LOCAL_PATH to skip the GitHub clone on air-gapped hosts.
+      # Requires a bind-mount of a local git clone of admin-shell-io/submodel-templates
+      # (see commented volume line below). Leave empty to clone from GitHub as usual.
+      TEMPLATES_LOCAL_PATH: "${TEMPLATES_LOCAL_PATH:-}"
     volumes:
       - template_data:/data/templates
       - ./data/user-templates:/data/user-templates:ro
+      # Uncomment and set TEMPLATES_LOCAL_PATH=/data/submodel-templates-idta when
+      # the H200 has no internet access (air-gapped deployment):
+      # - /data/submodel-templates-idta:/data/submodel-templates-idta:ro
     depends_on:
       weaviate:
         condition: service_healthy

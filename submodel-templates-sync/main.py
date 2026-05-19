@@ -1063,10 +1063,21 @@ def generate_custom_classes(templates: list[dict]) -> int:
 def main():
     log.info("Starting submodel-templates-sync")
 
-    # 1. Clone repo
-    clone_dir = Path(tempfile.mkdtemp(prefix="submodel-templates-"))
+    # 1. Clone repo (or use a pre-loaded local copy if TEMPLATES_LOCAL_PATH is set).
+    # Set TEMPLATES_LOCAL_PATH to a bind-mounted git clone of admin-shell-io/submodel-templates
+    # when the container host has no internet access to GitHub.
+    local_path = os.environ.get("TEMPLATES_LOCAL_PATH", "").strip()
+    if local_path:
+        clone_dir = Path(local_path)
+        do_cleanup = False
+        log.info("Using pre-loaded templates from %s (skipping git clone)", clone_dir)
+    else:
+        clone_dir = Path(tempfile.mkdtemp(prefix="submodel-templates-"))
+        do_cleanup = True
+
     try:
-        clone_repo(clone_dir)
+        if do_cleanup:
+            clone_repo(clone_dir)
         repo_hash = get_repo_hash(clone_dir)
         log.info("Repo HEAD: %s", repo_hash)
 
@@ -1127,7 +1138,8 @@ def main():
             client.close()
 
     finally:
-        shutil.rmtree(clone_dir, ignore_errors=True)
+        if do_cleanup:
+            shutil.rmtree(clone_dir, ignore_errors=True)
 
     log.info("submodel-templates-sync complete")
 
