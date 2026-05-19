@@ -64,9 +64,10 @@ Qwen3.6 hat nur zwei Modelle (27B dense + 35B MoE) — die asymmetrische Größe
 **Patterns:** ReAct, Plan-and-Solve, Reflexion. **CRAG out-of-scope**
 (separater Task [[task-paper-crag-removal-and-reframe]] für Paper-Anpassung).
 
-**Eval-Budget:** 3 Patterns × 9 Modelle × 6 Queries × N=30 = **4860 Runs**.
-Cortecs-Kosten (nur 397B, N=30): ~40–60 €. Judge-Kosten (gpt-4o-mini-2024-07-18, 4860 Calls): ~5–15 $.
+**Eval-Budget:** 3 Patterns × 9 Modelle × 6 Queries × N=10 = **1620 Runs**.
+Cortecs-Kosten (nur 397B, N=10): ~13–20 €. Judge-Kosten (gpt-4o-mini-2024-07-18, 1620 Calls): ~2–5 $.
 H200-Runs: sequenziell, je ~15–30 Min Reload-Zeit pro Modellwechsel.
+Begründung N=10: Existence-Framing im Paper; effektive N auf Suite-Ebene ist 6 Cases × 10 = 60 Obs./Variant — ausreichend für Suite-Aggregat-Claims. Per-Case-Zahlen in Tabellen als illustrativ kennzeichnen.
 
 ## Subtasks
 
@@ -161,7 +162,7 @@ aus [[task-paper-future-work-template-cypher]]. Konkret:
 
 ## Non-Goals
 
-- Kein N>30 — ±16pp CI ausreichend für Frequenz-Claims im Workshop-Paper; Cortecs-Kosten bei 397B vertretbar
+- Kein N>10 — Existence-Framing; Suite-Aggregation (6 Cases × N=10 = 60 Obs.) gibt ausreichend Abdeckung
 - Kein Vergleich gegen ChatGPT/Claude — würde Data-Sovereignty-Story
   verwässern und zwei Achsen confounden
 - Kein Cross-Family-Vergleich (Llama/DeepSeek) — Limitation, nicht Aufgabe

@@ -16,8 +16,6 @@ from langgraph.prebuilt import create_react_agent
 
 _TRAJECTORY_OUTPUT_CHARS = 200
 _TRAJECTORY_ARGS_CHARS = 120
-
-from aas_agent.qwen_parser import QwenOutputParser, _normalize_json_from_qwen
 from aas_agent.reflexion_state import (
     FinalAnswer,
     Judgment,
@@ -287,19 +285,19 @@ def make_judge_node(llm: BaseChatModel) -> Callable:
             HumanMessage(content=ctx),
         ]
 
-        response = await llm.ainvoke(msgs)
-        content = response.content
-        if isinstance(content, list):
-            content = content[0].text if content else ""
-
-        judgment = _parse_judgment(content)
-        if judgment is None:
-            judgment = Judgment(
-                score=0.5,
-                verdict="revise",
-                missing=["Could not parse judgment"],
-                reason="Parse failure, defaulting to revise.",
-            )
+        try:
+            judgment = await llm.with_structured_output(Judgment).ainvoke(msgs)
+        except Exception as e:
+            log.debug("judge structured output failed (%s), trying json_mode", e)
+            try:
+                judgment = await llm.with_structured_output(Judgment, method="json_mode").ainvoke(msgs)
+            except Exception:
+                judgment = Judgment(
+                    score=0.5,
+                    verdict="revise",
+                    missing=["Could not parse judgment"],
+                    reason="Parse failure, defaulting to revise.",
+                )
 
         # Record this trial and increment counter for next iteration
         new_record = TrialRecord(
@@ -328,31 +326,6 @@ def make_judge_node(llm: BaseChatModel) -> Callable:
     return judge_node
 
 
-def _parse_judgment(content: str) -> Judgment | None:
-    try:
-        parser = QwenOutputParser(pydantic_model=Judgment)
-        return parser.parse(content)
-    except Exception:
-        log.debug("Failed to parse judgment via QwenOutputParser")
-
-    normalized = _normalize_json_from_qwen(content)
-    if normalized and isinstance(normalized, dict) and "score" in normalized:
-        try:
-            return Judgment.model_validate(normalized)
-        except Exception:
-            log.debug("Failed to validate normalized judgment via pydantic")
-
-    try:
-        parsed = json.loads(content.strip())
-        if isinstance(parsed, dict) and "score" in parsed and "verdict" in parsed:
-            # LLM often returns missing as a string — coerce to list
-            if isinstance(parsed.get("missing"), str):
-                parsed["missing"] = [parsed["missing"]] if parsed["missing"] else []
-            return Judgment.model_validate(parsed)
-    except (json.JSONDecodeError, Exception):
-        log.debug("Failed to parse judgment via raw JSON")
-
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -390,18 +363,18 @@ def make_reflect_node(llm: BaseChatModel) -> Callable:
             HumanMessage(content=ctx),
         ]
 
-        response = await llm.ainvoke(msgs)
-        content = response.content
-        if isinstance(content, list):
-            content = content[0].text if content else ""
-
-        reflection = _parse_reflection(content)
-        if reflection is None:
-            reflection = ReflectionFeedback(
-                strategy_hint="Try a completely different approach. Consider using different tools or search terms.",
-                common_pitfalls=["Avoid repeating the same failed strategy."],
-                focus_areas=["Re-examine the user's core question from scratch."],
-            )
+        try:
+            reflection = await llm.with_structured_output(ReflectionFeedback).ainvoke(msgs)
+        except Exception as e:
+            log.debug("reflect structured output failed (%s), trying json_mode", e)
+            try:
+                reflection = await llm.with_structured_output(ReflectionFeedback, method="json_mode").ainvoke(msgs)
+            except Exception:
+                reflection = ReflectionFeedback(
+                    strategy_hint="Try a completely different approach. Consider using different tools or search terms.",
+                    common_pitfalls=["Avoid repeating the same failed strategy."],
+                    focus_areas=["Re-examine the user's core question from scratch."],
+                )
 
         # Render feedback for the next executor attempt
         feedback_text = (
@@ -431,38 +404,6 @@ def make_reflect_node(llm: BaseChatModel) -> Callable:
     return reflect_node
 
 
-def _coerce_reflection_fields(d: dict) -> None:
-    """Normalize ReflectionFeedback fields so pydantic validation passes."""
-    for field in ("common_pitfalls", "focus_areas"):
-        val = d.get(field)
-        if isinstance(val, str):
-            d[field] = [val] if val.strip() else []
-
-
-def _parse_reflection(content: str) -> ReflectionFeedback | None:
-    try:
-        parser = QwenOutputParser(pydantic_model=ReflectionFeedback)
-        return parser.parse(content)
-    except Exception:
-        log.debug("Failed to parse reflection via QwenOutputParser")
-
-    normalized = _normalize_json_from_qwen(content)
-    if normalized and isinstance(normalized, dict) and "strategy_hint" in normalized:
-        _coerce_reflection_fields(normalized)
-        try:
-            return ReflectionFeedback.model_validate(normalized)
-        except Exception:
-            log.debug("Failed to validate normalized reflection via pydantic")
-
-    try:
-        parsed = json.loads(content.strip())
-        if isinstance(parsed, dict) and "strategy_hint" in parsed:
-            _coerce_reflection_fields(parsed)
-            return ReflectionFeedback.model_validate(parsed)
-    except json.JSONDecodeError:
-        log.debug("Failed to parse reflection via raw JSON")
-
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -502,12 +443,18 @@ def make_finalizer_node(llm: BaseChatModel) -> Callable:
             HumanMessage(content=ctx),
         ]
 
-        response = await llm.ainvoke(msgs)
-        content = response.content
-        if isinstance(content, list):
-            content = content[0].text if content else ""
-
-        final = _parse_final_answer(content)
+        try:
+            final = await llm.with_structured_output(FinalAnswer).ainvoke(msgs)
+        except Exception as e:
+            log.debug("finalizer structured output failed (%s), trying json_mode", e)
+            try:
+                final = await llm.with_structured_output(FinalAnswer, method="json_mode").ainvoke(msgs)
+            except Exception:
+                final = FinalAnswer(
+                    answer=state.get("best_answer_text") or state.get("last_answer_text") or "No results.",
+                    confidence="low",
+                    unresolved=["Could not synthesize a confident answer."],
+                )
 
         # Calibrate confidence
         if not trials:
@@ -541,45 +488,6 @@ def make_finalizer_node(llm: BaseChatModel) -> Callable:
     return finalizer_node
 
 
-def _coerce_final_answer(d: dict) -> dict:
-    """Normalize FinalAnswer fields so pydantic validation passes."""
-    if isinstance(d.get("confidence"), (int, float)):
-        c = d["confidence"]
-        d["confidence"] = "high" if c >= 0.7 else ("medium" if c >= 0.4 else "low")
-    unresolved = d.get("unresolved")
-    if not isinstance(unresolved, list):
-        d["unresolved"] = [unresolved] if unresolved and unresolved is not False else []
-    return d
-
-
-def _parse_final_answer(content: str) -> FinalAnswer:
-    try:
-        parser = QwenOutputParser(pydantic_model=FinalAnswer)
-        return parser.parse(content)
-    except Exception:
-        log.debug("Failed to parse final answer via QwenOutputParser")
-
-    normalized = _normalize_json_from_qwen(content)
-    if normalized and isinstance(normalized, dict) and "answer" in normalized and "confidence" in normalized:
-        try:
-            _coerce_final_answer(normalized)
-            return FinalAnswer.model_validate(normalized)
-        except Exception:
-            log.debug("Failed to validate normalized final answer via pydantic")
-
-    try:
-        parsed = json.loads(content.strip())
-        if isinstance(parsed, dict) and "answer" in parsed and "confidence" in parsed:
-            _coerce_final_answer(parsed)
-            return FinalAnswer.model_validate(parsed)
-    except (json.JSONDecodeError, Exception):
-        log.debug("Failed to parse final answer via raw JSON")
-
-    return FinalAnswer(
-        answer=content.strip()[:2000] if content.strip() else "No results from Reflexion pipeline.",
-        confidence="low",
-        unresolved=["Could not synthesize a confident answer."],
-    )
 
 
 # ---------------------------------------------------------------------------

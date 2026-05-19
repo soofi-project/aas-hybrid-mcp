@@ -6,15 +6,12 @@ state-diff dict. State fields with ``Annotated[..., add_messages]`` or
 overwritten by the diff.
 """
 
-import json
 import logging
 import os
-import re
-from typing import Any, Callable, Type
+from typing import Callable, Type
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.messages import ToolCall as LangChainToolCall
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 
@@ -26,186 +23,30 @@ from aas_agent.agent_plan_state import (
     Reflection,
     Step,
 )
-from aas_agent.qwen_parser import QwenOutputParser, _normalize_keys, _normalize_json_from_qwen
 
 log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# JSON repair helper
+# Structured output helper
 # ---------------------------------------------------------------------------
 
-def _repair_json_string(text: str) -> str | None:
-    """Try to fix truncated JSON by closing unclosed braces/brackets.
-
-    Qwen often cuts output mid-JSON when the response is long. This finds
-    the first ``{`` / ``[`` and attempts to parse the substring, adding
-    closing characters until ``json.loads`` succeeds.
-    """
-    first_brace = text.find("{")
-    first_bracket = text.find("[")
-    if first_brace == -1 and first_bracket == -1:
-        return None
-
-    start = min(
-        v for v in (first_brace, first_bracket) if v >= 0
-    )
-    base = text[start:].rstrip()
-    if not base:
-        return None
-
-    # Already valid?
-    try:
-        json.loads(base)
-        return base
-    except json.JSONDecodeError:
-        pass
-
-    # Fix missing commas between adjacent JSON values (common Qwen output defect).
-    # Matches: `"value"\n  "key"` or `true\n  "key"` or `]\n  "key"` etc.
-    base = re.sub(r'(["\d\]\}]|true|false|null)(\s*\n\s*)(")', r'\1,\2\3', base)
-    try:
-        json.loads(base)
-        return base
-    except json.JSONDecodeError:
-        pass
-
-    # Close unclosed braces/brackets (max 20 added chars to avoid infinite loop)
-    repaired = base
-    for _ in range(20):
-        open_curly = repaired.count("{") - repaired.count("}")
-        open_sqr = repaired.count("[") - repaired.count("]")
-        if open_curly > 0:
-            repaired += "}"
-        elif open_sqr > 0:
-            repaired += "]"
-        else:
-            break
-        try:
-            json.loads(repaired)
-            return repaired
-        except json.JSONDecodeError:
-            pass
-    return None
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-async def _qwen_structured_invoke(
+async def _structured_invoke(
     llm: BaseChatModel,
     model_cls: Type[BaseModel],
     messages: list[BaseMessage],
 ) -> BaseModel:
-    """Call a Qwen-style model without ``with_structured_output``.
+    """Invoke LLM with schema enforcement via with_structured_output.
 
-    Qwen via vLLM enters reasoning-only mode when asked for structured
-    output (content=null, reasoning_content populated).  This helper
-    sidesteps that by doing a plain ``ainvoke`` and parsing the JSON
-    from the response text ourselves — falling back to
-    ``response.additional_kwargs.get("reasoning_content")`` if content
-    is empty.
+    Tries function_calling first (schema passed as tool definition —
+    most reliable for Qwen3.5-Instruct via vLLM), then falls back to
+    json_mode (response_format=json_object) if that raises.
     """
-    response = await llm.ainvoke(messages)
-
-    # 1. Extract string content from the response.
-    content = response.content
-    if not content:
-        # Qwen may put output in reasoning_content when in reasoning-only mode
-        reasoning = response.additional_kwargs.get("reasoning_content")
-        if reasoning:
-            content = reasoning
-
-    # Handle list-of-blocks format (some models return this)
-    if isinstance(content, list):
-        content = content[0].text if content else ""
-
-    # If still empty, error out
-    if not content or not isinstance(content, str):
-        raise ValueError(
-            f"LLM returned empty content (type={type(response.content).__name__}). "
-            "This model may not support this endpoint."
-        )
-
-    # 2. Try parsing with QwenOutputParser (handles markdown blocks, XML
-    #    tags, raw JSON, mixed text-with-braces, etc.)
-    parser = QwenOutputParser(pydantic_model=model_cls)
     try:
-        return parser.parse(content)
-    except Exception:
-        pass
-
-    # 3. Coercion + extraction fallback (with JSON repair for truncated
-    #    output — common when Qwen's response is cut mid-JSON)
-    stripped = re.sub(
-        r'<think[^>]*>.*?</think>', '', content, flags=re.DOTALL
-    ).strip()
-    parsed = _normalize_json_from_qwen(stripped)
-    if parsed is None:
-        # Brute-force: find largest JSON object in mixed text
-        depth, start = 0, -1
-        for i, ch in enumerate(stripped):
-            if ch == '{':
-                if depth == 0:
-                    start = i
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0 and start >= 0:
-                    try:
-                        parsed = json.loads(stripped[start:i+1])
-                    except json.JSONDecodeError:
-                        pass
-    if parsed is None:
-        # JSON repair: try to fix truncated JSON by closing unclosed
-        # braces/brackets
-        repaired = _repair_json_string(stripped)
-        if repaired:
-            try:
-                parsed = json.loads(repaired)
-            except json.JSONDecodeError:
-                pass
-    if parsed is not None and isinstance(parsed, dict):
-        try:
-            return _coerce_and_validate(model_cls, parsed)
-        except Exception:
-            pass
-
-    # 4. Final fallback: try QwenOutputParser one more time on stripped text
-    try:
-        return parser.parse(stripped)
-    except Exception:
-        pass
-
-    raise ValueError(f"Could not parse model output as structured data. Model returned: {content[:200]!r}...")
-
-
-def _coerce_and_validate(model_cls, parsed: dict):
-    """Apply common coercions before attempting model_cls(**parsed)."""
-    if isinstance(parsed.get("unresolved"), str):
-        parsed["unresolved"] = [parsed["unresolved"]] if parsed["unresolved"] else []
-    if isinstance(parsed.get("common_pitfalls"), str):
-        parsed["common_pitfalls"] = [parsed["common_pitfalls"]] if parsed["common_pitfalls"] else []
-    # Coerce evidence items to match Evidence schema
-    if isinstance(parsed.get("evidence"), list):
-        coerced = []
-        for item in parsed["evidence"]:
-            if not isinstance(item, dict):
-                continue
-            if "source" in item:
-                src = item["source"]
-                if isinstance(src, str) and "/" in src:
-                    item["source"] = src.split("/")[0]
-                if item["source"] not in ("graph", "document", "concept", "manual", "spec", "other"):
-                    item["source"] = "other"
-            else:
-                item["source"] = "other"
-            item.setdefault("tool", "unknown")
-            item["summary"] = item.get("summary", item.get("fact", ""))
-            coerced.append(item)
-        parsed["evidence"] = coerced
-    return model_cls(**parsed)
+        return await llm.with_structured_output(model_cls).ainvoke(messages)
+    except Exception as e:
+        log.debug("function_calling structured output failed (%s), retrying with json_mode", e)
+        return await llm.with_structured_output(model_cls, method="json_mode").ainvoke(messages)
 
 
 def _last_human_text(messages: list[BaseMessage]) -> str:
@@ -285,7 +126,7 @@ def make_planner_node(
             SystemMessage(content=f"{planner_prompt}\n\n---\n\n{base_system}"),
             HumanMessage(content=f"User request:\n{user_request}{replan_note}\n\nOutput ONLY a JSON object with keys: goal, steps, fallback_notes."),
         ]
-        plan: Plan = await _qwen_structured_invoke(llm, Plan, msgs)
+        plan: Plan = await _structured_invoke(llm, Plan, msgs)
 
         # Auto-assign step ids if Qwen didn't provide them
         plan = plan.auto_assign_step_ids()
@@ -299,7 +140,7 @@ def make_planner_node(
             try:
                 msgs_retry = list(msgs)
                 msgs_retry.append(HumanMessage(content="\n\nCRITICAL: You MUST return at least one step in the steps array. Do NOT return an empty steps list. Even a single exploratory step is required."))
-                plan = await _qwen_structured_invoke(llm, Plan, msgs_retry)
+                plan = await _structured_invoke(llm, Plan, msgs_retry)
             except Exception as e2:
                 log.error("Retry plan also failed: %s", e2)
                 # Raise a descriptive error instead of crashing later
@@ -476,12 +317,12 @@ def make_reflector_node(
             HumanMessage(content=ctx),
         ]
         try:
-            refl: Reflection = await _qwen_structured_invoke(llm, Reflection, msgs)
+            refl: Reflection = await _structured_invoke(llm, Reflection, msgs)
         except Exception as e:
             log.warning("Structured output parsing failed: %s, retrying with stronger JSON hint...", e)
             msgs_strict = list(msgs)
             msgs_strict.append(HumanMessage(content="\n\nCRITICAL: Your ENTIRE response must be valid JSON only. Do not include any text outside the JSON object."))
-            refl = await _qwen_structured_invoke(llm, Reflection, msgs_strict)
+            refl = await _structured_invoke(llm, Reflection, msgs_strict)
 
         # Hard contradiction guard: a step_done / all_done with no collected
         # evidence is a confident-empty conclusion off a single (or no) tool
@@ -573,12 +414,12 @@ def make_finalizer_node(
             HumanMessage(content=ctx),
         ]
         try:
-            final: FinalAnswer = await _qwen_structured_invoke(llm, FinalAnswer, msgs)
+            final: FinalAnswer = await _structured_invoke(llm, FinalAnswer, msgs)
         except Exception as e:
             log.warning("Structured output parsing failed: %s, retrying with stronger JSON hint...", e)
             msgs_strict = list(msgs)
             msgs_strict.append(HumanMessage(content="\n\nCRITICAL: Your ENTIRE response must be valid JSON only. Do not include any text outside the JSON object."))
-            final = await _qwen_structured_invoke(llm, FinalAnswer, msgs_strict)
+            final = await _structured_invoke(llm, FinalAnswer, msgs_strict)
 
         # Render to a single text answer with a foldable metadata block at the
         # end (Open WebUI collapses <think>...</think>). The streaming layer

@@ -27,7 +27,7 @@ COPY --from=download /tmp/connector-extracted/http-connector-for-apache-kafka-${
 
 COPY config/http-sink-connector.json /etc/kafka-connect/config/http-sink-connector.json
 COPY scripts/entrypoint.sh /etc/basyx/entrypoint.sh
-RUN chmod +x /etc/basyx/entrypoint.sh
+RUN sed -i 's/\r$//' /etc/basyx/entrypoint.sh && chmod +x /etc/basyx/entrypoint.sh
 
 USER appuser
 
