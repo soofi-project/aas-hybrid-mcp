@@ -6,4 +6,4 @@ COPY model.json /app/model.json
 COPY seed-model.sh /app/seed-model.sh
 
 ENTRYPOINT ["sh", "/app/seed-model.sh"]
-CMD ["http://open-webui:8080"]
+CMD ["http://open-web-ui:8080"]
