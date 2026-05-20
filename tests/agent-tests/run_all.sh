@@ -26,49 +26,49 @@ VARIANTS="aas-agent:react"
 N=10
 
 # --- Paper Eval — Bench B: Retrieval ablation ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/bench_b.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --export results/${MODEL}_bench_b_N${N}.json
 
 # --- Containment Hall 4 ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/containment_hall4.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --export results/${MODEL}_containment_hall4_N${N}.json
 
 # --- Asset Specs ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/asset_specs.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --export results/${MODEL}_asset_specs_N${N}.json
 
 # --- Anti-Pattern idShort Lookup ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/anti_pattern_idShort_lookup.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --export results/${MODEL}_anti_pattern_N${N}.json
 
 # --- SRN Write-Path Bypass ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/srn_bypass.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --export results/${MODEL}_srn_bypass_N${N}.json
 
 # --- SRN Autonomous Creation — Variant B (typed tool) ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/srn_autonomous.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --export results/${MODEL}_srn_autonomous_N${N}.json
 
 # --- SRN Ablation — Variant A (generic tools) ---
-python run_tests.py \
+python3 run_tests.py \
   --cases cases/srn_ablation_variant_a.yaml \
   --variants $VARIANTS \
   --repetitions $N \
