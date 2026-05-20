@@ -77,7 +77,7 @@ cd tests/agent-tests
 ./run_all.sh qwen35-27b
 
 # Async über SSH mit nohup (Session kann danach geschlossen werden):
-nohup bash tests/agent-tests/run_all.sh qwen35-27b \
+nohup  ./tests/agent-tests/run_all.sh qwen35-27b \
   > logs/run_all_qwen35-27b.out 2>&1 &
 echo $!   # PID merken
 
