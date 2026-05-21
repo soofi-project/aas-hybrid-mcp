@@ -223,8 +223,11 @@ def analyse_process(tool_calls: list[dict[str, Any]]) -> dict[str, Any]:
         if err is not None:
             errors.append({"index": i, "tool": name, **err})
 
-    if first_query_idx is None:
-        # Never queried — manual-first is trivially satisfied (or N/A).
+    if first_query_idx is None and first_manual_idx is None:
+        # No tool calls at all — cannot determine manual-first; treat as False.
+        read_manuals_first = False
+    elif first_query_idx is None:
+        # Read manuals but never queried — trivially satisfied.
         read_manuals_first = True
     elif first_manual_idx is None:
         read_manuals_first = False

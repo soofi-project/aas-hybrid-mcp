@@ -250,6 +250,7 @@ class PlanReflectAgentRunner:
                 "LLM backend: %s (vLLM, thinking=%s [default_thinking=%s])",
                 self._llm_base_url, use_thinking, self._default_thinking,
             )
+            model_kwargs["top_k"] = 20  # vLLM-specific; Qwen3.5 non-thinking default
             extra_body = {
                 "chat_template_kwargs": {"enable_thinking": use_thinking}
             }
@@ -270,6 +271,8 @@ class PlanReflectAgentRunner:
         )
         if temperature is not None:
             llm_init["temperature"] = temperature
+        if self._llm_base_url and "openai.com" not in self._llm_base_url:
+            llm_init["top_p"] = 0.8  # Qwen3.5 non-thinking default
         return ChatOpenAI(**llm_init)
 
     def _select_graph(self, reasoning_effort: str | None):

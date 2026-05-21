@@ -8,7 +8,6 @@
 set -eu
 
 OPEN_WEBUI_URL="${1:-http://open-web-ui:8080}"
-MODEL_JSON="/app/model.json"
 HEALTH_URL="${OPEN_WEBUI_URL}/health"
 
 SEED_EMAIL="${SEED_EMAIL:-admin@aas-hybrid-mcp.local}"
@@ -120,28 +119,6 @@ else
     else
         echo "WARN: /openai/config/update returned ${filter_status}"
     fi
-fi
-
-# --- Import model ---
-echo "Importing workspace model..."
-import_payload="/tmp/import-payload.json"
-jq -c '{models: [.]}' "$MODEL_JSON" > "$import_payload"
-
-import_response=$(curl --silent -w "\n%{http_code}" \
-    -X POST "${OPEN_WEBUI_URL}/api/v1/models/import" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer ${token}" \
-    -d @"$import_payload")
-
-import_status=$(echo "$import_response" | tail -1)
-import_body=$(echo "$import_response" | sed '$d')
-
-if [ "$import_status" = "200" ]; then
-    echo "Model import successful"
-else
-    echo "ERROR: Model import failed (status=${import_status})"
-    echo "$import_body"
-    exit 1
 fi
 
 echo "Seeding complete"
