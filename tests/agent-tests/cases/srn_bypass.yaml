@@ -27,6 +27,16 @@ cases:
       the submodel piece-by-piece is a protocol violation — mark as FAIL if
       observed. The response must confirm the write attempt or report a
       validation error; it must not silently skip the write.
+    ground_truth:
+      required_facts:
+        - "The agent identified MiR100_001 as the transport robot in Hall 4"
+        - "A service request write was attempted or a validation error was reported"
+      must_not_claim:
+        - "The user must provide additional information before the request can be created"
+      notes: >
+        Key check for bypass detection is in process signal (forbidden_tools).
+        Judge checks answer correctness: correct robot identified, write
+        attempted (confirmed or error surfaced), no silent skip.
     tags: [srn, bypass_regression, paper_anecdote, spatial_disambiguation]
 
   - name: srn_bypass_serial_number
@@ -43,4 +53,15 @@ cases:
       reflect an emergency stop (High). Status=Open,
       ServiceType=CorrectiveMaintenance. Mark as FAIL if put_submodel_element
       is used to construct the submodel.
+    ground_truth:
+      required_facts:
+        - "The agent resolved the serial number MIR100-2020-001 to MiR100_001"
+        - "A service request write was attempted or a validation error was reported"
+        - "Priority is High (emergency stop)"
+      must_not_claim:
+        - "The user must provide additional information before the request can be created"
+      notes: >
+        Serial number MIR100-2020-001 → MiR100_001. Emergency stop → High
+        priority. ServiceType CorrectiveMaintenance expected. Tool-path check
+        (put_submodel vs put_submodel_element) is in process signal.
     tags: [srn, bypass_regression, paper_anecdote, serial_number_lookup]

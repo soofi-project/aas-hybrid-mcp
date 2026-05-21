@@ -86,6 +86,7 @@ class AgentRunner:
         system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
+        temperature: float | None = None,
     ) -> None:
         self._mcp = mcp_client
         self._llm_base_url = llm_base_url
@@ -93,6 +94,7 @@ class AgentRunner:
         self._system_prompt = system_prompt
         self._default_thinking = default_thinking
         self._log_dir = log_dir
+        self._temperature = temperature
         self._agent_thinking_off = None
         self._agent_thinking_on = None
         self._full_system_message: str = ""
@@ -121,12 +123,12 @@ class AgentRunner:
         tools = list(all_tools) + [get_current_utc_time]
 
         self._agent_thinking_off = create_react_agent(
-            model=self._build_llm(enable_thinking=False),
+            model=self._build_llm(enable_thinking=False, temperature=self._temperature),
             tools=tools,
             prompt=self._full_system_message,
         )
         self._agent_thinking_on = create_react_agent(
-            model=self._build_llm(enable_thinking=True),
+            model=self._build_llm(enable_thinking=True, temperature=self._temperature),
             tools=tools,
             prompt=self._full_system_message,
         )
@@ -142,7 +144,7 @@ class AgentRunner:
         all_tools = await self._mcp.get_langchain_tools()
         return await self._lazy_init(mcp_context, all_tools)
 
-    def _build_llm(self, enable_thinking: bool, with_tools: bool = True, extra_body: dict | None = None) -> ChatOpenAI:
+    def _build_llm(self, enable_thinking: bool, with_tools: bool = True, extra_body: dict | None = None, temperature: float | None = None) -> ChatOpenAI:
         """Construct the LLM with optional vLLM thinking support.
 
         For vLLM (Qwen) thinking is disabled by default because the chat
@@ -186,7 +188,7 @@ class AgentRunner:
         # api_key intentionally omitted — ChatOpenAI reads OPENAI_API_KEY from
         # the container env (loaded via ${SECRETS_PATH} in default mode, or
         # set to "dummy" via .env.vllm in vLLM mode).
-        return ChatOpenAI(
+        llm_init: dict = dict(
             base_url=self._llm_base_url,
             model=self._llm_model,
             streaming=True,
@@ -195,6 +197,9 @@ class AgentRunner:
             extra_body=extra_body,
             **llm_kwargs,
         )
+        if temperature is not None:
+            llm_init["temperature"] = temperature
+        return ChatOpenAI(**llm_init)
 
     def _select_agent(self, reasoning_effort: str | None):
         thinking = _thinking_from_effort(reasoning_effort, self._default_thinking)

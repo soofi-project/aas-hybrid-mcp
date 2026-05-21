@@ -1,0 +1,1224 @@
+{
+  "input": "results\\qwen35-2b_srn_ablation_variant_a_N10.json",
+  "cases": [
+    "cases/srn_ablation_variant_a.yaml"
+  ],
+  "judge_model": "gpt-5.4-mini",
+  "judge_base_url": "https://api.openai.com",
+  "summary": {
+    "totals": {
+      "n": 30,
+      "correct": 3,
+      "correct_rate": 0.1,
+      "manuals_first": 2,
+      "manuals_first_rate": 0.067,
+      "tool_error_free": 21,
+      "tool_error_free_rate": 0.7,
+      "all_good": 0,
+      "all_good_rate": 0.0
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "srn_variant_a_fault_context",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 2,
+        "manuals_first_rate": 0.2,
+        "tool_error_free": 8,
+        "tool_error_free_rate": 0.8,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_variant_a_no_element_bypass",
+        "n": 10,
+        "correct": 3,
+        "correct_rate": 0.3,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 6,
+        "tool_error_free_rate": 0.6,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_variant_a_routine_priority",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 7,
+        "tool_error_free_rate": 0.7,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 30,
+        "correct": 3,
+        "correct_rate": 0.1,
+        "manuals_first": 2,
+        "manuals_first_rate": 0.067,
+        "tool_error_free": 21,
+        "tool_error_free_rate": 0.7,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I have all the information I need. Now the service request notification has been created. Let me provide a summary to the user:\n\n**Service Request Notification Created**\n\nBased on the incident: a transport robot in Hall 4 experienced an emergency stop with a red LED illumination. I have created a pre-action service request notification for immediate supervisor attention.\n\n**GRANTED**: I have passed pre-communication analysis through diagnostic tools and identified the following:\n\n1. **Asset Identification**: The asset is `TransportRobotHALL4` (ure:urn:aas:hall4)\n2. **Incident Verification**: No immediate danger identified\n3. **Service Request Creation**: IDTA 02010-1-1 compliant SRN generated\n\n**SRN Details**:\n- **ID**: `urn:aas-hybrid-mcp:srn:hall4:3fa787cf`\n- **Type**: CorrectiveMaintenance (urgent repair required)\n- **Priority**: High (immediate attention)\n- **Description**: Transport robot in Hall 4 has emergency stop and red LED illuminated - require pre-action service request\n\nThe SRN contains all required fields (short_text, service_type, priority, long_text). For supervisor review, the full text describing the nearest fault code if available is included.",
+      "duration_s": 16.586,
+      "tool_call_count": 36,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: the agent’s identified asset and SRN creation claims; it did not identify MiR100_001 and did not show a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_templates_index",
+          "get_manual_page",
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "Need to locate the asset in the AAS before creating a service request. Can you provide the AAS ID or shipping digit (MSDS number) for the transport robot?",
+      "duration_s": 0.212,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: asks for more information before doing anything; this misses the required MiR100_001 identification and any write/validation attempt, and it makes a forbidden request for additional information.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I need to find the asset for this transport robot in Hall 4 with an emergency stop after an LED redized on. Let me search for it.\n\n\n\n\n\n\n\n\n\nHall 4 as a string doesn't find any submodels. Let me list all assets to find the transport robot:\n\n\n\n\n\n\n\n\n\nLet me fix the query:\n\n\n\n\n\n\n\n\n\nFound the Transport robot in Hall 4: **TransportRobotHALL4** with id `urn:asset:hall4`. Let me traverse to find more details:\n\n\n\n\n\n\n\n\n\nThe asset doesn't have a submodel in the query, but it does exist. Let me try a different approach - let me list all AAS and find where TransportRobotHALL4 belongs:\n\n\n\n\n\n\n\n\n\nLet me search for \"Hall 4\" to find where it belongs:\n\n\n\n\n\n\n\n\n\nLet me use proper Cypher syntax:\n\n\n\n\n\n\n\n\n\nLet me use proper query syntax:\n\n\n\n\n\n\n\n\n\nLet me simplify and just search for TransportRobotHALL4 directly:\n\n\n\n\n\n\n\n\n\nLet me try to find all instances that might be Hall 4 in the name:\n\n\n\n\n\n\n\n\n\nLet me try a simpler query:\n\n\n\n\n\n\n\n\n\nLet me try querying for Hall3 first to see the correct syntax:\n\n\n\n\n\n\n\n\n\nNeed to use proper Cypher query syntax:\n\n\n\n\n\n\n\n\n\nLet me check the graph schema to understand the structure better:\n\n\n\n\n\n\n\n\n\nLet me try listing all assets with just `virtualTraversal=True` if needed, but first let me check if I can query a version of the data differently:\n\n\n\n\n\n\n\n\n\nI see - asset.id is put in a graph pattern. Let me just query Hall3 directly:\n\n\n\n\n\n\n\n\n\nThe asset idShort shows as \"hall3\" in my earlier results. Let me try querying assets directly:\n\n\n\n\n\n\n\n\n\nI see - AssetAdministrationShell doesn't appear in the select list. Let me try a different pattern:\n\n\n\n\n\n\n\n\n\nLet me try with MATCH properly and just return filtered results:\n\n\n\n\n\n\n\n\n\nLet me look up the asset existence with a simpler approach:\n\n\n\n\n\n\n\n\n\nLet me just look at what aas_id the asset has and query the submodel for it directly:\n\n\n\n\n\n\n\n\n\nLet me try a different asset ID from Hall 3:\n\n\n\n\n\n\n\n\n\nLet me just look at the AASад at Hall 4 more carefully. From my earlier query I found TransportRobotHALL4 has idShort \"TransportRobotHALL4\" and assetId \"urn:asset:hall4\". Let me now try to infer its template by looking at related assets:\n\n\n\n\n\n\n\n\n\nLet me just search for the submodel directly for \"Rest Machine 2\":\n\n\n\n\n\n\n\n\n\nLet me look at the templates index to find the relevant template:\n\n\n\n\n\n\n\n\n\nI see there's no AGV (Automated Guided Vehicle) template in the current index. I need to continue searching manually. Based on what I know:\n\n1. The Assets include: Stone 100 (aggressive nameplate), UR3e models, Commercial electric conveyors 3/20\n2. I found UR3e_Type and UR3e_001/002\n3. The user reports a transport robot with emergency stop after red LED\n\nLet me look at the Hughes Poll number 1000 AAS (similar to Stone 100) and related AGV assets. Looking at the templates, I see no AGV-specific template. The transport robot is likely the Rockwell KRC-GRNU (71003.200) or similar rail system.\n\nLet me search for \"Control Component Type\" as an AGV or conveyer type:\n\n\n\n\n\n\n\n\n\nLet me try to directly query for UR3e assets and Hall 3 assets:\n\n\n\n\n\n\n\n\n\nHmm, asset id is a relation endpoint `HAVAS_NEXT_NAME` relationship. Let me just list assets with proper syntax:\n\n\n\n\n\n\n\n\n\nI need to find a different pattern for asset.idShort. The ID is stored in the graph pattern as a relation endpoint. Let me look at the Asset node structure first:\n\n\n\n\n\n\n\n\n\nLet me just query with proper Cypher pattern for asset idShort which is a property:\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach - just query all assets with their idShort as plain text in WHERE clause for property matching. Actually, looking at the graph schema, asset.idShort exists as a property. Let me query with it properly:\n\n\n\n\n\n\n\n\n\nThe artifact is stored as a property. Let me look at the asset node definition again. The graph schema shows `idShort` is a property. Let me use the `id` relation field which contains the asset ID:\n\n\n\n\n\n\n\n\n\nI see - the query pattern syntax is different for Cypher. Let me examine how to query asset.idShort properly. Let me first look at what the graph schema shows about how to access the Asset structure:\n\n\n\n\n\n\n\n\n\nLet me trace through what I know about the data. Earlier I found TransportRobotHALL4 with idShort \"TransportRobotHALL4\" and id \"urn:asset:hall4\". Let me verify and find its submodel structure by looking at the aas hierarchy:\n\n\n\n\n\n\n\n\n\nLet me try to find the aas for TransportRobotHALL4 by checking the idShort that was mentioned:\n\n\n\n\n\n\n\n\n\nFound it! The asset is in AAS \"urn:aas:hall4\" with idShort \"TransportRobotHALL4\". Now let me find what submodel(s) this AAS has:\n\n\n\n\n\n\n\n\n\nLet me try importing all submodels first:\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach to find submodels:\n\n\n\n\n\n\n\n\n\nLet me try a basic query to find all submodels connected to the AAS:\n\n\n\n\n\n\n\n\n\nExcellent! I found the submodels for Hall 4 AAS:\n- ServiceRequestNotification (8 instances)\n- HierarchicalStructures\n- Nameplate\n- FacilityInformation\n\nBut I'm missing **Rest Machine 2** and the transport robot related elements. Let me look for elements in these submodels. The user mentioned a transport robot with an emergency stop after red LED.\n\nLet me check the File relationships to find PDFs or reports that might describe this issue:\n\n\n\n\n\n\n\n\n\nLet me try simpler syntax:\n\n\n\n\n\n\n\n\n\nLet me try to list all files first and check what each one is:\n\n\n\n\n\n\n\n\n\nNo files found. Let me check what submodel elements are available:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me try exact match pattern - I need to find the exact idShort values:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me check how to compare idShort in submodel queries:",
+      "duration_s": 20.754,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a failed search narrative with no supported service request action; it does not support the required identification or a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 24,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 44,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"e.idShort cont"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "Let me search for all URLs with 'transport' in the path:",
+      "duration_s": 23.152,
+      "tool_call_count": 48,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is only a search intent, with no identification of MiR100_001 and no write attempt or validation error, so the answer fails.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 7,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_templates_index",
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The AAS shell isn't being found. This suggests it may not be properly indexed or there's a problem. However, since I successfully created a service request (which returned ownership), and the manual showed it regarding the SRN exists, let me proceed:\n\nThe svrny notification for TransportRobotHALL4 at Hall 4 has I_SRO_ID:hall4:f5c120ce - this is where the service request notification is recorded.\n\n**Summary:**\n- **Asset**: TransportRobotHALL4 (Instance) in Hall 4 AAS\n- **Issue**: Emergency stop with red LED on  \n- **Service Request ID**: `urn:aas-hybrid-mcp:srn:hall4:f5c120ce`\n- **Status**: Open (as designed by the tool)\n\nThe emergency response workflow has been initiated via the Service Request Notification system.",
+      "duration_s": 14.105,
+      "tool_call_count": 33,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list names TransportRobotHALL4 and a service request, but it does not identify MiR100_001 and it does not clearly report a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 2,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I've created the service request notification. Now let me verify the customer gates that exist for the robot in Hall 4 to understand what kind of service is involved:",
+      "duration_s": 24.187,
+      "tool_call_count": 48,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: a service request notification was created and customer gates will be verified; it does not identify MiR100_001 or show a write/validation result.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 9,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_manual_page",
+          "get_graph_schema",
+          "get_manual_page",
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "Let me query differently:",
+      "duration_s": 21.469,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is absent because the agent only returned the grading template, not an answer about MiR100_001 or a service request/write attempt.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 28,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The WHERE clause is still problematic. Let me try without the WHERE:",
+      "duration_s": 20.572,
+      "tool_call_count": 48,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is only a note about the WHERE clause; it does not identify MiR100_001 or show a write attempt/validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "Based on the earlier query, I found the Hall 4 submodels:\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:42f82a2a)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:3fa787cf)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:f5c120ce)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:ab23dd8f)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:f4375ab2)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:b7c4b4c2)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:cd460196)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:6c1c29e6)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:32f4b2d5)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:f2001216)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:01f95f75)\n- ServiceRequestNotification (urn:aas-hybrid-mcp:srn:hall4:1b85bd47)\n+ and more ServiceRequestNotification entries\n\nLet me just query one of these to find what they contain (check for customer/entity links):",
+      "duration_s": 21.499,
+      "tool_call_count": 46,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is only Hall 4 ServiceRequestNotification submodels and a plan to query them; it does not identify MiR100_001 or report a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 9,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 3,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(a.idShort) C"
+          },
+          {
+            "index": 15,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(sm.idShort) "
+          },
+          {
+            "index": 20,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(sm.idShort) "
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I need to find the transport robot in Hall 4 and create an emergency service request notification. Let me first query the AAS to identify the specific asset.\n\n\n\n\n\n\n\n\n\nThe Cypher syntax had an error. Let me fix it - I need to use proper Cypher pattern matching syntax.\n\n\n\n\n\n\n\n\n\nLet me try a different approach - query all Assets in the graph and filter manually:\n\n\n\n\n\n\n\n\n\nThe Cypher engine doesn't support the WHERE clause for filtering. Let me query relationships directly:\n\n\n\n\n\n\n\n\n\nLet me try a simple query first to understand the graph structure:\n\n\n\n\n\n\n\n\n\nLet me try without a WHERE clause to get all AAS:\n\n\n\n\n\n\n\n\n\nLet me use a different approach with LIMIT and a counter variable:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFound it! **TransportRobotHALL4** is the asset in Hall 4. Now let me get more details about it including its submodel and properties:\n\n\n\n\n\n\n\n\n\nNow let me get all submodels for this AAS:\n\n\n\n\n\n\n\n\n\nLet me try a different approach - get all submodels of this AAS:\n\n\n\n\n\n\n\n\n\nThe submodel IDs start with `urn:`. Let me get all the submodel elements (PDFs, documents, etc.) linked to a submodel:\n\n\n\n\n\n\n\n\n\nLet me switch to select mode:\n\n\n\n\n\n\n\n\n\nGood! Now let me get details about the submodel to understand its structure and find the domain function / capability:\n\n\n\n\n\n\n\n\n\nI see the structure. Let me search for service request documents and check the TechnicalData for hall4:\n\n\n\n\n\n\n\n\n\nThe submodel is not index in documents. Let me search the IDTA templates for service request information:\n\n\n\n\n\n\n\n\n\nLet me use the graph to find the service request template and its elements:\n\n\n\n\n\n\n\n\n\nLet me try a different approach - use OVERLAY to extract the logic for the submodel:\n\n\n\n\n\n\n\n\n\nNow let me query the ServiceRequestNotification submodel to check its structure and see if it has an emergency stop event or related fault:\n\n\n\n\n\n\n\n\n\nThe syntax error is due to the brace `'urn:aas-hybrid-mcp:srn:hall4:42f82a2a'`. Let me fix that:\n\n\n\n\n\n\n\n\n\nLet me simplify - just query the submodel without the sc part:\n\n\n\n\n\n\n\n\n\nThe submodel might not be in the graph directly. Let me check from the AssetAdministrationShell:\n\n\n\n\n\n\n\n\n\nI see! Several \"ServiceRequestNotification\" submodels exist, but the paths might be nested. Let me get the submodel elements:\n\n\n\n\n\n\n\n\n\nLet me now read more submodel elements to understand the full structure. Let me focus on finding the Type shell and look for service request related assets:\n\n\n\n\n\n\n\n\n\nLet me check the AssetAdministrationShell relationships more carefully - there's no DERIVED_FROM:\n\n\n\n\n\n\n\n\n\nLet me query for PDF documents within this AAS to find documentation:\n\n\n\n\n\n\n\n\n\nNo PDFs indexed yet. Let me query for submodel elements directly:\n\n\n\n\n\n\n\n\n\nI see the root category is \"HALL_4\" for TransportRobotHALL4 instance. Let me look at the submodel elements under it. Let me query submodel elements:\n\n\n\n\n\n\n\n\n\nI see a lot of submodel elements. The most important one is the TechnicalData for hall4. But first, I need to understand what could cause an emergency stop with red LED on. These are Type AAS robots, likely AGVs (Automated Guided Vehicles) that use the TechnicalData to indicate the domain function.\n\nGiven the facts:\n1. **TransportRobotHALL4** is an Instance shell in Hall 4\n2. **Red LED on** typically indicates a fault\n3. **Emergency stop** needs an action and service request\n\nLet me search the TechnicalData elements to understand how THEY relate to issues:\n\n\n\n\n\n\n\n\n\nLet me simplify and query for submodel elements:\n\n\n\n\n\n\n\n\n\nLet me query the submodel name to find the exact category/instance:\n\n\n\n\n\n\n\n\n\nLet me try simpler query on submodel:\n\n\n\n\n\n\n\n\n\nThe submodel elements seem to be organized differently. Let me search the document store for any hall4 related documents:\n\n\n\n\n\n\n\n\n\nI found relevant documentation about ServiceRequestNotification elements. Now let me create a Service Request notification for the emergency stop of the TransportRobotHALL4. Based on the conversation and typical elevator/robot behavior patterns, I'll create an SRN for the emergency stop.\n\n\n\n\n\n\n\n\n\nService request has been created. Let me add the related submodel information for the document:\n\n\n\n\n\nThe first SRN was created successfully. Let me explain the service request information clearly and provide actions.\n\n**Service Request Created:**\n- **ID:** `urn:aas-hybrid-mcp:srn:hall4:ba50fc9c`\n- **Priority:** High (Emergency stop)\n- **Asset:** TransportRobotHALL4 (Room: Hall 4)\n- **Status:** Open\n\n**Actions Required:**\n\n1. **Page the Power Control System:** \n   - Access the AAS Knowledge Graph\n   - Navigate to `TransportRobotHALL4`\n   - View the `TechnicalData` as listed in submodel hierarchy\n   - Check for safety classification values in the technical data\n\n2. **Check Energy Storage Module:**\n   - Review AAS Schema for Electrical Power Component\n   - Verify energy storage connects to power feed\n   - Check if relevant data is available in submodel documents\n\n3. **Monitor Power Flow:**\n   - Track vehicle acceleration/deceleration in data stream\n   - Check power history for abnormal patterns\n\n4. **Roll out Physical Safety Measures:**\n   - Evaluate whether containment of dangerous energy release is sufficient safety\n   - Implement appropriate mechanical or electrical containment measures if needed\n\n5. **Report at Emergency Stop:**\n   - Verify there are no additional impacts or training requirements\n   - Document the remediation status or completed actions\n\n**Follow-up:**\n- Document the power flow measurements and acceleration limits\n- Verify that emergency stop signal meets safety classification requirements\n- Ensure all safety parameters (e.g., 7% acceleration limit, collision avoidance modes) have been reconfirmed\n</think>",
+      "duration_s": 17.231,
+      "tool_call_count": 34,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: the identified robot and the service request outcome; the answer names TransportRobotHALL4 instead of MiR100_001 and does not clearly support a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "The translation Robot shell doesn't seem to have direct MANAGES_ASSET relationships. Let me list all shells and their assets more directly:\n\nSince the user's request was very simple, let me also consider if they meant the \"Hall3\" robot in hall 3:",
+      "duration_s": 21.691,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a refusal-like diversion about shells/Hall3, with no identification of UR3e_002 or attempted write/validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 7,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "Let me try without having and submodel at the same level:",
+      "duration_s": 24.194,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: no service request details were actually provided; the response is just a meta-instruction and does not identify UR3e_002 or show a write/validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 3,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "I need to find the AAS for the UR3e robot arm before creating a service request. Let me search for it in the graph.\n\n\n\n\n\n\n\n\n\nThat didn't work - let me try a broader search to find the robot arm asset:\n\n\n\n\n\n\n\n\n\nLet me fix the Cypher query - I'll just list the submodels to find the UR3e shell:\n\n\n\n\n\n\n\n\n\nLet me search more broadly for the UR3e robot:\n\n\n\n\n\n\n\n\n\nLet me try to get the AAS index to see what's available:\n\n\n\n\n\n\n\n\n\nLet me step back and query the entire AAS graph to see what exists:\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach - just list all Assets and submodels:\n\n\n\n\n\n\n\n\n\nThe graph seems to be empty. Let me check the graph schema to understand the structure better:\n\n\n\n\n\n\n\n\n\nThe graph appears empty. Let me check the submodels list to ensure I don't miss anything:\n\n\n\n\n\n\n\n\n\nNow I can see the UR3e related submodels. Let me get more details about the types:\n\n\n\n\n\n\n\n\n\nNow I can see the templates for the UR3e. Let me get the template info and then find the relevant submodels:\n\n\n\n\n\n\n\n\n\nLet me look for the UR3e submodels with their templates:\n\n\n\n\n\n\n\n\n\nThe semantic ID lookup might have changed. Let me search for UR3e submodels differently:\n\n\n\n\n\n\n\n\n\nLet me list all semantic IDs in the graph and identify UR3e related ones:\n\n\n\n\n\n\n\n\n\nLet me look for submodels with UR3e in their idShort:\n\n\n\n\n\n\n\n\n\nLet me list all the submodel idShorts and find the UR3e related ones:\n\n\n\n\n\n\n\n\n\nI found \"UR3e_Type\". Now let me look at the category for TransportRobotHALL4 and UR3e_Type to understand they belong to Hall 4:\n\n\n\n\n\n\n\n\n\nI need to find the submodels with UR3e. Let me query the graph schemas and find the proper way to match submodels:\n\n\n\n\n\n\n\n\n\nLet me search the serial_id_index for UR3e template references:\n\n\n\n\n\n\n\n\n\nThis is an external reference. Let me try \"0173-1#01-AHX837#003\" for UR3e submodel:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me search the submodels for these UR3e templates:\n\n\n\n\n\n\n\n\n\nLet me query the submodels with UR3e in the nameplate data or details:\n\n\n\n\n\n\n\n\n\nI need to use apostrophes properly. Let me list all submodel ids and manually find the UR3e ones:\n\n\n\n\n\n\n\n\n\nLet me use an alternative approach to find UR3e submodels:\n\n\n\n\n\n\n\n\n\nLet me try a more direct approach - find all submodel elements that belong to submodels (excluding root submodels since they don't have children):\n\n\n\n\n\n\n\n\n\nLet me approach this differently - searching in a broader pattern:\n\n\n\n\n\n\n\n\n\nThis approach won't work. Let me try getting the submodel index to find UR3e-related items:\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach - search for submodel elements that might match UR3e:\n\n\n\n\n\n\n\n\n\nLet me just find submodel idShorts for UR3e templates by using indexed property or list. Let me see what the submodels contain:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nGood - UR3e_Type has no direct submodels. Now let me search for 3m-related UR3e submodels:\n\n\n\n\n\n\n\n\n\nLet me try to get ALL submodel ids in a structured way to find UR3e references:\n\n\n\n\n\n\n\n\n\nI can see \"UR3e_Type\" is in the graph. But I need to find the submodels with UR3e semantics (3m models). Let me try to index the submodel elements side by side:\n\n\n\n\n\n\n\n\n\nLet me try to find UR3e-related submodel elements by a different approach - look for elements with 3m in their description or without explicit idShort but matching UR3e patterns:\n\n\n\n\n\n\n\n\n\nLet me try listing all submodel element ids to find pattern:\n\n\n\n\n\n\n\n\n\nThe search isn't finding things directly. Let me look for all submodels that contain UR3e in their semanticId:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me look at what property contains UR3e semanticId by looking at submodel elements that are NOT identity nodes:\n\n\n\n\n\n\n\n\n\nLet me take a different approach - I'll list all submodels and their nodes to find UR3e related ones:\n\n\n\n\n\n\n\n\n\nLet me look for any semanticId containing 'ur3e' in the graph:\n\n\n\n\n\n\n\n\n\nLet me try to get the submodels of the TransportRobotHALL4 AAS and find the UR3e type submodel within it:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow I found the UR3e AAS instances. I can see there is a `UR3e_Type` AAS. Let me find its submodels:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI have the submodels of UR3e_Type. Now let me find the UR3e_3m submodel within Hall 4:",
+      "duration_s": 23.042,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: no service request was created; the answer only describes searching and ends without identifying UR3e_002 or confirming a write/validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 7,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_templates_index",
+          "get_templates_index",
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "The query is now failing because the tool might be having trouble parsing the full query. Let me simplify to just match files:",
+      "duration_s": 38.57,
+      "tool_call_count": 46,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a tool/parsing failure explanation, not the required UR3e_002 identification or a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_templates_index",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "Service request notification created successfully.\n\n**Service Request ID:** `urn:aas-hybrid-mcp:srn:002:144e11bb`\n\nThe service request has been created for the UR3e robot arm (AAS: `urn:aas:ur3e:002`) in Hall 4 with:\n- Service Type: Preventive Maintenance\n- Priority: Low\n- Short text: \"Routine inspection of Hall 4 UR3e robot arm\"\n- Long text: Scheduled for preventive maintenance next quarter\n\nThe SRN follows IDTA 02010-1-0 structure and is registered on the asset's AAS.",
+      "duration_s": 2.18,
+      "tool_call_count": 4,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: the created service request for the UR3e in Hall 4; it does not identify UR3e_002 and does not show a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "The search tool has limitations. Let me look at what I know:\n\n**From the `get_templates_index()` result:**\n- `TransportRobotHALL4` (0173-1#01-AGC973#003) is a \"Plant Asset Management Specification Sheet\" - this is a submodel template, not the actual robot shell\n- No UR3e-specific templates were found in my search\n\n**Current Session State:**\n- AAS `TransportRobotHALL4` exists - it's a template for robot shells in Hall 4\n- The actual `AssetAdministrationShell` for the UR3e robot arm does not exist yet\n- The submodel `TransportRobotHALL4` is a capability template matching IEC 62683 Structural Safety\n\n**To create a Service Request Notification** using the `create_service_request_notification` tool:\n- Requires AAS ID (like `Guardian X_Hall4_Perimeter`, `X_Hall4_Guardian`, `P_SmartOakWorkspace_Hall4`)\n- Requires short_text describing the fault/request\n- Requires service_type and priority (Inspection is available)\n\nWould you like me to:\n1. Let you know the AAS IDs that exist in the Hall 4 domain (find the actual shell ID)?\n2. Let you tell me about what UR3e-related submodels exist?\n3. Or do you have another AAS ID in mind where the robot shell might exist?\n\nThe tool requires an existing AAS ID to create an SRN - I cannot create or modify the shell itself with available tools.",
+      "duration_s": 13.244,
+      "tool_call_count": 24,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list says the UR3e shell does not exist yet and asks for more info, so it fails to identify UR3e_002 and does not attempt a write/validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 3,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "I have the facilities info. Since `FacilityInformation` template doesn't have actual values, let me look for the actual Hall 4 facility in the graph differently.\n\nActually, from the earlier query results I found:\n- `TransportRobotHALL4` has `idShort='ForestRobotHALL4'` and `id='urn:aas:hall4'`\n\nThe service request notification was created successfully with aas_id 'urn:aas:hall4'. The tool said \"status:ok\" so it found the AAS.\n\nLet me provide the user with the service request ID:",
+      "duration_s": 23.223,
+      "tool_call_count": 47,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: it claims a service request was created for aas_id urn:aas:hall4, but it does not identify UR3e_002 as the UR3e in Hall 4 and does not clearly report a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported (not silently skipped)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 3,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_templates_index",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "Let me check without WHERE and see what submodels exist.",
+      "duration_s": 25.499,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: a request to check submodels only; it does not identify UR3e_002 or report a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 6,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_graph_schema",
+          "get_templates_index",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "I've created a Service Request Notification (SRN) for the UR3e robot arm in Hall 4. \n\n**Summary:**\n- **Asset URL**: `urn:aas:ur3e:001` (UR3e robot arm in Hall 4)\n- **Service Request ID**: `urn:aas-hybrid-mcp:srn:001:1a958068`\n- **Service Type**: Inspection\n- **Priority**: Medium\n\nThe SRN is now registered on the AAS asset at `urn:aas:ur3e:001`.",
+      "duration_s": 19.666,
+      "tool_call_count": 36,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list names urn:aas:ur3e:001, not UR3e_002, and it asserts creation without showing a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The answer positively identifies the Hall 4 UR3e as urn:aas:ur3e:001 instead of UR3e_002"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 13,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 26,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "Based on the attempt, I'm getting mostly Unindexed results. Let me try a different approach - just get the submodel-level structure of one Submodel and see what LANGSTRING/IDTA templates are available. I already have the CATEGORY of TransportRobotHALL4 as `HALL_4`. Let me search for the template of ServiceRequestNotification:",
+      "duration_s": 23.523,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: no service request was created for UR3e_002; the answer only describes searching and does not support the required identification or any write/validation attempt.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "But I know from the templates index there is `ServiceRequestNotification` with:\n- ID: `ServiceRequestNotification`\n- Semantic ID: `0173-1#01-AHX443#001`\n\nLet me get the template details for this:",
+      "duration_s": 22.815,
+      "tool_call_count": 47,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the template lookup only; it does not identify CRX10iA_001 or report a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 8,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_graph_schema",
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "Both service requests have been created. Let me provide you with a summary:\n\n## Service Requests Created\n\n**Asset:** CRX-10iA articulated collaborative robot (Mobile Industrial Robots ApS - MiR)\n**AAS ID:** `urn:aas:crx10ia:001` \n**AAS IDShort:** `CRX10iA_001`\n\n### Service Request 1 (High Priority)\n- **ID:** `urn:aas-hybrid-mcp:srn:001:ab8eb794`\n- **Short Text:** Servicing motor fault on FANUC CRX-10iA articulated robot\n- **Service Type:** CorrectiveMaintenance\n- **Short Culture:** Rotary motor fault detected during operation\n\n### Service Request 2 (High Priority)\n- **ID:** `urn:aas-hybrid-mcp:srn:001:196a41cc`\n- **Short Text:** Service for mechanical unit replacement on FANUC CRX-10iA collaborative robot\n- **Service Type:** CorrectiveMaintenance\n- **Notes:** Controller and amplifier unit being replaced at Mobile Industrial Robots ApS (MiR)\n\nBoth SRNs are on the AAS and cannot be modified post-creation.",
+      "duration_s": 17.131,
+      "tool_call_count": 29,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the agent identified CRX10iA_001 and reported that service requests were created, satisfying the required write/validation outcome.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 9,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template",
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 16,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'Nameplate' not found."
+          },
+          {
+            "index": 24,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "So there are 14 AAS entities in this graph. The entry for `urn:asset:crx10ia:001` exists as a raw entry. The issue is that the entity has the `URN_PREFIX_001 as a value somewhere but might not be a valid AAS entity.\n\nLet me check the structure more carefully. Earlier I saw:\n```\nSELECT 'urn:asset:crx10ia:001' AS asset_aas_id, count(*) AS total\n```\nAnd one row returned with that ID.\n\nLet me check if there's an EMPTY AAS entity by checking for matching properties:",
+      "duration_s": 24.406,
+      "tool_call_count": 47,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: it only mentions the asset ID as a raw entry and does not identify CRX10iA_001 as the target asset or report a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 6,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I've created a Service Request Notification for the motor fault. \n\n## Summary\n\nI found and created a service request for the robot with serial number `urn:aas:crx10ia:001` (idShort `CRX10iA_001`).\n\n**Service Request Details:**\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:69919ea9`\n- **Fault:** Motor fault on robot asset\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** High\n- **Comment:** \"Long description: Robot CRX10iA_001 (urn:aas:crx10ia:001) experiencing motor fault. Asset Type less than 180cm in height. Part of Sample Fleet - HR. Needs immediate attention.\"\n\nNote: Customer information (StudentID, Phone, Email, Company, Address) required for a complete Service Request Notification, as you did not provide this in the original request.",
+      "duration_s": 20.618,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list supports the target asset and a write attempt, but it incorrectly claims more information is required before anything can be done.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 15,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 6,
+        "tool_errors": [
+          {
+            "index": 8,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          },
+          {
+            "index": 10,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"e.idShort CONT"
+          },
+          {
+            "index": 32,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"fm.idShort CON"
+          },
+          {
+            "index": 43,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          },
+          {
+            "index": 44,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          },
+          {
+            "index": 45,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'serviceRequestNotification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "Excellent! The service request was created successfully. Let me provide you with the summary:\n\n**Service Request Created:**\n- **ID**: `urn:aas-hybrid-mcp:srn:001:bb303fd4`\n- **Asset**: CRX10iA_001 (Collaborative Robot motor fault)\n- **AAS**: `urn:aas:crx10ia:001`\n- **Type**: Corrective Maintenance\n- **Priority**: High\n\nThe service request has been created and registered on the AAS. You can use this ID (`urn:aas-hybrid-mcp:srn:001:bb303fd4`) to track the request or document the fault.",
+      "duration_s": 25.544,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: service request created for CRX10iA_001 with a successful write; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "Okay - the error says \"must be a RETURN clause\", which means that specific pattern fails to match. Let me try a different approach - using `OPTIONAL` at the end:",
+      "duration_s": 21.559,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a validation-error explanation only; it does not identify CRX10iA_001 as the target asset or show a write attempt/validation error for the service request.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 19,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "The write permission was required. This means the createrv_service_request_notification was executed under write/transaction mode and the node should still exist. The issue is that the query_aas_graph tool runs in read-only mode.\n\nLet me provide the user with the service request ID I received:\n\nThe service request notification has been created. Here are the details:\n\n**AAS ID:** `urn:aas:crx10ia:001` (a ROS robot facility)  \n**Asset ID:** `urn:asset:crx10ia:001` (the URX robot)  \n**Service Request ID:** `urn:aas-hybrid-mcp:srn:001:500585ac`  \n**Short Text:** Motor fault on URX robot  \n**Service Type:** CorrectiveMaintenance  \n**Priority:** High\n\nThe service request was created for the motor fault at the ultrasonic robot (URX). The service request is currently in \"Open\" status pending worker assignment or advisor review.",
+      "duration_s": 19.048,
+      "tool_call_count": 42,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the service request details for urn:asset:crx10ia:001 / CRX10iA_001 were provided and a write/creation was reported.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 11,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "The Service Request Notification has been created successfully. Let me retrieve the SRN ID to confirm:",
+      "duration_s": 22.672,
+      "tool_call_count": 48,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: a service request notification was created successfully and an SRN ID will be retrieved; it does not identify CRX10iA_001 or show a write/validation result.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_templates_index",
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to find the AAS containing the robot with the given serial number, then create a service request.\n\n\n\n\n\n\n\n\n\nLet me first gather the graph schema and templates index, then handle the asset identification properly.\n</think>\n\n\n\n\n\n\n\n\n\nI need to use the ASSET Administration Shell ID instead of assetType. Let me first find the dashboard shell ID, then search for the asset associated with serial number urn:asset:crx10ia:001.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me use a simpler approach - just return the required fields first to see what assets exist.\n</think>\n\n\n\n\n\n\n\n\n\nFound it. Now I need to get the AAS information for the asset urn:asset:crx10ia:001. Let me look up the AAS structure.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me walk the AAS structure to find submodels, then get the asset's own information.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me try a simpler query structure.\n</think>\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me use a rfactor query style.\n</think>\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach.\n</think>\n\n\n\n\n\n\n\n\n\nLet me try a simpler approach - just split the query.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nThe cardinality is very unusual. Let me check the ASSET Administration Shell structure more directly.\n\n\n\n\n\n\n\n\n\nLet me try using glob patterns in Cypher directly.\n</think>\n\n\n\n\n\n\n\n\n\nGood, I found the asset. Now I need to find its corresponding AAS. Let me look for submodels.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI found the asset and its corresponding submodel. The AAS should be expressed-type under the submodel name. The serial number urn:asset:crx10ia:001 corresponds to a submodel named `crx10ia/type:capabilitydescription`. Let me look for the AAS containing this submodel.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me simplify.\n</think>\n\n\n\n\n\n\n\n\n\nNow I need to find the AAS this asset belongs to. Let me try a different approach.\n</think>\n\n\n\n\n\n\n\n\n\nLet me query this pattern sequentially.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me try the asset search to understand the graph structure.\n</think>\n\n\n\n\n\n\n\n\n\nLet me check how to use agent capabilities from other AAS.\n</think>\n\n\n\n\n\n\n\n\n\nLet me try a simpler query to get the structure.\n</think>\n\n\n\n\n\n\n\n\n\nLet me take a step back - the asset has `idShort: null` in the asset itself, but let me look at submodels for cells. The submodel ID would be `urn:submodel:crx10ia:type:capabilitydescription`. Let me find the AAS containing this submodel directly.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me try a different approach.\n</think>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nThe semantic ID pattern doesn't match. Let me check available semantic IDs from other cells.\n</think>\n\n\n\n\n\n\n\n\n\nLet me search for any submodel that has the capability description in its elements.\n</think>",
+      "duration_s": 19.819,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a narrative of attempted searches, but it never clearly identifies CRX10iA_001 as the target asset in the answer or reports a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "It's called \"MTP\" and \"AssetIdentification\" in the index but the available list doesn't have it exactly. The template name might be different. Let me try searching for submodels with tech data:",
+      "duration_s": 20.111,
+      "tool_call_count": 49,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a search attempt only; it does not identify CRX10iA_001 as the target asset or report a write/validation result.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 15,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 48,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'AssetIdentification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    }
+  ]
+}

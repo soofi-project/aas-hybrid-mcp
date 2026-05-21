@@ -125,7 +125,7 @@ def _resolve_prompt_file(prompt_file_stem: str) -> Path:
     return _PROMPT_DIR / prompt_file_stem
 
 
-async def _get_runner(model_id: str) -> Any:
+async def _get_runner(model_id: str, temperature: float | None = None) -> Any:
     """Return a ready-to-use agent runner for *model_id*, initializing it on first call."""
     if model_id in _runners and _runners[model_id] is not None:
         return _runners[model_id]
@@ -158,6 +158,7 @@ async def _get_runner(model_id: str) -> Any:
             system_prompt=system_prompt,
             default_thinking=False,
             log_dir=_log_dir,
+            temperature=temperature,
         )
 
         await runner._lazy_init(
@@ -299,7 +300,7 @@ async def chat_completions(request: ChatCompletionRequest, http_request: Request
     model = original_model[:-len(_DELIMITER)] if verbose else original_model
 
     try:
-        runner = await _get_runner(model)
+        runner = await _get_runner(model, temperature=request.temperature)
     except ValueError as e:
         return {"error": str(e)}, 400
 

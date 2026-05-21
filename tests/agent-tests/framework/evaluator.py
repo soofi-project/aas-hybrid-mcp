@@ -1,17 +1,21 @@
-"""Regex + LLM-judge evaluators. Composite: regex floor, LLM refinement."""
+"""Deterministic regex + tool-call evaluator.
+
+Produces an :class:`Evaluation` with keyword hits, forbidden-token hits,
+Cypher anti-pattern violations, server-side validator rejections, and
+write-path bypass classification. The semantic "is the answer correct?"
+judgement is NOT computed here — that is the job of ``judge.py`` and the
+``ground_truth`` block in each case YAML.
+"""
 
 from __future__ import annotations
 
 import json
-import os
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
-import httpx
-
 from framework.cases import Case
-from framework.runner import TResult, extract_final_answer
+from framework.runner import TResult
 
 
 @dataclass
@@ -58,15 +62,22 @@ class WritePathAnalysis:
 
 @dataclass
 class Evaluation:
-    score: float                # final composite score in [0, 1]
+    """Deterministic regex + tool-call evaluation.
+
+    ``score`` is the regex/keyword score in [0, 1] with hard zeroes for
+    forbidden-token hits, Cypher anti-pattern violations, and tool-call
+    constraint failures. ``passed`` is True when score >= 0.7 and no hard
+    rule was violated. This is the deterministic smoke signal; the
+    authoritative correctness judgement lives in ``judge.py``.
+    """
+
+    score: float                # regex+tool-constraint score in [0, 1]
     passed: bool
     regex_score: float = 0.0
-    llm_score: float | None = None
     keyword_hits: list[str] = field(default_factory=list)
     keyword_misses: list[str] = field(default_factory=list)
     forbidden_hits: list[str] = field(default_factory=list)
     pattern_matched: bool | None = None
-    llm_reasoning: str | None = None
     cypher_violations: list[CypherViolation] = field(default_factory=list)
     tool_violations: list[ToolViolation] = field(default_factory=list)
     validator_rejections: list[ValidatorRejection] = field(default_factory=list)
@@ -78,12 +89,10 @@ class Evaluation:
             "score": round(self.score, 3),
             "passed": self.passed,
             "regex_score": round(self.regex_score, 3),
-            "llm_score": round(self.llm_score, 3) if self.llm_score is not None else None,
             "keyword_hits": self.keyword_hits,
             "keyword_misses": self.keyword_misses,
             "forbidden_hits": self.forbidden_hits,
             "pattern_matched": self.pattern_matched,
-            "llm_reasoning": self.llm_reasoning,
             "cypher_violations": [
                 {
                     "pattern": v.pattern,
@@ -310,7 +319,7 @@ def evaluate_regex(case: Case, result: TResult) -> Evaluation:
         and not tool_violations
         and not result.error
     )
-    return Evaluation(
+    ev = Evaluation(
         score=regex_score,
         passed=passed,
         regex_score=regex_score,
@@ -323,126 +332,14 @@ def evaluate_regex(case: Case, result: TResult) -> Evaluation:
         validator_rejections=validator_rejections,
         write_path=write_path,
     )
-
-
-class LLMJudge:
-    """Calls a second LLM (vLLM / OpenAI-compatible) to grade the agent response.
-
-    The judge does NOT see the agent's reasoning — only the user query, the
-    grading criterion, and the agent's final answer. This keeps the judge
-    focused on outcome quality rather than process quality.
-    """
-
-    _PROMPT = (
-        "You are an evaluator for an industrial-AI agent. Grade the assistant's "
-        "answer against the criterion. Be strict: a partially correct answer "
-        "with omissions or extra wrong items scores lower.\n\n"
-        "User question:\n{query}\n\n"
-        "Grading criterion:\n{criterion}\n\n"
-        "Assistant answer:\n{answer}\n\n"
-        "Respond with ONLY a JSON object: "
-        '{{"score": <float 0..1>, "reasoning": "<one sentence>"}}'
-    )
-
-    def __init__(self, base_url: str, model: str, timeout_s: float = 60.0, api_key: str = "") -> None:
-        if not base_url or not model:
-            raise ValueError("LLMJudge requires base_url and model")
-        self._base = base_url.rstrip("/")
-        self._model = model
-        self._timeout = timeout_s
-        self._api_key = api_key or "dummy"
-
-    @classmethod
-    def from_config(cls, cfg: dict[str, Any]) -> "LLMJudge":
-        base = cfg.get("base_url") or os.environ.get("LLM_BASE_URL", "")
-        model = cfg.get("model") or os.environ.get("LLM_MODEL", "")
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        return cls(base_url=base, model=model, api_key=api_key)
-
-    async def grade(self, case: Case, result: TResult) -> tuple[float, str]:
-        criterion = case.llm_criteria or "The answer must directly address the user's question with correct, complete information."
-        final_answer = extract_final_answer(result.raw_stream) if result.raw_stream else result.response or ""
-        prompt = self._PROMPT.format(
-            query=case.query,
-            criterion=criterion,
-            answer=final_answer or "(empty)",
-        )
-        payload = {
-            "model": self._model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.0,
-            "stream": False,
-        }
-        try:
-            async with httpx.AsyncClient(timeout=self._timeout) as client:
-                resp = await client.post(
-                    f"{self._base}/v1/chat/completions",
-                    json=payload,
-                    headers={"Authorization": f"Bearer {self._api_key}"},
-                )
-                resp.raise_for_status()
-                data = resp.json()
-        except httpx.HTTPStatusError as e:
-            body = ""
-            try:
-                body = e.response.text[:500]
-            except Exception:
-                pass
-            msg = f"LLM judge HTTP error: {e!r} (body: {body})"
-            raise RuntimeError(msg) from e
-        except httpx.HTTPError as e:
-            raise RuntimeError(f"LLM judge transport error: {e!r}") from e
-
-        text = (
-            data.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-        )
-        score, reasoning = _parse_judge_response(text)
-        return score, reasoning
-
-
-def _parse_judge_response(text: str) -> tuple[float, str]:
-    if not text:
-        return 0.0, "empty judge response"
-    # Tolerate leading prose / code fences.
-    m = re.search(r"\{[^{}]*\}", text, re.DOTALL)
-    payload = m.group(0) if m else text
-    try:
-        obj = json.loads(payload)
-        score = float(obj.get("score", 0.0))
-        reasoning = str(obj.get("reasoning", "")).strip()
-        return max(0.0, min(1.0, score)), reasoning
-    except (json.JSONDecodeError, ValueError, TypeError):
-        return 0.0, f"unparseable judge response: {text[:200]!r}"
-
-
-async def evaluate(
-    case: Case,
-    result: TResult,
-    *,
-    judge: LLMJudge | None = None,
-) -> Evaluation:
-    """Composite evaluation: regex is the hard floor, LLM refines the score."""
-    ev = evaluate_regex(case, result)
     if result.error:
         ev.notes.append(f"agent error: {result.error}")
         ev.passed = False
         ev.score = 0.0
-        return ev
-
-    if judge is None or not case.llm_criteria:
-        return ev
-
-    llm_score, reasoning = await judge.grade(case, result)
-    ev.llm_score = llm_score
-    ev.llm_reasoning = reasoning
-    # Composite: weight 0.4 regex + 0.6 LLM, but hard-rule violations
-    # (forbidden response tokens OR forbidden Cypher patterns) still zero out.
-    if ev.forbidden_hits or ev.cypher_violations or ev.tool_violations:
-        ev.score = 0.0
-        ev.passed = False
-    else:
-        ev.score = 0.4 * ev.regex_score + 0.6 * llm_score
-        ev.passed = ev.score >= 0.7
     return ev
+
+
+# Backwards-compatible alias for the runner: the only evaluator we keep is the
+# deterministic regex+tool-call one. Authoritative correctness judgement lives
+# in judge.py.
+evaluate = evaluate_regex

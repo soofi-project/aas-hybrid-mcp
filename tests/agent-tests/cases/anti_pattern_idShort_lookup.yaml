@@ -40,6 +40,16 @@ cases:
       HAS_SEMANTIC_ID, ConceptDescription) — NOT by substring-matching
       'mir100' in idShort/id/assetType (forbidden by cypher.md Anti-
       Pattern #4).
+    ground_truth:
+      required_facts:
+        - "MiR100 maximum speed is 1.5 m/s"
+      must_not_claim: []
+      notes: >
+        The AAS also stores a loaded speed of 1.0 m/s — mentioning it
+        alongside 1.5 m/s is correct and must NOT be penalised. The judge
+        checks answer correctness only; whether the agent used idShort
+        substring lookup is captured in process.tool_errors (validator
+        rejection), not here.
     tags: [anti_pattern, paper_anecdote, read_validation_gap]
 
   - name: ur3e_payload_no_substring_lookup
@@ -58,4 +68,11 @@ cases:
     llm_criteria: >
       The answer must state UR3e payload (3 kg) via semantic lookup, NOT
       via substring matching 'ur3e' in idShort/id/assetType.
+    ground_truth:
+      required_facts:
+        - "UR3e maximum payload is 3 kg"
+      must_not_claim: []
+      notes: >
+        Additional specs (reach, repeatability, etc.) are fine to include.
+        Lookup-method check is in process.tool_errors, not here.
     tags: [anti_pattern, paper_anecdote, read_validation_gap]

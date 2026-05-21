@@ -26,6 +26,19 @@ cases:
       (emergency stop is safety-relevant), service_type CorrectiveMaintenance,
       and must NOT ask the user for any field values. The response must confirm
       the SRN was created successfully.
+    ground_truth:
+      required_facts:
+        - "A service request was created for MiR100_001 (the transport robot in Hall 4)"
+        - "Priority is High"
+        - "ServiceType is CorrectiveMaintenance"
+        - "Status is Open"
+      must_not_claim:
+        - "The user must provide additional information before the request can be created"
+      notes: >
+        Emergency stop is safety-relevant → High priority. The agent must
+        resolve the spatial reference (transport robot in Hall 4) to MiR100_001
+        autonomously. Confirming creation or reporting an error are both
+        acceptable outcomes; silently skipping the write is not.
     tags: [srn, autonomous, paper_anecdote]
 
   - name: srn_routine_priority
@@ -45,6 +58,17 @@ cases:
       priority Low for a routine inspection and service_type Inspection.
       Status must be Open. Must NOT ask the user for any values —
       all fields are derivable from the context.
+    ground_truth:
+      required_facts:
+        - "A service request was created for UR3e_002"
+        - "ServiceType is Inspection"
+        - "Priority is Low"
+        - "Status is Open"
+      must_not_claim:
+        - "The user must provide additional information before the request can be created"
+      notes: >
+        Routine inspection → Low priority. UR3e in Hall 4 = UR3e_002.
+        All field values must be inferred from context without asking the user.
     tags: [srn, autonomous, priority_inference]
 
   - name: srn_no_element_bypass
@@ -60,4 +84,14 @@ cases:
       The agent must use create_service_request_notification to create the SRN,
       not put_submodel_element or put_submodel. Priority should reflect a motor
       fault (Medium or High). Status must be Open.
+    ground_truth:
+      required_facts:
+        - "A service request was created for CRX10iA_001"
+        - "Status is Open"
+      must_not_claim:
+        - "The user must provide additional information before the request can be created"
+      notes: >
+        Motor fault → Medium or High priority, both acceptable. The tool-path
+        check (create_service_request_notification vs put_submodel_element) is
+        captured in the process signal; the judge checks answer correctness only.
     tags: [srn, bypass_regression]

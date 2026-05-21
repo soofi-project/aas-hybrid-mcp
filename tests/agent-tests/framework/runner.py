@@ -79,8 +79,9 @@ class TResult:
             usage=d.get("usage", {}),
             error=d.get("error"),
         )
-        # Restore raw_stream from final_answer so LLMJudge.grade() works correctly.
-        # extract_final_answer() on a string without </think> blocks returns it unchanged.
+        # Preserve a stream-equivalent string so downstream tooling can re-extract
+        # a final_answer. extract_final_answer() on a string without </think>
+        # blocks returns it unchanged.
         obj.raw_stream = d.get("final_answer", d.get("response", ""))
         return obj
 
@@ -118,6 +119,7 @@ class AgentTester:
             "model": verbose_model,
             "messages": messages,
             "stream": True,
+            "temperature": 0.7,
         }
 
         start = time.perf_counter()

@@ -25,6 +25,17 @@ cases:
       The answer must list MiR100_001 as the transport/mobile robot in Hall 4.
       It must NOT include the hall itself (urn:asset:hall4) or stationary
       manipulators (UR3e_002, CRX10iA_001) as transport robots.
+    ground_truth:
+      required_facts:
+        - "MiR100_001 is in Hall 4 and is the transport / mobile robot"
+      must_not_claim:
+        - "urn:asset:hall4 is a transport robot"
+        - "UR3e_002 is a transport robot in Hall 4"
+        - "CRX10iA_001 is a transport robot in Hall 4"
+      notes: >
+        Hall 4 contains MiR100_001 (mobile transport), UR3e_002 and CRX10iA_001
+        (cobots). Only MiR100_001 qualifies as transport robot. Mentioning the
+        cobots to contrast/exclude them is fine.
     tags: [containment, paper_anecdote]
 
   - name: containment_cobots_hall4
@@ -37,6 +48,16 @@ cases:
       The answer must list both UR3e_002 and CRX10iA_001 as the collaborative
       manipulators in Hall 4. It must NOT include the hall itself
       (urn:asset:hall4) or the mobile robot MiR100_001.
+    ground_truth:
+      required_facts:
+        - "UR3e_002 is a collaborative robot in Hall 4"
+        - "CRX10iA_001 is a collaborative robot in Hall 4"
+      must_not_claim:
+        - "urn:asset:hall4 is a collaborative robot"
+        - "MiR100_001 is a collaborative robot in Hall 4"
+      notes: >
+        Both cobots must appear. MiR100_001 is the mobile robot, not a cobot.
+        Mentioning MiR100_001 to exclude it is fine.
     tags: [containment, paper_anecdote]
 
   - name: containment_devices_hall4
@@ -48,6 +69,16 @@ cases:
     llm_criteria: >
       The answer must list all three robots in Hall 4: MiR100_001, UR3e_002,
       CRX10iA_001. It must NOT include the hall itself (urn:asset:hall4).
+    ground_truth:
+      required_facts:
+        - "MiR100_001 is a device in Hall 4"
+        - "UR3e_002 is a device in Hall 4"
+        - "CRX10iA_001 is a device in Hall 4"
+      must_not_claim:
+        - "urn:asset:hall4 is one of the devices in Hall 4"
+      notes: >
+        All three robots must be listed. The hall's own asset reference
+        (urn:asset:hall4) is the hall's identity, not a contained device.
     tags: [containment, paper_anecdote]
 
   # Ambiguous calibration case — kept tagged so the loader does not reject it.
@@ -64,6 +95,18 @@ cases:
       the physically contained devices, not the hall's own asset
       self-reference. Correct answer lists MiR100_001, UR3e_002, CRX10iA_001
       and does NOT include urn:asset:hall4.
+    ground_truth:
+      required_facts:
+        - "MiR100_001 is in Hall 4"
+        - "UR3e_002 is in Hall 4"
+        - "CRX10iA_001 is in Hall 4"
+      must_not_claim:
+        - "urn:asset:hall4 is one of the assets contained in Hall 4"
+      notes: >
+        'Assets' here means the physically contained devices. urn:asset:hall4
+        is the hall's own asset self-reference (MANAGES_ASSET) — it must NOT
+        appear as a member of the contained-asset list. This is the
+        pre/post-fix calibration case for the pragmatics anecdote.
     tags: [containment, paper_anecdote, ambiguous_calibration]
 
   # Identity regression — the pragmatics fix must not break the legitimate
@@ -77,4 +120,15 @@ cases:
       This question asks for the identity-reading (MANAGES_ASSET): which
       asset does the AAS shell urn:aas:hall4 represent? Correct answer is
       urn:asset:hall4. The robots in the hall are NOT a valid answer here.
+    ground_truth:
+      required_facts:
+        - "The Hall 4 AAS shell represents the asset urn:asset:hall4"
+      must_not_claim:
+        - "MiR100_001 is the asset the Hall 4 shell represents"
+        - "UR3e_002 is the asset the Hall 4 shell represents"
+        - "CRX10iA_001 is the asset the Hall 4 shell represents"
+      notes: >
+        This is the identity / MANAGES_ASSET reading. The correct answer is
+        the hall's own asset ID. Listing the contained robots as the answer
+        is a confusion of containment and identity.
     tags: [identity, regression]

@@ -39,18 +39,19 @@ class RunRecord:
         }
 
 
-def print_table(records: list[RunRecord], *, llm_judge_used: bool) -> None:
+def print_table(records: list[RunRecord]) -> None:
+    """Render the deterministic per-run table (keywords, tool-call violations).
+
+    Semantic correctness is judged separately by ``judge.py``.
+    """
     console = Console()
-    table = Table(title="Agent Test Results", show_lines=False)
+    table = Table(title="Agent Test Results (deterministic checks)", show_lines=False)
     table.add_column("Case", style="cyan", overflow="fold")
     table.add_column("Variant", style="magenta")
     table.add_column("Run", justify="right")
     table.add_column("Dur (s)", justify="right")
     table.add_column("Tools", justify="right")
     table.add_column("Regex", justify="right")
-    if llm_judge_used:
-        table.add_column("LLM", justify="right")
-    table.add_column("Score", justify="right")
     table.add_column("Pass", justify="center")
 
     for r in records:
@@ -63,19 +64,15 @@ def print_table(records: list[RunRecord], *, llm_judge_used: bool) -> None:
             passed = "[red]fail[/red] [yellow]Fb![/yellow]"
         else:
             passed = "[red]fail[/red]"
-        row = [
+        table.add_row(
             r.case.name,
             r.result.variant,
             str(r.repetition + 1),
             f"{r.result.duration_s:.1f}",
             str(len(r.result.tool_calls)),
             f"{ev.regex_score:.2f}",
-        ]
-        if llm_judge_used:
-            row.append(f"{ev.llm_score:.2f}" if ev.llm_score is not None else "—")
-        row.append(f"{ev.score:.2f}")
-        row.append(passed)
-        table.add_row(*row)
+            passed,
+        )
     console.print(table)
 
     violations = [
@@ -238,12 +235,10 @@ def _evaluation_from_dict(d: dict[str, Any]) -> Evaluation:
         score=d.get("score", 0.0),
         passed=d.get("passed", False),
         regex_score=d.get("regex_score", 0.0),
-        llm_score=d.get("llm_score"),
         keyword_hits=d.get("keyword_hits", []),
         keyword_misses=d.get("keyword_misses", []),
         forbidden_hits=d.get("forbidden_hits", []),
         pattern_matched=d.get("pattern_matched"),
-        llm_reasoning=d.get("llm_reasoning"),
         cypher_violations=cypher_violations,
         tool_violations=tool_violations,
         validator_rejections=validator_rejections,

@@ -28,6 +28,17 @@ cases:
       service_type CorrectiveMaintenance in the payload. The response must
       confirm the SRN was created or report a validation error — it must NOT
       silently skip the write.
+    ground_truth:
+      required_facts:
+        - "The agent identified MiR100_001 as the transport robot in Hall 4"
+        - "A write was attempted or a validation error was reported (not silently skipped)"
+      must_not_claim:
+        - "The user must provide additional information before anything can be done"
+      notes: >
+        Variant A uses generic put_submodel (no typed SRN tool). Correct
+        outcomes: write confirmed with Status=Open, OR validation error
+        surfaced. Either is a pass. Silently skipping the write is a fail.
+        Tool-path check (put_submodel vs put_submodel_element) is in process signal.
     tags: [srn, ablation_variant_a, paper_anecdote]
 
   - name: srn_variant_a_routine_priority
@@ -44,6 +55,15 @@ cases:
       should include Status=Open, Priority=Low (routine inspection), and
       service_type=Inspection. The response confirms the write or surfaces an
       error — no silent failure, no asking the user for field values.
+    ground_truth:
+      required_facts:
+        - "The agent identified UR3e_002 as the UR3e in Hall 4"
+        - "A write was attempted or a validation error was reported (not silently skipped)"
+      must_not_claim:
+        - "The user must provide additional information before anything can be done"
+      notes: >
+        Variant A uses generic put_submodel. Write confirmed OR validation
+        error surfaced are both correct outcomes. Silent skip is a fail.
     tags: [srn, ablation_variant_a, priority_inference]
 
   - name: srn_variant_a_no_element_bypass
@@ -59,4 +79,15 @@ cases:
       Request Notification for the CRX10iA_001 motor fault. It must NOT
       construct the submodel piece-by-piece via put_submodel_element calls.
       Priority should reflect a motor fault (Medium or High). Status=Open.
+    ground_truth:
+      required_facts:
+        - "The agent identified CRX10iA_001 as the target asset"
+        - "A write was attempted or a validation error was reported"
+      must_not_claim:
+        - "The user must provide additional information before anything can be done"
+      notes: >
+        Motor fault → Medium or High priority, both acceptable. Correct
+        outcome: write confirmed OR validation error surfaced. Silent skip is
+        a fail. Tool-path check (put_submodel vs put_submodel_element) is in
+        process signal, not judge signal.
     tags: [srn, ablation_variant_a, bypass_regression]

@@ -125,6 +125,7 @@ class PlanReflectAgentRunner:
         system_prompt: str = "",
         default_thinking: bool = False,
         log_dir: Path | None = None,
+        temperature: float | None = None,
     ) -> None:
         self._mcp = mcp_client
         self._llm_base_url = llm_base_url
@@ -132,6 +133,7 @@ class PlanReflectAgentRunner:
         self._system_prompt = system_prompt
         self._default_thinking = default_thinking
         self._log_dir = log_dir
+        self._temperature = temperature
         self._graph_thinking_off = None
         self._graph_thinking_on = None
         self._base_system: str = ""
@@ -184,16 +186,16 @@ class PlanReflectAgentRunner:
         )
 
         self._graph_thinking_off = build_plan_reflect_graph(
-            executor_llm=self._build_llm(enable_thinking=False, with_tools=True),
+            executor_llm=self._build_llm(enable_thinking=False, with_tools=True, temperature=self._temperature),
             structured_llm=self._build_llm(
-                enable_thinking=False, with_tools=False, streaming=False
+                enable_thinking=False, with_tools=False, streaming=False, temperature=self._temperature
             ),
             **common_kwargs,
         )
         self._graph_thinking_on = build_plan_reflect_graph(
-            executor_llm=self._build_llm(enable_thinking=True, with_tools=True),
+            executor_llm=self._build_llm(enable_thinking=True, with_tools=True, temperature=self._temperature),
             structured_llm=self._build_llm(
-                enable_thinking=True, with_tools=False, streaming=False
+                enable_thinking=True, with_tools=False, streaming=False, temperature=self._temperature
             ),
             **common_kwargs,
         )
@@ -221,6 +223,7 @@ class PlanReflectAgentRunner:
         with_tools: bool = True,
         streaming: bool = True,
         extra_body: dict | None = None,
+        temperature: float | None = None,
     ) -> ChatOpenAI:
         """Construct a ChatOpenAI bound for vLLM thinking when applicable.
 
@@ -256,7 +259,7 @@ class PlanReflectAgentRunner:
             extra_body = extra_body  # use caller-provided or None
             llm_kwargs = {}
 
-        return ChatOpenAI(
+        llm_init: dict = dict(
             base_url=self._llm_base_url,
             model=self._llm_model,
             streaming=streaming,
@@ -265,6 +268,9 @@ class PlanReflectAgentRunner:
             extra_body=extra_body,
             **llm_kwargs,
         )
+        if temperature is not None:
+            llm_init["temperature"] = temperature
+        return ChatOpenAI(**llm_init)
 
     def _select_graph(self, reasoning_effort: str | None):
         thinking = _thinking_from_effort(reasoning_effort, self._default_thinking)
