@@ -250,9 +250,9 @@ class PlanReflectAgentRunner:
                 "LLM backend: %s (vLLM, thinking=%s [default_thinking=%s])",
                 self._llm_base_url, use_thinking, self._default_thinking,
             )
-            model_kwargs["top_k"] = 20  # vLLM-specific; Qwen3.5 non-thinking default
             extra_body = {
-                "chat_template_kwargs": {"enable_thinking": use_thinking}
+                "chat_template_kwargs": {"enable_thinking": use_thinking},
+                "top_k": 20,  # vLLM-specific; not a standard OpenAI param
             }
             llm_kwargs = {"http_client": _build_http_client()}
         else:

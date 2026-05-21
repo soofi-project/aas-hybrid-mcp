@@ -71,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repetitions", type=int, default=1)
     parser.add_argument("--export", type=Path, default=None)
     parser.add_argument("--agent-url", default=None)
+    parser.add_argument("--temperature", type=float, default=None,
+                        help="Sampling temperature passed to the agent (overrides config.yaml)")
     parser.add_argument("--config", type=Path, default=HERE / "config.yaml")
     parser.add_argument("--strict-validation", action="store_true",
                         help="Reject ambiguous queries instead of warning")
@@ -88,6 +90,7 @@ def main(argv: list[str] | None = None) -> int:
         "aas-agent:react", "aas-agent:plan", "aas-agent:crag", "aas-agent:reflexion",
     ])
     timeout = float(cfg.get("request_timeout_s", 300))
+    temperature = args.temperature if args.temperature is not None else float(cfg.get("temperature", 0.7))
 
     include_tags = set(args.include_tags) if args.include_tags else None
     exclude_tags = set(args.exclude_tags) if args.exclude_tags is not None else None
@@ -103,8 +106,8 @@ def main(argv: list[str] | None = None) -> int:
         console.print("[red]no cases loaded[/red]")
         return 1
 
-    tester = AgentTester(agent_url=agent_url, timeout_s=timeout)
-    console.print(f"[dim]agent URL: {agent_url}[/dim]")
+    tester = AgentTester(agent_url=agent_url, timeout_s=timeout, temperature=temperature)
+    console.print(f"[dim]agent URL: {agent_url}  temperature: {temperature}[/dim]")
 
     ts = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H-%M-%SZ")
     incremental_path: Path = args.export or (HERE / "results" / f"run_{ts}.json")

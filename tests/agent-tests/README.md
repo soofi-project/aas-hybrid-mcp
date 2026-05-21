@@ -88,20 +88,33 @@ automatisch `~/.env.secrets` für den Judge-API-Key.
 # Direkt (blockierend):
 cd tests/agent-tests
 source .venv/bin/activate
-./run_all.sh qwen35-27b
+./run_all.sh qwen35-27b 0.7
+# → results/qwen35-27b_bench_b_N10_T07.json, ..._T07.json, …
+
+# Greedy decoding (empfohlen für MoE-Modelle und reproduzierbare Skalierungs-Studie):
+./run_all.sh qwen35-122b 0.0
+# → results/qwen35-122b_bench_b_N10_T00.json, …
 
 # Async über SSH mit nohup (Session kann danach geschlossen werden):
-cd tests/agent-tests
-source .venv/bin/activate
-nohup ./run_all.sh qwen35-27b > logs/run_all_qwen35-27b.out 2>&1 &
+nohup ./run_all.sh qwen35-27b 0.7 > logs/run_all_qwen35-27b_T07.out 2>&1 &
 echo $!   # PID merken
 
 # Fortschritt verfolgen:
-tail -f logs/run_all_qwen35-27b.out
+tail -f logs/run_all_qwen35-27b_T07.out
 
 # Abbrechen:
 kill <PID>
 ```
+
+> **Temperature im Dateinamen:** Das Skript kodiert die Temperature als Suffix
+> `_T<digits>` im JSON-Dateinamen (`0.7` → `_T07`, `0.0` → `_T00`, `0.1` → `_T01`).
+> Runs bei verschiedenen Temperatures koexistieren so im `results/`-Verzeichnis ohne
+> sich zu überschreiben, und `judge.py` / `analyze_results.py` greifen immer auf den
+> richtigen Dateinamen zu.
+>
+> Für die Skalierungs-Studie (alle Modelle vergleichbar) empfiehlt sich `0.0`
+> (greedy decoding) — reduziert Sampling-Rauschen und stellt sicher dass MoE-Modelle
+> wie `qwen35-122b` zuverlässig Function-Calling nutzen.
 
 ### Prerequisites
 
@@ -141,6 +154,10 @@ Options:
   --repetitions N        Repetitions per case × variant (default: 1)
   --export PATH          Write full results to JSON (default: results/run_<ts>.json)
   --agent-url URL        Override agent URL (default from config)
+  --temperature T        Sampling temperature passed to the agent (overrides
+                         config.yaml; default: 0.7). Use 0.0 for greedy decoding —
+                         recommended for MoE models (e.g. qwen35-122b) where T=0.7
+                         can suppress function-calling entirely.
   --include-tags TAGS    Only run cases with at least one matching tag
   --exclude-tags TAGS    Skip cases with any matching tag (default: requires_fixture)
 ```

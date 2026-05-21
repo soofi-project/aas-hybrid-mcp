@@ -89,9 +89,10 @@ class TResult:
 class AgentTester:
     """Async HTTP client that runs queries against the agent's /v1/chat/completions endpoint."""
 
-    def __init__(self, agent_url: str, timeout_s: float = 300.0) -> None:
+    def __init__(self, agent_url: str, timeout_s: float = 300.0, temperature: float = 0.7) -> None:
         self._base = agent_url.rstrip("/")
         self._timeout = timeout_s
+        self._temperature = temperature
 
     async def run_query(
         self,
@@ -119,7 +120,7 @@ class AgentTester:
             "model": verbose_model,
             "messages": messages,
             "stream": True,
-            "temperature": 0.7,
+            "temperature": self._temperature,
         }
 
         start = time.perf_counter()

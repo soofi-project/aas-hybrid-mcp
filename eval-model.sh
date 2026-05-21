@@ -7,8 +7,9 @@
 #   ./eval-model.sh qwen35-397b   # Cortecs — set OPENAI_API_KEY in ~/.env.secrets
 #
 # Available slugs:
-#   qwen35-08b   qwen35-2b    qwen35-4b    qwen35-9b    qwen35-27b    qwen35-122b    qwen35-397b (Cortecs)
-#   qwen36-27b   qwen36-35b
+#   qwen35-08b   qwen35-2b    qwen35-4b    qwen35-9b    qwen35-27b    qwen35-35b (MoE, ~3B active)
+#   qwen35-122b (MoE, ~10B active)    qwen35-397b (Cortecs)
+#   qwen36-27b   qwen36-35b (MoE, ~22B active)
 #
 # How it works:
 #   Copies .env.model.<slug> to .env.model, then runs docker compose with
@@ -32,7 +33,7 @@ if [ ! -f "idta_templates/README.md" ]; then
     git submodule update --init idta_templates
 fi
 
-SLUGS="qwen35-08b qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-122b qwen35-397b qwen36-27b qwen36-35b"
+SLUGS="qwen35-08b qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-35b qwen35-122b qwen35-397b qwen36-27b qwen36-35b"
 
 MODEL=${1:-}
 if [ -z "$MODEL" ]; then
