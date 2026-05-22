@@ -1,0 +1,1850 @@
+{
+  "cases": [
+    "cases/containment_hall4.yaml"
+  ],
+  "judge_model": "gpt-5.4-mini",
+  "judge_base_url": "https://api.openai.com",
+  "summary": {
+    "totals": {
+      "n": 50,
+      "correct": 43,
+      "correct_rate": 0.86,
+      "manuals_first": 41,
+      "manuals_first_rate": 0.82,
+      "tool_error_free": 26,
+      "tool_error_free_rate": 0.52,
+      "all_good": 21,
+      "all_good_rate": 0.42
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "containment_ambiguous_assets_hall4",
+        "n": 10,
+        "correct": 7,
+        "correct_rate": 0.7,
+        "manuals_first": 10,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 5,
+        "tool_error_free_rate": 0.5,
+        "all_good": 5,
+        "all_good_rate": 0.5
+      },
+      {
+        "variant": "react",
+        "case": "containment_cobots_hall4",
+        "n": 10,
+        "correct": 9,
+        "correct_rate": 0.9,
+        "manuals_first": 10,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 6,
+        "tool_error_free_rate": 0.6,
+        "all_good": 5,
+        "all_good_rate": 0.5
+      },
+      {
+        "variant": "react",
+        "case": "containment_devices_hall4",
+        "n": 10,
+        "correct": 9,
+        "correct_rate": 0.9,
+        "manuals_first": 10,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 7,
+        "tool_error_free_rate": 0.7,
+        "all_good": 6,
+        "all_good_rate": 0.6
+      },
+      {
+        "variant": "react",
+        "case": "containment_transport_hall4",
+        "n": 10,
+        "correct": 8,
+        "correct_rate": 0.8,
+        "manuals_first": 10,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 4,
+        "tool_error_free_rate": 0.4,
+        "all_good": 4,
+        "all_good_rate": 0.4
+      },
+      {
+        "variant": "react",
+        "case": "identity_hall4_regression",
+        "n": 10,
+        "correct": 10,
+        "correct_rate": 1.0,
+        "manuals_first": 1,
+        "manuals_first_rate": 0.1,
+        "tool_error_free": 4,
+        "tool_error_free_rate": 0.4,
+        "all_good": 1,
+        "all_good_rate": 0.1
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 50,
+        "correct": 43,
+        "correct_rate": 0.86,
+        "manuals_first": 41,
+        "manuals_first_rate": 0.82,
+        "tool_error_free": 26,
+        "tool_error_free_rate": 0.52,
+        "all_good": 21,
+        "all_good_rate": 0.42
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "CRX10iA_Type and UR3e_Type have CapabilityDescription and TechnicalData submodels, but not TechnicalDataAGV. Only MiR types have TechnicalDataAGV, confirming they are the transport robots.\n\nBased on my analysis:\n\n**According to the graph data**, Hall 4 (AAS id: `urn:aas:hall4`) contains the following assets via its HierarchicalStructures submodel:\n- CRX10iA_001 (industrial arm robot)\n- UR3e_002 (collaborative robot arm)\n- MiR100_001 (transport robot / AGV)\n\nAmong these, **only MiR100_001 is a transport robot**. This is confirmed because:\n1. MiR100_001 is derived from MiR100_Type\n2. MiR100_Type has a TechnicalDataAGV submodel (AGV = Automated Guided Vehicle)\n3. The TechnicalDataAGV template is specifically for \"technical data for AGV in intralogistics\"\n\n**Answer:** The transport robot in Hall 4 is **MiR100_001** (AAS id: `urn:aas:mir100:001`, globalAssetId: `urn:asset:mir100:001`).",
+      "duration_s": 72.502,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the transport robot in Hall 4; this is fully supported and no forbidden transport-robot claims are asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 15,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on the graph data, I can now answer the question:\n\n**According to the graph data**, the assets located in Hall 4 are:\n- CRX10iA_001 (capabilities: Assembly, Handling)\n- UR3e_002 (capability: Handling)\n- MiR100_001 (capability: Transport)\n\nAmong these, only **MiR100_001** is a transport robot. This is confirmed by:\n1. Its type shell (MiR100_Type) has a \"TechnicalDataAGV\" submodel (AGV = Automated Guided Vehicle)\n2. Its CapabilityDescription contains a \"Transport\" capability\n\nThe other two assets (CRX10iA_001 and UR3e_002) are handling/assembly robots (likely robotic arms), not transport robots.\n\n**Answer:** The only transport robot in Hall 4 is **MiR100_001** (MiR100 mobile robot).",
+      "duration_s": 37.74,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 only; all required facts are supported and no must-not-claim is positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on the graph data, I found that **Hall 4** contains one transport robot:\n\n**MiR100_001** (AAS ID: `urn:aas:mir100:001`, Asset ID: `urn:asset:mir100:001`)\n\nThe MiR100 is a Mobile Industrial Robot (AGV - Automated Guided Vehicle), which is a transport robot used for logistics and material handling. This is confirmed by the fact that its type shell (`MiR100_Type`) has the \"Technical Data for Automated Guided Vehicles\" submodel template.\n\nAccording to the graph data, Hall 4 is described as \"Production Hall — Logistics / Transport\", which aligns with having transport robots deployed there.",
+      "duration_s": 45.371,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 in Hall 4 as the transport robot; all required facts are supported and no forbidden robot is positively asserted as transport.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on the graph data, I can identify the transport robots in the system. The AAS environment contains:\n\n**Transport robots (AGVs - Automated Guided Vehicles):**\n- **MiR100_001** (urn:aas:mir100:001)\n- **MiR250_001** (urn:aas:mir250:001)\n- **MiR250_002** (urn:aas:mir250:002)\n\nThese are MiR (Mobile Industrial Robots) transport robots - the MiR100 and MiR250 models are common autonomous mobile robots used for intralogistics.\n\nHowever, the graph does **not** contain location information linking these robots to specific halls. The robots have:\n- Nameplate submodels (with technical identification data)\n- Service Request Notification submodels (for maintenance/fault reporting)\n\nBut no **AssetLocation** submodel that would indicate which hall they are currently assigned to or located in.\n\n**Hall4** exists as a separate AAS with FacilityInformation (12,000 m² area, 10 kW power connection, primary use information), but there's no structural relationship in the graph connecting the transport robots to Hall4.\n\nTo answer your question definitively, I would need either:\n1. An AssetLocation submodel on the robot AAS instances showing their current location\n2. A containment relationship (e.g., via Entity nodes in a container AAS) linking robots to Hall4\n3. A DERIVED_FROM relationship showing instance-to-type derivation with location context\n\nWould you like me to search the PDF documentation of these robots for any location-related information, or do you have additional context about how location tracking is implemented in your system?",
+      "duration_s": 45.857,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: MiR100_001, MiR250_001, MiR250_002; it misses the required Hall 4 location for MiR100_001 and positively asserts unsupported extra robots.",
+        "missing_facts": [
+          "MiR100_001 is in Hall 4 and is the transport / mobile robot"
+        ],
+        "wrong_claims": [
+          "MiR250_001 is a transport robot in Hall 4",
+          "MiR250_002 is a transport robot in Hall 4"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 6,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 8,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort =~"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on the graph data, **Hall 4** contains the following assets:\n\n| Asset | Type | AAS ID |\n|-------|------|--------|\n| **MiR100_001** | Transport robot (AGV) | `urn:aas:mir100:001` |\n| **CRX10iA_001** | Robot (likely industrial arm) | `urn:aas:crx10ia:001` |\n| **UR3e_002** | Robot (likely industrial arm) | `urn:aas:ur3e:002` |\n\n**Transport robots in Hall 4:**\n- **MiR100_001** - This is a MiR100 autonomous mobile robot (transport robot/AGV)\n\nThe other two assets (CRX10iA_001 and UR3e_002) appear to be industrial robot arms rather than transport robots, based on their naming conventions (CRX and UR3e are typical robot arm model names from manufacturers like Kawasaki and Universal Robots).\n\nAccording to the graph data, Hall 4 has an area of 12,000 (square meters) and a power connection capacity of 10.",
+      "duration_s": 43.343,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list includes MiR100_001, CRX10iA_001, and UR3e_002 as Hall 4 assets, but only MiR100_001 is a transport robot; the answer also positively labels CRX10iA_001 and UR3e_002 as robots in Hall 4, which is not the required transport-robot answer.",
+        "missing_facts": [
+          "MiR100_001 is in Hall 4 and is the transport/mobile robot"
+        ],
+        "wrong_claims": [
+          "CRX10iA_001 is a robot in Hall 4",
+          "UR3e_002 is a robot in Hall 4"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 11,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sc.id CONTAINS\"},{\"rule\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on my analysis of the graph data:\n\n**According to the graph data**, Hall 4 contains the following assets:\n- CRX10iA_001 (type: CRX10iA_Type) - has Handling and Assembly capabilities\n- UR3e_002 (type: UR3e_Type) - has Handling capability\n- **MiR100_001** (type: MiR100_Type) - has **Transport** capability\n\nThe only transport robot in Hall 4 is:\n- **MiR100_001** (AAS ID: `urn:aas:mir100:001`, Asset ID: `urn:asset:mir100:001`)\n\nThis is confirmed by the CapabilityDescription submodel which shows that MiR100_Type has a \"Transport\" capability, while the other robots (CRX10iA and UR3e) have \"Handling\" and \"Assembly\" capabilities but not \"Transport\".",
+      "duration_s": 41.872,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 is the only transport robot in Hall 4; this supports the required fact and makes no forbidden positive claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 9,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"assetAas.idSho"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on the graph data, I can now answer the question:\n\n**According to the graph data**, there is **one transport robot in Hall 4**:\n\n- **MiR100_001** (globalAssetId: `urn:asset:mir100:001`) - This is a Mobile Industrial Robot (AGV - Automated Guided Vehicle)\n\nThe other transport robots (MiR250_001 and MiR250_002) are located in Hall 3, not Hall 4.",
+      "duration_s": 29.99,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 in Hall 4 as the transport/mobile robot; all required facts are supported and no must-not-claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on my analysis:\n\n**According to the graph data**, Hall 4 contains the following assets in its HierarchicalStructures submodel:\n- CRX10iA_001\n- UR3e_002\n- MiR100_001\n\nAmong these, **MiR100_001** is a transport robot. This is confirmed because:\n1. MiR100_001 is an instance shell derived from MiR100_Type\n2. MiR100_Type has the \"Technical Data for Automated Guided Vehicles\" (technicaldataagv) submodel template, which identifies it as an AGV (Automated Guided Vehicle) - a transport robot\n\n**Answer:** The transport robot in Hall 4 is **MiR100_001** (urn:aas:mir100:001).",
+      "duration_s": 37.727,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001; all required facts are supported and no must-not-claim is positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Based on my investigation, I can now answer the question.\n\n**According to the graph data**, there is **1 transport robot in Hall 4**:\n\n- **MiR100_001** (AAS ID: `urn:aas:mir100:001`, Asset ID: `urn:asset:mir100:001`)\n\nThis robot is an Automated Guided Vehicle (AGV) - a MiR100 model. It is listed in the HierarchicalStructures submodel of Hall 4, which defines the assets located in that hall.\n\nThe other entities in Hall 4 (CRX10iA_001 and UR3e_002) are industrial arm robots, not transport robots. The other transport robots (MiR250_001 and MiR250_002) are located in different halls.",
+      "duration_s": 35.355,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001; it is correctly identified as the only transport robot in Hall 4.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_transport_hall4",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which transport robots are in Hall 4?",
+      "final_answer": "Now I have a clear picture:\n\n**Hall 4 contains:**\n- MiR100_001 (transport robot)\n- UR3e_002 (collaborative robot arm - not a transport robot)\n- CRX10iA_001 (collaborative robot arm - not a transport robot)\n\n**Hall 3 contains:**\n- MiR250_001 (transport robot)\n- MiR250_002 (transport robot)\n- UR3e_001 (collaborative robot arm)\n- UR20_001 (collaborative robot arm)\n\nMiR (Mobile Industrial Robots) are autonomous mobile robots used for material transport. UR (Universal Robots) and CRX (FANUC CRX) are collaborative robot arms used for manipulation tasks, not transport.\n\n**Answer:** According to the graph data, the transport robot in Hall 4 is **MiR100_001** (globalAssetId: urn:asset:mir100:001). This is a Mobile Industrial Robot (MiR) which is an autonomous mobile robot used for material transport.",
+      "duration_s": 35.899,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list is MiR100_001 as the transport robot in Hall 4, which is fully supported and no must-not-claim is positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 6,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Based on the graph data, Hall 4 contains the following assets:\n- EntryNode (the hall itself)\n- CRX10iA_001\n- UR3e_002\n- MiR100_001\n\nFrom the TechnicalData submodels, I confirmed that:\n- **CRX10iA_Type** has `CollaborativeOperation: \"true\"` \n- **UR3e_Type** has `CollaborativeOperation: \"true\"`\n- **MiR100_Type** does not have this property (it's an autonomous mobile robot for transport)\n\n**According to the graph data, the collaborative robots in Hall 4 are:**\n\n1. **CRX10iA_001** (globalAssetId: `urn:asset:crx10ia:001`) - FANUC CRX-10iA collaborative robot\n2. **UR3e_002** (globalAssetId: `urn:asset:ur3e:002`) - Universal Robots UR3e collaborative robot\n\nThe MiR100_001 in Hall 4 is an autonomous mobile robot (AMR) for transport, not a collaborative robot arm.",
+      "duration_s": 39.162,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002; verdict: incorrect because it also positively lists MiR100_001 as being in Hall 4, which is a must-not-claim.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "MiR100_001 is listed as an asset in Hall 4 in the answer's core list/supporting prose."
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Based on the graph data, **there are 2 collaborative robots in Hall 4**:\n\n1. **CRX10iA_001** (AAS ID: `urn:aas:crx10ia:001`)\n   - FANUC collaborative robot\n   - Serial number: CRX10IA-2024-001\n   - Payload: 10 kg\n   - Collaborative operation: confirmed (ISO 10218-1, ISO/TS 15066 compliant)\n\n2. **UR3e_002** (AAS ID: `urn:aas:ur3e:002`)\n   - Universal Robots collaborative robot\n   - Serial number: UR3E-2025-002\n   - Payload: 3 kg\n   - Collaborative operation: confirmed (EN ISO 10218-1 compliant)\n\nNote: Hall 4 also contains a **MiR100_001**, but this is an autonomous mobile robot (AGV) for transport, not a collaborative robot.",
+      "duration_s": 67.108,
+      "tool_call_count": 18,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002 are both identified as collaborative robots in Hall 4, with no forbidden entity positively asserted as a cobot.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 11,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"p.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "UR20 also has `CollaborativeOperation` = `true`, confirming it's a collaborative robot.\n\n**Summary:**\n\nAccording to the graph data, the collaborative robots in **Hall 4** are:\n\n1. **CRX10iA_001** - FANUC collaborative robot (CollaborativeOperation: true, SafetyStandard: ISO 10218-1, ISO/TS 15066)\n2. **UR3e_002** - Universal Robots collaborative robot (CollaborativeOperation: true, SafetyStandard: EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1)\n\nNote: MiR100_001 is also in Hall 4 but it's an autonomous mobile robot (AMR), not a collaborative robot.",
+      "duration_s": 67.759,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002 are identified as collaborative robots in Hall 4; all required facts are supported and no forbidden entity is positively asserted as a cobot.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Now I have all collaborative robot instances in the system:\n- CRX10iA_001\n- UR20_001\n- UR3e_001\n- UR3e_002\n\nAnd from earlier, Hall4's HierarchicalStructures contains:\n- CRX10iA_001\n- UR3e_002\n- MiR100_001 (not a collaborative robot)\n\nSo the collaborative robots in Hall4 are:\n- **CRX10iA_001**\n- **UR3e_002**\n\nLet me provide the answer to the user.\n\nAccording to the graph data, the collaborative robots in Hall 4 are:\n\n1. **CRX10iA_001** - A FANUC collaborative robot (derived from CRX10iA_Type, which has `CollaborativeOperation = true`)\n2. **UR3e_002** - A Universal Robots collaborative robot (derived from UR3e_Type, which has `CollaborativeOperation = true`)\n\nThese were identified by:\n- Checking the HierarchicalStructures submodel of Hall4, which lists contained assets\n- Verifying each asset's type shell has the `CollaborativeOperation` property set to `true` in their TechnicalData submodel\n\nNote: MiR100_001 is also located in Hall4 but is an autonomous mobile robot (AGV) for transport, not a collaborative robot.",
+      "duration_s": 65.886,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002; both required Hall 4 cobots are supported and no forbidden entity is positively asserted as a cobot.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 4,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 4,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(sc.id) CONTA"
+          },
+          {
+            "index": 14,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"p.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Based on the graph data, here are the **collaborative robots in Hall 4**:\n\n1. **CRX10iA_001** - A collaborative robot (FANUC CRX series) for pick-and-place and assembly tasks. According to the CapabilityDescription, it supports \"collaborative pick-and-place without safety fence\" with a payload up to 10 kg and reach of 1249 mm.\n\n2. **UR3e_002** - A collaborative robot (Universal Robots UR3e) for pick-and-place and light handling tasks. It has a payload of 3 kg and reach of 500 mm, designed for collaborative operation.\n\n**Note:** MiR100_001 is also in Hall 4, but it is a mobile robot (autonomous guided vehicle) for transport tasks, not a collaborative robot arm.",
+      "duration_s": 80.145,
+      "tool_call_count": 13,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002; both required cobots are supported and no forbidden entity is positively asserted as a cobot.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "No CapabilityDescription submodels found. Based on the asset names and common industry knowledge:\n\n- **CRX10iA** (Canon) and **UR3e** (Universal Robots) are well-known collaborative robot (cobot) models\n- **MiR100** (Mobile Industrial Robots) is a mobile robot platform, not a collaborative robot arm\n\nAccording to the graph data, Hall 4 contains three assets:\n1. CRX10iA_001 - a collaborative robot\n2. UR3e_002 - a collaborative robot  \n3. MiR100_001 - a mobile robot (not a collaborative robot)\n\n**Answer:**\n\nAccording to the graph data, Hall 4 contains **2 collaborative robots**:\n\n1. **CRX10iA_001** (AAS ID: `urn:aas:crx10ia:001`, Asset ID: `urn:asset:crx10ia:001`)\n2. **UR3e_002** (AAS ID: `urn:aas:ur3e:002`, Asset ID: `urn:asset:ur3e:002`)\n\nHall 4 also contains a MiR100 mobile robot (`MiR100_001`), but this is an autonomous mobile robot platform, not a collaborative robot arm.",
+      "duration_s": 38.579,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002; both required facts are supported and no must-not-claim is positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Based on my analysis:\n\n**Assets in Hall 4:**\n- CRX10iA_001\n- UR3e_002  \n- MiR100_001\n\n**Determining which are collaborative robots:**\n\n1. **CRX10iA_001**: The type shell's URIOfTheProduct explicitly points to `.../collaborative-robots/crx-10ia` - This IS a collaborative robot (FANUC CRX series)\n\n2. **UR3e_002**: Universal Robots UR3e is a well-known collaborative robot (cobots) - This IS a collaborative robot\n\n3. **MiR100_001**: Mobile Industrial Robot (MiR) is an autonomous mobile robot (AMR/AGV), not a collaborative robot arm - This is NOT a collaborative robot\n\n**Answer:**\n\nAccording to the graph data, the collaborative robots in Hall 4 are:\n\n1. **CRX10iA_001** (FANUC CRX-10iA collaborative robot)\n2. **UR3e_002** (Universal Robots UR3e collaborative robot)\n\nThe MiR100_001 in Hall 4 is a mobile robot (AGV), not a collaborative robot arm.",
+      "duration_s": 55.399,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002; both required cobots are supported and no forbidden entity is positively asserted as a cobot.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Now I have the full picture. The collaborative robot types are:\n- UR3e_Type, UR20_Type (Universal Robots - collaborative)\n- CRX10iA_Type (Fanuc - collaborative)\n\nAnd MiR100_Type, MiR250_Type are mobile robots (AGV), not collaborative robot arms.\n\nFrom Hall 4's HierarchicalStructures, the assets are:\n- CRX10iA_001 (collaborative robot)\n- UR3e_002 (collaborative robot)\n- MiR100_001 (mobile robot - NOT collaborative)\n\n**Answer:**\n\nAccording to the graph data, the collaborative robots in Hall 4 are:\n\n1. **CRX10iA_001** (Fanuc CRX-10iA collaborative robot) - capabilities: Handling, Assembly\n2. **UR3e_002** (Universal Robots UR3e collaborative robot) - capability: Handling\n\nNote: MiR100_001 is also located in Hall 4, but it is a mobile robot (AGV) for transport tasks, not a collaborative robot arm.",
+      "duration_s": 71.476,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002 are both supported as collaborative robots in Hall 4, with MiR100_001 only mentioned as non-collaborative.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "Now I have the complete picture:\n\n**Assets in Hall 4:**\n1. **CRX10iA_001** → derived from CRX10iA_Type (CollaborativeOperation = true) → **Collaborative Robot**\n2. **UR3e_002** → derived from UR3e_Type (CollaborativeOperation = true) → **Collaborative Robot**\n3. **MiR100_001** → derived from MiR100_Type (TechnicalDataAGV submodel, not collaborative robot) → **AGV (Automated Guided Vehicle), NOT a collaborative robot**\n\nSo the collaborative robots in Hall 4 are:\n- **CRX10iA_001**\n- **UR3e_002**\n\nLet me provide the answer to the user.\n\n---\n\nAccording to the graph data, **Hall 4** contains the following **collaborative robots**:\n\n1. **CRX10iA_001** (derived from CRX10iA_Type) - CollaborativeOperation: true\n2. **UR3e_002** (derived from UR3e_Type) - CollaborativeOperation: true\n\nNote: Hall 4 also contains **MiR100_001**, but this is an Automated Guided Vehicle (AGV), not a collaborative robot.",
+      "duration_s": 51.237,
+      "tool_call_count": 15,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list includes CRX10iA_001 and UR3e_002 as collaborative robots in Hall 4, with MiR100_001 only excluded as non-cobot.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 4,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_cobots_hall4",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which collaborative robots are in Hall 4?",
+      "final_answer": "So Hall 4 contains three assets: CRX10iA_001, UR3e_002, and MiR100_001.\n\nNow I need to determine which of these are **collaborative robots**:\n\n1. **CRX10iA_001** - The URI shows \"collaborative-robots/crx-10ia\" from FANUC - this IS a collaborative robot\n2. **UR3e_002** - UR3e is from Universal Robots, a well-known collaborative robot manufacturer - this IS a collaborative robot  \n3. **MiR100_001** - MiR100 is an autonomous mobile robot (AMR/AGV) from Mobile Industrial Robots - this is NOT a collaborative robot arm (it's a mobile platform)\n\nBased on the graph data:\n- CRX10iA_001 has capabilities: Assembly, Handling (collaborative robot arm)\n- UR3e_002 has capability: Handling (collaborative robot arm)\n- MiR100_001 has capability: Transport (autonomous mobile robot, not a collaborative robot arm)\n\n**Answer:** According to the graph data, the collaborative robots in Hall 4 are:\n- **CRX10iA_001** (FANUC CRX-10iA collaborative robot)\n- **UR3e_002** (Universal Robots UR3e collaborative robot)\n\nMiR100_001 is also in Hall 4 but it's an autonomous mobile robot (AMR) for transport, not a collaborative robot arm.",
+      "duration_s": 50.114,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001 and UR3e_002; both required cobots are supported and no must-not-claim is positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(p.idShort) C"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "I found the devices in Hall 4. According to the graph data, the Hall4 AAS contains a HierarchicalStructures submodel with Entity nodes that represent the following assets:\n\n1. **CRX10iA_001** (globalAssetId: urn:asset:crx10ia:001) - Instance\n2. **UR3e_002** (globalAssetId: urn:asset:ur3e:002) - Instance  \n3. **MiR100_001** (globalAssetId: urn:asset:mir100:001) - Instance\n\n(Note: EntryNode represents the hall4 asset itself, not a device within it)\n\n**According to the graph data**, the devices located in Hall 4 are:\n- **CRX10iA_001** - a CRX10iA robot\n- **UR3e_002** - a UR3e robot\n- **MiR100_001** - a MiR100 autonomous mobile robot",
+      "duration_s": 56.494,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as devices in Hall 4, with no forbidden hall asset claimed as a device.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(p.idShort) C"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "According to the graph data, **Hall 4** contains the following devices:\n\n1. **CRX10iA_001** (Asset ID: `urn:asset:crx10ia:001`)\n2. **UR3e_002** (Asset ID: `urn:asset:ur3e:002`)\n3. **MiR100_001** (Asset ID: `urn:asset:mir100:001`)\n\nThese devices are registered in the HierarchicalStructures submodel of Hall 4's Asset Administration Shell, which tracks the assets contained within the facility.",
+      "duration_s": 32.342,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all listed as devices in Hall 4, with no forbidden device asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "I found the devices in Hall 4. According to the graph data, Hall 4 contains the following devices (represented as Entity elements in the HierarchicalStructures submodel):\n\n1. **CRX10iA_001** - Asset ID: `urn:asset:crx10ia:001`\n2. **UR3e_002** - Asset ID: `urn:asset:ur3e:002`\n3. **MiR100_001** - Asset ID: `urn:asset:mir100:001`\n\nThese are all SelfManagedEntity types, representing physical assets located in Hall 4. The EntryNode represents the hall itself.",
+      "duration_s": 12.923,
+      "tool_call_count": 4,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001; all required devices are supported and no forbidden device is asserted as a contained device.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "I found the devices in Hall 4. According to the HierarchicalStructures submodel of Hall4, there are 4 devices:\n\n1. **CRX10iA_001** - a robot (CRX10iA series)\n2. **UR3e_002** - a robot (UR3e series)\n3. **MiR100_001** - an autonomous mobile robot (MiR100 series)\n4. **EntryNode** - this appears to be the root node of the hierarchy structure, not an actual device\n\nSo the actual devices in Hall 4 are:\n- **CRX10iA_001**\n- **UR3e_002**\n- **MiR100_001**\n\nAccording to the graph data, Hall 4 contains these three devices as defined in its HierarchicalStructures submodel.",
+      "duration_s": 36.008,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001; all required devices are supported and urn:asset:hall4 is not positively asserted as a device.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "Based on the graph data, I found the devices located in Hall 4:\n\n**Devices in Hall 4:**\n\n1. **CRX10iA_001** (Asset ID: `urn:asset:crx10ia:001`) - AAS: `urn:aas:crx10ia:001`\n2. **UR3e_002** (Asset ID: `urn:asset:ur3e:002`) - AAS: `urn:aas:ur3e:002`\n3. **MiR100_001** (Asset ID: `urn:asset:mir100:001`) - AAS: `urn:aas:mir100:001`\n\nAll three devices are instance assets. The information comes from the HierarchicalStructures submodel of Hall 4 (`urn:submodel:hall4:hierarchicalstructures`), which uses Entity nodes with REPRESENTS_ASSET relationships to link to the actual assets.",
+      "duration_s": 43.039,
+      "tool_call_count": 13,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as devices in Hall 4, with no forbidden device asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "I found the devices in Hall 4. According to the graph data, Hall 4 contains the following devices (represented by Entity nodes in the HierarchicalStructures submodel):\n\n1. **CRX10iA_001** - Asset ID: `urn:asset:crx10ia:001` (Instance)\n2. **UR3e_002** - Asset ID: `urn:asset:ur3e:002` (Instance)\n3. **MiR100_001** - Asset ID: `urn:asset:mir100:001` (Instance)\n\nThe \"EntryNode\" appears to be a structural element representing the hall itself (Asset ID: `urn:asset:hall4`).\n\n**Summary (according to the graph data):**\nHall 4 contains 3 devices:\n- CRX10iA_001 (a robot)\n- UR3e_002 (a robot)\n- MiR100_001 (an AGV - Automated Guided Vehicle)",
+      "duration_s": 55.846,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as devices in Hall 4, with no forbidden device positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sc.id CONTAINS\"},{\"rule\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "The pattern is confirmed. Hall3 contains different devices (UR3e_001, MiR250_002, MiR250_001, UR20_001), while Hall4 contains the devices I found earlier.\n\n**Answer:**\n\nAccording to the graph data, the following devices are located in **Hall 4**:\n\n1. **CRX10iA_001** (robot)\n2. **UR3e_002** (robot)\n3. **MiR100_001** (autonomous mobile robot)\n\nThis information comes from the HierarchicalStructures submodel of the Hall4 Asset Administration Shell, which defines the containment relationship between the hall and its devices.",
+      "duration_s": 47.59,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as devices in Hall 4, with no forbidden device asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "Based on the graph data, **Hall 4 contains 3 devices**:\n\n1. **CRX10iA_001** (urn:aas:crx10ia:001) - Instance asset\n2. **UR3e_002** (urn:aas:ur3e:002) - Instance asset  \n3. **MiR100_001** (urn:aas:mir100:001) - Instance asset\n\nThese devices are registered in the HierarchicalStructures submodel of the Hall4 AAS, which defines the containment relationship between the hall and its devices.",
+      "duration_s": 15.763,
+      "tool_call_count": 5,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as devices in Hall 4, with no forbidden device asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "I have found the devices in Hall 4. Let me provide a summary:\n\n**According to the graph data**, Hall 4 (AAS id: `urn:aas:hall4`) contains **3 devices**:\n\n1. **CRX10iA_001** - AAS id: `urn:aas:crx10ia:001`, Asset id: `urn:asset:crx10ia:001` (Instance)\n2. **UR3e_002** - AAS id: `urn:aas:ur3e:002`, Asset id: `urn:asset:ur3e:002` (Instance)\n3. **MiR100_001** - AAS id: `urn:aas:mir100:001`, Asset id: `urn:asset:mir100:001` (Instance)\n\nThese devices are represented as Entity nodes within the HierarchicalStructures submodel of Hall 4, with REPRESENTS_ASSET relationships linking them to their corresponding Asset nodes.",
+      "duration_s": 60.747,
+      "tool_call_count": 15,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as devices in Hall 4, with no forbidden device asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_manual_page",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sc.id CONTAINS\"},{\"rule\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_devices_hall4",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which devices are in Hall 4?",
+      "final_answer": "Based on the graph data, the following devices are located in **Hall 4**:\n\n1. **CRX10iA_001** (Asset ID: urn:asset:crx10ia:001) - Instance\n2. **UR3e_002** (Asset ID: urn:asset:ur3e:002) - Instance  \n3. **MiR100_001** (Asset ID: urn:asset:mir100:001) - Instance\n\nAdditionally, there's an **EntryNode** representing the hall itself (Asset ID: urn:asset:hall4).\n\nThese devices are stored as Entity elements within Hall 4's FacilityInformation submodel, each linked to their respective Asset nodes via REPRESENTS_ASSET relationships.",
+      "duration_s": 15.252,
+      "tool_call_count": 4,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, MiR100_001, plus urn:asset:hall4 as a device; verdict: incorrect because the hall asset is wrongly asserted as a device.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "urn:asset:hall4 is one of the devices in Hall 4"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. The HierarchicalStructures submodel of Hall4 contains Entity nodes that represent the following assets:\n\n1. **CRX10iA_001** (asset ID: urn:asset:crx10ia:001)\n2. **UR3e_002** (asset ID: urn:asset:ur3e:002)\n3. **MiR100_001** (asset ID: urn:asset:mir100:001)\n\nThe EntryNode represents the hall itself (urn:asset:hall4).\n\n**According to the graph data**, Hall 4 contains **3 assets**:\n- CRX10iA_001\n- UR3e_002\n- MiR100_001",
+      "duration_s": 46.29,
+      "tool_call_count": 13,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, MiR100_001; verdict: incorrect because it positively asserts urn:asset:hall4 as the hall itself in the answer context and the required facts are not all directly supported in the core list format.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "Positively asserts urn:asset:hall4 as part of the Hall 4 answer context"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"prop.idShort C"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. According to the graph data, Hall 4 contains the following assets:\n\n1. **CRX10iA_001** (globalAssetId: `urn:asset:crx10ia:001`)\n2. **UR3e_002** (globalAssetId: `urn:asset:ur3e:002`)\n3. **MiR100_001** (globalAssetId: `urn:asset:mir100:001`)\n\nThe EntryNode represents the hall itself (urn:asset:hall4).\n\n**According to the graph data**, Hall 4 contains 3 assets:\n- CRX10iA_001 (a robot)\n- UR3e_002 (a robot)\n- MiR100_001 (an automated guided vehicle)",
+      "duration_s": 38.734,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are in Hall 4; all required facts are supported and the hall self-reference is only mentioned as context.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sc.id CONTAINS\"},{\"rule\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. According to the graph data, Hall 4 contains the following assets:\n\n1. **CRX10iA_001** (globalAssetId: `urn:asset:crx10ia:001`)\n2. **UR3e_002** (globalAssetId: `urn:asset:ur3e:002`)\n3. **MiR100_001** (globalAssetId: `urn:asset:mir100:001`)\n\nAdditionally, there's an EntryNode representing the hall itself (globalAssetId: `urn:asset:hall4`).\n\nThese assets are linked through the HierarchicalStructures submodel of the Hall4 AAS, which uses Entity nodes with `REPRESENTS_ASSET` relationships to connect to the actual Asset nodes.",
+      "duration_s": 32.222,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, MiR100_001, plus urn:asset:hall4; the required assets are supported but the forbidden hall self-reference is positively asserted as a contained asset.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "urn:asset:hall4 is one of the assets contained in Hall 4"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(sc.id) CONTA"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "Based on the graph data, I found **3 assets located in Hall 4**:\n\n1. **CRX10iA_001** (AAS-ID: `urn:aas:crx10ia:001`, Asset-ID: `urn:asset:crx10ia:001`) - Instance\n2. **UR3e_002** (AAS-ID: `urn:aas:ur3e:002`, Asset-ID: `urn:asset:ur3e:002`) - Instance  \n3. **MiR100_001** (AAS-ID: `urn:aas:mir100:001`, Asset-ID: `urn:asset:mir100:001`) - Instance\n\nThese assets are registered in the HierarchicalStructures submodel of Hall 4, which defines the parent-child relationship showing they are part of Hall 4.",
+      "duration_s": 46.501,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are in Hall 4; all required facts are supported and no forbidden asset is asserted as a contained member.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "According to the graph data, the following assets are located in **Hall 4**:\n\n| Asset Name | Global Asset ID |\n|------------|-----------------|\n| CRX10iA_001 | urn:asset:crx10ia:001 |\n| UR3e_002 | urn:asset:ur3e:002 |\n| MiR100_001 | urn:asset:mir100:001 |\n\nThese assets are registered in the HierarchicalStructures submodel of Hall 4's AAS, which tracks the bill of materials / contained assets for the hall.",
+      "duration_s": 40.635,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all stated as located in Hall 4, with no forbidden asset positively asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. According to the graph data, the following assets are located in Hall 4:\n\n1. **CRX10iA_001** (globalAssetId: urn:asset:crx10ia:001) - Instance\n2. **UR3e_002** (globalAssetId: urn:asset:ur3e:002) - Instance  \n3. **MiR100_001** (globalAssetId: urn:asset:mir100:001) - Instance\n\nThese assets are defined in the HierarchicalStructures submodel of the Hall4 AAS, where each Entity represents an asset located in the hall.",
+      "duration_s": 25.013,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all supported as being in Hall 4, with no forbidden asset asserted as a contained member.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. According to the graph data, Hall 4 contains the following assets:\n\n1. **CRX10iA_001** (globalAssetId: `urn:asset:crx10ia:001`) - Instance\n2. **UR3e_002** (globalAssetId: `urn:asset:ur3e:002`) - Instance  \n3. **MiR100_001** (globalAssetId: `urn:asset:mir100:001`) - Instance\n\nThe \"EntryNode\" entity represents the hall itself (urn:asset:hall4).\n\n**Answer:** According to the graph data, Hall 4 contains 3 assets:\n- **CRX10iA_001** (a robot)\n- **UR3e_002** (a robot)\n- **MiR100_001** (an autonomous mobile robot)",
+      "duration_s": 33.813,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are in Hall 4; all required facts are supported and urn:asset:hall4 is only mentioned as the hall itself, not as a contained asset.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sc.id CONTAINS\"},{\"rule\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. According to the graph data, Hall 4 contains **3 assets**:\n\n1. **CRX10iA_001** (AAS ID: `urn:aas:crx10ia:001`, Asset ID: `urn:asset:crx10ia:001`) - Instance\n2. **UR3e_002** (AAS ID: `urn:aas:ur3e:002`, Asset ID: `urn:asset:ur3e:002`) - Instance  \n3. **MiR100_001** (AAS ID: `urn:aas:mir100:001`, Asset ID: `urn:asset:mir100:001`) - Instance\n\nThese assets are linked to Hall 4 through the HierarchicalStructures submodel, which contains Entity elements that represent each asset.",
+      "duration_s": 26.86,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are in Hall 4; all required facts are supported and no forbidden asset is asserted as a contained member.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "Based on the graph data, I can now answer the question.\n\n**According to the graph data**, the following assets are located in Hall 4:\n\n1. **CRX10iA_001** (Asset ID: urn:asset:crx10ia:001) - Instance\n2. **UR3e_002** (Asset ID: urn:asset:ur3e:002) - Instance  \n3. **MiR100_001** (Asset ID: urn:asset:mir100:001) - Instance\n\nThese assets are defined in the HierarchicalStructures submodel of the Hall4 AAS, which uses Entity nodes with `REPRESENTS_ASSET` relationships to link to the actual assets.",
+      "duration_s": 21.91,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, and MiR100_001 are all stated as located in Hall 4; no forbidden asset is asserted as a contained asset.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "containment_ambiguous_assets_hall4",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which assets are in Hall 4?",
+      "final_answer": "I found the assets in Hall 4. According to the graph data, the Hall4 AAS contains a HierarchicalStructures submodel with Entity nodes that represent the following assets:\n\n1. **CRX10iA_001** (globalAssetId: `urn:asset:crx10ia:001`)\n2. **UR3e_002** (globalAssetId: `urn:asset:ur3e:002`)\n3. **MiR100_001** (globalAssetId: `urn:asset:mir100:001`)\n\n(The EntryNode with globalAssetId `urn:asset:hall4` represents the hall itself.)\n\n**According to the graph data**, the assets located in Hall 4 are:\n- CRX10iA_001\n- UR3e_002\n- MiR100_001",
+      "duration_s": 36.934,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: CRX10iA_001, UR3e_002, MiR100_001; verdict: incorrect because it positively includes the hall self-reference as part of the contained assets.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "It asserts urn:asset:hall4 as part of the Hall 4 asset structure, which is the forbidden self-reference claim."
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(p.idShort) C"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "I found it. The shell with `idShort` **\"Hall4\"** (note: no space) represents the asset with:\n\n- **globalAssetId**: `urn:asset:hall4`\n- **assetKind**: Instance\n- **AAS ID**: `urn:aas:hall4`\n\nAccording to the graph data, the Hall 4 shell manages the asset identified by `urn:asset:hall4`.",
+      "duration_s": 8.968,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the Hall 4 shell represents urn:asset:hall4; all required facts are supported and no forbidden asset is asserted as the answer.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "I found the Hall 4 shell. According to the graph data, the **Hall 4** Asset Administration Shell (idShort: \"Hall4\", id: \"urn:aas:hall4\") represents the asset with:\n\n- **globalAssetId**: `urn:asset:hall4`\n- **assetKind**: Instance\n- **assetType**: null\n\nSo the Hall 4 shell represents the asset identified by `urn:asset:hall4`.",
+      "duration_s": 9.008,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the Hall 4 shell represents the asset identified by urn:asset:hall4; this matches the required fact and makes no forbidden asset claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "According to the graph data, the **Hall4** shell (AAS ID: `urn:aas:hall4`) represents the asset with:\n\n- **Global Asset ID:** `urn:asset:hall4`\n- **Asset Kind:** Instance\n- **Asset Type:** (not specified)\n\nThe Hall4 AAS directly manages this asset via the `MANAGES_ASSET` relationship.",
+      "duration_s": 16.081,
+      "tool_call_count": 5,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: Hall4 shell represents urn:asset:hall4; all required facts are supported and no forbidden asset is asserted as the answer.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "I found it. The **Hall 4** shell has `idShort = \"Hall4\"` (without a space).\n\nAccording to the graph data:\n- **AAS ID**: `urn:aas:hall4`\n- **idShort**: `Hall4`\n- **Asset it represents**: `urn:asset:hall4` (globalAssetId)\n- **Asset kind**: Instance\n\nSo the Hall 4 shell represents the asset with global ID **`urn:asset:hall4`**.",
+      "duration_s": 14.242,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the Hall 4 shell represents urn:asset:hall4; all required facts are supported and no forbidden asset is asserted as the answer.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "According to the graph data, the **Hall 4** shell (idShort: `Hall4`, id: `urn:aas:hall4`) represents the asset with:\n\n- **globalAssetId**: `urn:asset:hall4`\n- **assetKind**: `Instance`\n\nSo the Hall 4 AAS manages the physical Hall 4 asset itself.",
+      "duration_s": 7.678,
+      "tool_call_count": 1,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: Hall 4 shell represents urn:asset:hall4; all required facts are supported and no forbidden asset is asserted as the represented asset.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "According to the graph data, the **Hall 4** shell (with `idShort` \"Hall4\") represents the asset with:\n\n- **Global Asset ID**: `urn:asset:hall4`\n- **Asset Kind**: Instance\n- **AAS ID**: `urn:aas:hall4`\n\nThe shell manages an instance asset representing Hall 4 itself.",
+      "duration_s": 7.073,
+      "tool_call_count": 2,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: Hall 4 shell represents urn:asset:hall4; this matches the required fact and makes no forbidden asset claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "According to the graph data, the **Hall4** shell (idShort: `Hall4`, AAS-ID: `urn:aas:hall4`) represents the asset with:\n\n- **globalAssetId**: `urn:asset:hall4`\n- **assetKind**: Instance\n- **assetType**: (not set)\n\nSo the Hall 4 shell represents the asset identified as `urn:asset:hall4`.",
+      "duration_s": 8.952,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: Hall 4 shell represents urn:asset:hall4; this matches the required asset ID and makes no forbidden identity claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "According to the graph data, the **Hall 4** shell (AAS ID: `urn:aas:hall4`) represents the asset with:\n\n- **Global Asset ID:** `urn:asset:hall4`\n- **Asset Kind:** Instance",
+      "duration_s": 14.13,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the Hall 4 shell represents urn:asset:hall4; all required facts are supported and no forbidden asset is asserted as the represented asset.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "According to the graph data, the **Hall 4** shell (AAS id: `urn:aas:hall4`) represents the asset with:\n\n- **globalAssetId:** `urn:asset:hall4`\n- **assetKind:** Instance\n- **assetType:** (not set)\n\nThe shell directly manages this single asset entity representing Hall 4.",
+      "duration_s": 11.089,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the Hall 4 shell represents globalAssetId urn:asset:hall4; this matches the required asset identity and makes no forbidden asset claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "identity_hall4_regression",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Which asset does the Hall 4 shell represent?",
+      "final_answer": "I found it. The shell with `idShort` **\"Hall4\"** (no space) represents the asset with:\n\n- **globalAssetId:** `urn:asset:hall4`\n- **assetKind:** Instance\n- **AAS ID:** `urn:aas:hall4`\n\nAccording to the graph data, the Hall 4 shell represents the physical hall asset identified by `urn:asset:hall4`.",
+      "duration_s": 12.054,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the Hall 4 shell represents urn:asset:hall4, which matches the required fact.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    }
+  ]
+}

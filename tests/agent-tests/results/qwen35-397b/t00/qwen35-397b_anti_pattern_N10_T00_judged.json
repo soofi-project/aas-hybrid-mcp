@@ -1,0 +1,880 @@
+{
+  "cases": [
+    "cases/anti_pattern_idShort_lookup.yaml"
+  ],
+  "judge_model": "gpt-5.4-mini",
+  "judge_base_url": "https://api.openai.com",
+  "summary": {
+    "totals": {
+      "n": 20,
+      "correct": 20,
+      "correct_rate": 1.0,
+      "manuals_first": 12,
+      "manuals_first_rate": 0.6,
+      "tool_error_free": 1,
+      "tool_error_free_rate": 0.05,
+      "all_good": 1,
+      "all_good_rate": 0.05
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "mir100_max_speed_no_substring_lookup",
+        "n": 10,
+        "correct": 10,
+        "correct_rate": 1.0,
+        "manuals_first": 6,
+        "manuals_first_rate": 0.6,
+        "tool_error_free": 0,
+        "tool_error_free_rate": 0.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "ur3e_payload_no_substring_lookup",
+        "n": 10,
+        "correct": 10,
+        "correct_rate": 1.0,
+        "manuals_first": 6,
+        "manuals_first_rate": 0.6,
+        "tool_error_free": 1,
+        "tool_error_free_rate": 0.1,
+        "all_good": 1,
+        "all_good_rate": 0.1
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 20,
+        "correct": 20,
+        "correct_rate": 1.0,
+        "manuals_first": 12,
+        "manuals_first_rate": 0.6,
+        "tool_error_free": 1,
+        "tool_error_free_rate": 0.05,
+        "all_good": 1,
+        "all_good_rate": 0.05
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "According to the graph data, the MiR100 has the following maximum speed specifications:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- **Maximum speed (with max load, as specified): 1.0 m/s**\n\nThe maximum speed of the MiR100 is **1.5 m/s** when operating without a load, and **1.0 m/s** when carrying its maximum load.",
+      "duration_s": 20.351,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list states MiR100 maximum speed is 1.5 m/s, with 1.0 m/s only as additional loaded-speed context; verdict correct.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "According to the graph data, the MiR100 has the following maximum speed specifications:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- **Maximum speed (with max load, as specified): 1.0 m/s**\n\nThe maximum speed of the MiR100 is **1.5 m/s** when operating without load, and **1.0 m/s** when carrying its maximum load.",
+      "duration_s": 22.329,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list states MiR100 maximum speed is 1.5 m/s, which matches the required fact; the additional 1.0 m/s loaded speed is allowed.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "Based on the graph data from the MiR100 Type AAS, the maximum speeds are:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- **Maximum speed (with max load, as specified): 1.0 m/s**\n\nThese values come from the `TechnicalDataAGV` submodel of the MiR100 Type shell (`urn:aas:mir100:type`).",
+      "duration_s": 18.419,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list includes the MiR100 maximum speed of 1.5 m/s, which matches the required fact; the extra loaded-speed mention is allowed.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "According to the graph data from the MiR100 type shell's Technical Data submodel:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- Maximum speed (with max load, as specified): 1.0 m/s\n\nThe **maximum speed of the MiR100 is 1.5 m/s** (when operating without load).",
+      "duration_s": 18.97,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s; supported by the answer.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "According to the graph data from the MiR100 Type shell's TechnicalDataAGV submodel:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- **Maximum speed (with max load, as specified): 1.0 m/s**\n\nThe maximum speed of the MiR100 is **1.5 m/s** when operating without a load. When carrying its maximum load, the speed is limited to **1.0 m/s**.",
+      "duration_s": 16.976,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s (with loaded speed 1.0 m/s also mentioned); all required facts are supported and no must-not-claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "The semantic IDs are external references without local definitions. However, based on the context of AGV technical data and the typical units used in such specifications, these speed values are in **meters per second (m/s)**, which is the standard unit for AGV speed specifications.\n\n**According to the graph data**, the MiR100 has the following maximum speeds:\n\n- **Maximum speed with max load**: 1.0 m/s\n- **Maximum speed (empty)**: 1.5 m/s\n\nThe MiR100 can travel faster when not carrying a load (1.5 m/s) compared to when it's carrying its maximum load capacity of 100 kg (1.0 m/s).",
+      "duration_s": 19.214,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s; supported by the answer.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_graph_schema"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "The semantic IDs are external references without local definitions. However, based on the AGV technical data template context and standard conventions, speed values for AGVs are typically expressed in **meters per second (m/s)**.\n\nAccording to the graph data from the MiR100 Type shell's TechnicalDataAGV submodel:\n\n**Maximum speed of the MiR100:**\n- **1.5 m/s** (maximum speed when empty, as specified by manufacturer)\n- **1.0 m/s** (maximum speed with maximum load, as specified)\n\nThe MiR100 can travel faster when unloaded (1.5 m/s) and reduces to 1.0 m/s when carrying its maximum payload for safety and stability reasons.",
+      "duration_s": 27.002,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s; this required fact is supported and the extra 1.0 m/s note is allowed.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "The values don't have explicit qualifiers for units. For AGVs, speed is typically measured in meters per second (m/s). The MiR100 is a well-known autonomous mobile robot, and the values 1.5 and 1.0 are consistent with typical AGV speeds in m/s.\n\nBased on the graph data:\n- **SpeedMaxEmptyAsSpecified**: 1.5 (maximum speed when empty, as specified)\n- **SpeedMaxWithMaxLoadAsSpecified**: 1.0 (maximum speed with maximum load, as specified)\n\nThe maximum speed of the MiR100 is **1.5 m/s** (when empty, as specified).\n\nAccording to the graph data from the TechnicalDataAGV submodel of the MiR100 type shell, the maximum speed is **1.5 m/s** (specified as `SpeedMaxEmptyAsSpecified`). When carrying maximum load, the maximum speed is reduced to **1.0 m/s** (`SpeedMaxWithMaxLoadAsSpecified`).",
+      "duration_s": 26.091,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the MiR100 maximum speed is 1.5 m/s; this matches the required fact and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "According to the graph data, the MiR100 has the following maximum speed specifications:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- **Maximum speed (with max load, as specified): 1.0 m/s**\n\nThe maximum speed depends on the load condition. When the vehicle is empty, it can reach up to **1.5 m/s**, but when carrying its maximum load, the speed is limited to **1.0 m/s**.",
+      "duration_s": 20.186,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s (with 1.0 m/s loaded speed also mentioned); all required facts are supported and no must-not-claim is violated.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed_no_substring_lookup",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the MiR100?",
+      "final_answer": "According to the graph data, the MiR100 has the following maximum speed specifications:\n\n- **Maximum speed (empty, as specified): 1.5 m/s**\n- **Maximum speed (with max load, as specified): 1.0 m/s**\n\nThe values are stored in the Technical Data for Automated Guided Vehicles submodel of the MiR100 type shell. The speed is given in meters per second (m/s), which is the standard unit for AGV velocity specifications.",
+      "duration_s": 20.974,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the MiR100 maximum speed is 1.5 m/s (with 1.0 m/s loaded speed also mentioned); all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e_Type Asset Administration Shell, where the Payload property has a value of \"3\" (with valueType xs:double, indicating kilograms as the standard unit for robot payload specifications).",
+      "duration_s": 16.099,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the UR3e maximum payload is 3 kg; this matches the required fact and no must-not-claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e_Type AssetAdministrationShell, where the `Payload` property has a value of `3` (with valueType `xs:double`).",
+      "duration_s": 15.529,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: “the maximum payload of the UR3e is 3 kg”; verdict: correct.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the Technical_Data submodel of the UR3e type shell (AAS ID: `urn:aas:ur3e:type`), which contains a Property element with:\n- `idShort`: \"Payload\"\n- `value`: \"3\"\n- `valueType`: \"xs:double\"\n\nThe UR3e is a collaborative robot with 6 axes, a reach of 500 mm, and weighs 11.1 kg.",
+      "duration_s": 14.11,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: UR3e maximum payload is 3 kg; this supports the required fact and includes no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis value is stored in the TechnicalData submodel of the UR3e type shell (`urn:aas:ur3e:type`), with the value \"3\" and data type `xs:double`.",
+      "duration_s": 18.115,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: “the maximum payload of the UR3e is 3 kg”; this matches the required fact and includes no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e type shell (`urn:submodel:ur3e:type:technicaldata`), which contains a Property element with:\n- **idShort**: `Payload`\n- **value**: `3`\n- **valueType**: `xs:double`\n\nThe UR3e is a collaborative robot with 6 axes, a reach of 500 mm, and weighs 11.1 kg.",
+      "duration_s": 15.078,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e Type shell (`urn:submodel:ur3e:type:technicaldata`), where the `Payload` property has a value of `3` (with unit implicitly in kilograms based on the robot specification context).",
+      "duration_s": 11.283,
+      "tool_call_count": 5,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: “the maximum payload of the UR3e is 3 kg”; this matches the required fact and includes no forbidden claims.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": true
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e Type AAS (`urn:aas:ur3e:type`), where the Payload property has a value of \"3\" (type: xs:double).",
+      "duration_s": 12.819,
+      "tool_call_count": 4,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is made.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThe semantic definition confirms this is the \"Maximum mass that can be carried at the tool flange under nominal operating conditions,\" with the unit specified as **kg** (kilograms).",
+      "duration_s": 24.045,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is made.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e Type shell (`urn:submodel:ur3e:type:technicaldata`), where the `Payload` property has a value of `3` (type: xs:double).",
+      "duration_s": 26.204,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: “the maximum payload of the UR3e is 3 kg”; this matches the required fact and includes no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload_no_substring_lookup",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis information comes from the TechnicalData submodel of the UR3e_Type Asset Administration Shell, where the `Payload` property has a value of `3` (with unit implicitly in kilograms based on the technical data context).",
+      "duration_s": 32.867,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the UR3e maximum payload is 3 kg; this matches the required fact and includes no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    }
+  ]
+}

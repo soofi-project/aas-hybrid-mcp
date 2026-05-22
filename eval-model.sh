@@ -13,9 +13,10 @@
 #
 # How it works:
 #   Copies .env.model.<slug> to .env.model, then runs docker compose with
-#   docker-compose.eval-model.yml as final overlay. That overlay appends
-#   .env.model as the last env_file entry for each service, so its LLM_MODEL /
-#   LLM_BASE_URL / QUERY_REWRITE_* values win over .env.vllm.
+#   docker-compose.eval-model-vllm.yml (H200 models) or
+#   docker-compose.eval-model-cortecs.yml (qwen35-397b) as final overlay.
+#   That overlay appends .env.model as the last env_file entry for each service,
+#   so its LLM_MODEL / LLM_BASE_URL / QUERY_REWRITE_* values win over .env.vllm.
 #
 # Prerequisites:
 #   - LiteLLM alias for the chosen model must be configured on the H200.
@@ -49,8 +50,14 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
-# .env.model is the temp file loaded by docker-compose.eval-model.yml
+# .env.model is the temp file loaded by the eval-model overlay
 cp "$ENV_FILE" .env.model
+
+if [[ "$MODEL" == "qwen35-397b" ]]; then
+    EVAL_OVERLAY="docker-compose.eval-model-cortecs.yml"
+else
+    EVAL_OVERLAY="docker-compose.eval-model-vllm.yml"
+fi
 
 echo "========================================"
 echo "  Eval Model: $MODEL"
@@ -62,12 +69,15 @@ source .env 2>/dev/null || true
 set -a
 source .env.vllm
 source .env.model
+if [[ "$MODEL" == "qwen35-397b" ]]; then
+    source ~/.env.secrets 2>/dev/null || true
+fi
 set +a
 
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.vllm.yml \
-  -f docker-compose.eval-model.yml \
+  -f "$EVAL_OVERLAY" \
   up -d --wait --build
 
 echo ""

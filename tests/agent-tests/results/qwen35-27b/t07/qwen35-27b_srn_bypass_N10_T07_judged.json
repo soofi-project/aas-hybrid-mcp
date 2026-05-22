@@ -1,0 +1,840 @@
+{
+  "cases": [
+    "cases/srn_bypass.yaml"
+  ],
+  "judge_model": "gpt-5.4-mini-2026-03-17",
+  "judge_base_url": "https://api.openai.com",
+  "summary": {
+    "totals": {
+      "n": 20,
+      "correct": 17,
+      "correct_rate": 0.85,
+      "manuals_first": 0,
+      "manuals_first_rate": 0.0,
+      "tool_error_free": 2,
+      "tool_error_free_rate": 0.1,
+      "all_good": 0,
+      "all_good_rate": 0.0
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "srn_bypass_serial_number",
+        "n": 10,
+        "correct": 8,
+        "correct_rate": 0.8,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 2,
+        "tool_error_free_rate": 0.2,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_bypass_spatial_hall4",
+        "n": 10,
+        "correct": 9,
+        "correct_rate": 0.9,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 0,
+        "tool_error_free_rate": 0.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 20,
+        "correct": 17,
+        "correct_rate": 0.85,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 2,
+        "tool_error_free_rate": 0.1,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "I see the list of all Asset Administration Shells in the system. However, you haven't told me which specific asset you need help with. To provide maintenance assistance, I need to know:\n\n1. **Which asset** is experiencing an issue? (e.g., robot name, location, or AAS-ID from QR scan)\n2. **What is the problem?** (e.g., error code, symptom, maintenance need)\n\nCould you please specify:\n- The asset identifier (name, location, or AAS-ID), and\n- The issue you're experiencing or the maintenance task you need help with?\n\nFor example: \"UR20_001 robot arm is showing error E402\" or \"I need to schedule preventive maintenance for the MiR100 in Hall 3.\"",
+      "duration_s": 4.229,
+      "tool_call_count": 2,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a request for more information, not a service request for MiR100_001, and no write attempt or validation error is shown.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A service request write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before the request can be created"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset:** MiR100_001 (Transport robot in Hall 4)\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:2de15c8e`\n- **Status:** Open\n- **Service Type:** Corrective Maintenance\n- **Priority:** Medium\n- **Description:** Fault light active on transport robot\n\nThe service request has been registered on the asset's AAS. Maintenance team can now track and process this request.",
+      "duration_s": 12.346,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the Hall 4 transport robot and a successful service request creation/write attempt; both are supported.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset**: MiR100_001 (Transport robot in Hall 4)\n- **SRN ID**: `urn:aas-hybrid-mcp:srn:001:d7bcae47`\n- **Type**: Corrective Maintenance\n- **Priority**: Medium\n- **Status**: Open\n- **Description**: Fault light active on transport robot\n\nThe service request has been registered on the asset's AAS and is now visible to maintenance teams. They can track the request status through the AAS.",
+      "duration_s": 13.045,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the Hall 4 transport robot and a service request write was attempted; both are supported.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully.**\n\n- **Asset:** MiR100_001 (Transport robot in Hall 4)\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:a8541456`\n- **Type:** Corrective Maintenance\n- **Priority:** Medium\n- **Status:** Open\n\nThe fault light issue has been logged. Maintenance team can now track and address this request.",
+      "duration_s": 7.72,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: service request created for MiR100_001 in Hall 4 with a request ID; both required facts are supported and no forbidden extra-information claim is made.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset**: MiR100_001 (transport robot in Hall 4)\n- **SRN ID**: `urn:aas-hybrid-mcp:srn:001:607affe7`\n- **Status**: Open\n- **Type**: Corrective Maintenance\n- **Priority**: Medium\n- **Description**: Fault light on transport robot\n\nThe service request has been registered on the asset's AAS and is now visible to maintenance teams.",
+      "duration_s": 12.649,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the Hall 4 transport robot and a successful service request write; both required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset:** Transport robot MiR100_001 in Hall 4\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:a68c2af7`\n- **Type:** Corrective Maintenance\n- **Priority:** Medium\n- **Status:** Open\n- **Description:** Fault light on transport robot\n\nThe service request has been registered on the asset's AAS. Maintenance team can now track and respond to this request.",
+      "duration_s": 13.088,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 in Hall 4 with a service request created; both required facts are supported and no forbidden extra-information claim is made.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 7,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset:** MiR100_001 (transport robot in Hall 4)\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:7aaf862e`\n- **Status:** Open\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium (functional fault - fault light)\n- **Description:** Fault light on transport robot\n\nThe service request has been registered on the asset's AAS and is now visible to maintenance teams.",
+      "duration_s": 12.88,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the Hall 4 transport robot and a service request creation/write was successfully attempted; both required facts are supported and no forbidden extra-information claim is made.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset**: MiR100_001 (Transport robot in Hall 4)\n- **SRN ID**: `urn:aas-hybrid-mcp:srn:001:60c159f1`\n- **Status**: Open\n- **Service Type**: CorrectiveMaintenance\n- **Priority**: Medium\n- **Description**: Fault light on transport robot\n\nThe service request has been registered on the asset's AAS. Maintenance team can now track and process this request.",
+      "duration_s": 8.502,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 identified as the Hall 4 transport robot and a service request write was successfully attempted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully!**\n\n**Details:**\n- **Asset:** MiR100_001 (Transport robot in Hall 4)\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:3e4e253d`\n- **Type:** Corrective Maintenance\n- **Priority:** Medium\n- **Status:** Open\n- **Description:** Fault light on transport robot\n\nThe service request has been registered on the asset's AAS. Maintenance personnel can now access this notification to diagnose and address the fault light issue on the MiR100 transport robot in Hall 4.",
+      "duration_s": 8.071,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the Hall 4 transport robot and a service request creation attempt/result; both are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "✅ **Service request notification created successfully.**\n\n**Details:**\n- **Asset:** MiR100_001 (Transport Robot in Hall 4)\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:e0d04ccf`\n- **Type:** Corrective Maintenance\n- **Priority:** Medium\n- **Status:** Open\n- **Description:** Fault light active on transport robot\n\nThe service request has been registered on the robot's AAS and is now visible to maintenance personnel.",
+      "duration_s": 11.447,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001 as the Hall 4 transport robot and a service request write was attempted/succeeded; both required facts are supported and no forbidden extra-info claim is made.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully.**\n\n- **Asset:** MiR100_001 (serial: MIR100-2020-001)\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:ecd4a0cd`\n- **Type:** Corrective Maintenance\n- **Priority:** High\n- **Status:** Open\n- **Description:** Emergency stop triggered\n\nThe service request has been registered on the asset's AAS. Maintenance team should investigate the emergency stop cause immediately.",
+      "duration_s": 10.226,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: a logged service request for MiR100_001 with High priority; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully.**\n\n- **AAS:** MiR100_001 (`urn:aas:mir100:001`)\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:ff3e485b`\n- **Type:** Corrective Maintenance\n- **Priority:** High\n- **Issue:** Emergency stop triggered\n\nThe service request has been registered on the asset's AAS. Maintenance team should be notified immediately given the high priority.",
+      "duration_s": 10.963,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001, High priority, and a service request logged/registered; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "Done! I've logged a high-priority corrective maintenance service request for the MiR100 robot (MiR100_001) that triggered an emergency stop.\n\n**Service Request Created:**\n- **Asset**: MiR100_001 (serial MIR100-2020-001)\n- **Issue**: Emergency stop triggered\n- **Type**: Corrective Maintenance\n- **Priority**: High\n- **SRN ID**: `urn:aas-hybrid-mcp:srn:001:e65dad66`\n\nThe service request is now registered on the AAS and ready for the maintenance team to address.",
+      "duration_s": 11.767,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: a high-priority corrective maintenance service request for MiR100_001 was created; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully!**\n\n- **Asset**: MiR100_001 (MiR100 automated guided vehicle)\n- **Request ID**: `urn:aas-hybrid-mcp:srn:001:9de686b0`\n- **Status**: Open\n- **Priority**: High\n- **Type**: Corrective Maintenance\n- **Issue**: Emergency stop triggered\n\nThe service request has been registered on the asset's AAS. Maintenance team should investigate the emergency stop cause, clear any obstructions or faults, and reset the system before resuming operation.",
+      "duration_s": 9.226,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: asset MiR100_001, high-priority corrective maintenance service request for emergency stop; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully.**\n\n- **Asset:** MiR100_001 (serial: MIR100-2020-001)\n- **Issue:** Emergency stop triggered\n- **Priority:** High\n- **Service Type:** Corrective Maintenance\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:ba103f1a`\n\nThe service request has been registered on the asset's AAS. Maintenance team should respond immediately given the high priority emergency stop condition.",
+      "duration_s": 7.846,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: service request logged for MiR100_001 with High priority; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully.**\n\n- **Asset:** MiR100_001 (AAS: `urn:aas:mir100:001`)\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:6ae7f5f0`\n- **Type:** Corrective Maintenance\n- **Priority:** High\n- **Issue:** Emergency stop triggered\n- **Status:** Open\n\nThe service request has been registered on the asset's AAS. Maintenance team should investigate the emergency stop cause and reset the system.",
+      "duration_s": 7.892,
+      "tool_call_count": 5,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: a logged service request for MiR100_001 with High priority; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "I can see there are multiple assets in the system (MiR100, MiR250, UR20, UR3e, CRX10iA robots, and Hall3/Hall4). However, the user hasn't specified which asset they're asking about. \n\nLet me check if there are any existing service requests or if the user mentioned a specific asset earlier in the conversation. Since this appears to be the start of our conversation and no specific asset was mentioned, I need to ask for clarification.\n\nCould you please specify which asset you're reporting a fault for? I can see the following assets in the system:\n\n- **MiR100** robots (MiR100_001)\n- **MiR250** robots (MiR250_001, MiR250_002)\n- **UR20** robots (UR20_001)\n- **UR3e** robots (UR3e_001, UR3e_002)\n- **CRX10iA** robots (CRX10iA_001)\n- **Hall3** and **Hall4** (facility areas)\n\nPlease let me know which asset has the issue and describe the fault so I can create a service request notification.",
+      "duration_s": 5.437,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list asks to log a service request for MIR100-2020-001 as MiR100_001 with High priority, but the answer only asks for clarification instead of attempting the request.",
+        "missing_facts": [
+          "The agent resolved the serial number MIR100-2020-001 to MiR100_001",
+          "A service request write was attempted or a validation error was reported",
+          "Priority is High (emergency stop)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before the request can be created"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully.**\n\n- **Asset:** MiR100_001 (serial: MIR100-2020-001)\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:9be1028c`\n- **Type:** Corrective Maintenance\n- **Priority:** High\n- **Status:** Open\n\nThe emergency stop has been registered as a high-priority service request. Maintenance team should investigate the cause immediately.",
+      "duration_s": 4.853,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: MiR100_001, High priority, and a logged service request; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "**Service request logged successfully.**\n\n- **Request ID:** `urn:aas-hybrid-mcp:srn:001:18d2c3c6`\n- **Asset:** MiR100_001 (AAS: urn:aas:mir100:001)\n- **Priority:** High\n- **Type:** Corrective Maintenance\n- **Issue:** Emergency stop triggered\n- **Status:** Open\n\nThe service request has been registered on the asset's AAS. Maintenance team should investigate the emergency stop cause and reset the system.",
+      "duration_s": 8.108,
+      "tool_call_count": 6,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: service request logged for MiR100_001 with High priority and corrective maintenance; all required facts are supported and no forbidden claim is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "I can see the available assets. Since you haven't specified which asset has an issue, I need to clarify which asset you're reporting a problem with.\n\n**Available assets:**\n- **CRX10iA**: Instance 001 (CRX10iA_001)\n- **MiR100**: Instance 001 (MiR100_001)\n- **MiR250**: Instances 001, 002 (MiR250_001, MiR250_002)\n- **UR20**: Instance 001 (UR20_001)\n- **UR3e**: Instances 001, 002 (UR3e_001, UR3e_002)\n- **Hall assets**: Hall3, Hall4\n\n**Which asset is experiencing the issue?** Please tell me:\n1. The asset name/ID (e.g., \"MiR250_001\" or \"the UR3e robot in hall 2\")\n2. What the problem is (e.g., \"error code E42\", \"won't start\", \"maintenance needed\")\n\nOnce you provide this, I'll create the service request notification immediately.",
+      "duration_s": 5.474,
+      "tool_call_count": 3,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a request for more information instead of logging the service request, so required facts are unsupported and a forbidden clarification request is asserted.",
+        "missing_facts": [
+          "The agent resolved the serial number MIR100-2020-001 to MiR100_001",
+          "A service request write was attempted or a validation error was reported",
+          "Priority is High (emergency stop)"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before the request can be created"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": 0,
+        "manual_tools_called": [],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    }
+  ]
+}

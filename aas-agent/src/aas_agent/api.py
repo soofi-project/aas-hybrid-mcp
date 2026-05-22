@@ -358,8 +358,58 @@ async def _stream_sse(
     extra: dict | None = None,
 ):
     usage = empty_usage()
+
+    # Run the runner in a background task so we can send SSE keepalive comments
+    # (": keep-alive\n\n") every 15 s while waiting.  Without this the
+    # non-verbose plan-agent path blocks for 60-120 s (multiple LLM calls) and
+    # clients / proxies drop the connection before the first real chunk arrives.
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def _fill_queue() -> None:
+        try:
+            async for token in runner.stream(
+                messages,
+                conversation_id=completion_id,
+                chat_id=client_id,
+                extra=extra,
+            ):
+                await queue.put(("token", token))
+        except Exception as exc:
+            log.exception("Error in runner.stream()")
+            await queue.put(("error", exc))
+        finally:
+            await queue.put(("done", None))
+
+    fill_task = asyncio.create_task(_fill_queue())
+
     try:
-        async for token in runner.stream(messages, conversation_id=completion_id, chat_id=client_id, extra=extra):
+        while True:
+            try:
+                kind, value = await asyncio.wait_for(queue.get(), timeout=15.0)
+            except asyncio.TimeoutError:
+                yield ": keep-alive\n\n"
+                continue
+
+            if kind == "done":
+                break
+            if kind == "error":
+                err_chunk = {
+                    "id": completion_id,
+                    "object": "chat.completion.chunk",
+                    "created": created,
+                    "model": model,
+                    "choices": [
+                        {
+                            "index": 0,
+                            "delta": {"content": "\n\n[stream error — see server logs]"},
+                            "finish_reason": None,
+                        }
+                    ],
+                }
+                yield f"data: {json.dumps(err_chunk)}\n\n"
+                break
+
+            token = value
             if not isinstance(token, str):
                 token = str(token)
             # Runners yield a ``__usage__:{...}`` sentinel in their finally
@@ -379,23 +429,12 @@ async def _stream_sse(
                 ],
             }
             yield f"data: {json.dumps(chunk)}\n\n"
-    except Exception:
-        log.exception("Error while streaming agent response")
-        err_chunk = {
-            "id": completion_id,
-            "object": "chat.completion.chunk",
-            "created": created,
-            "model": model,
-            "choices": [
-                {
-                    "index": 0,
-                    "delta": {"content": "\n\n[stream error — see server logs]"},
-                    "finish_reason": None,
-                }
-            ],
-        }
-        yield f"data: {json.dumps(err_chunk)}\n\n"
     finally:
+        fill_task.cancel()
+        try:
+            await fill_task
+        except (asyncio.CancelledError, Exception):
+            pass
         done_chunk = {
             "id": completion_id,
             "object": "chat.completion.chunk",
