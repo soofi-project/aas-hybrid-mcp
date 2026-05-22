@@ -195,7 +195,7 @@ def convert_pdf_to_markdown(pdf_bytes: bytes) -> str:
         # (flat layout under ~/.cache/docling/models/), bypassing huggingface_hub snapshot_download
         # which expects a different on-disk format and would hit the network under HF_HUB_OFFLINE=1.
         pipeline_options = PdfPipelineOptions(artifacts_path=os.environ.get("DOCLING_ARTIFACTS_PATH"))
-        pipeline_options.do_table_structure = True
+        pipeline_options.do_table_structure = os.environ.get("PDF_TABLE_STRUCTURE", "false").lower() == "true"
         pipeline_options.do_ocr = False
         converter = DocumentConverter(
             format_options={
