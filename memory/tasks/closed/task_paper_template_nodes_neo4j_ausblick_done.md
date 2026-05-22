@@ -2,8 +2,9 @@
 name: Task – Template-Nodes in Neo4j als Paper-Ausblick
 description: IDTA-Template-Instanzen als :SubmodelTemplate-Knoten in Neo4j beschreiben und als Future-Work-Punkt im Paper §Ausblick verankern.
 type: task
-status: open
+status: closed
 priority: low
+closed: 2026-05-22
 ---
 
 ## Background
@@ -30,19 +31,22 @@ Layered-Determinism-Bezug (deterministischer Filter als Schutz vor Contamination
 
 ## Subtasks
 
-### T1 — Paper-Ausblick-Bullet formulieren
+### T1 — Paper-Ausblick-Bullet formulieren ✅ (2026-05-22)
 
-Einen Absatz / Bullet für §Ausblick (Future Work) schreiben:
+Bullet in `paper/etfa2026/content/13-future-work.tex` eingebaut (zusammen mit
+dem neuen "Document Knowledge Graph"-Bullet, der `:SemanticConcept` als
+gemeinsamen Anker für beide Future-Work-Ideen etabliert).
 
-> *"Storing IDTA template instances as typed graph nodes (`:SubmodelTemplate`)
+Finaler Text:
+
+> *"Storing IDTA template instances as typed `:SubmodelTemplate` nodes
 > co-located with `:SemanticConcept` nodes would give agents a schema-grounded
 > retrieval path without additional tool learning — particularly relevant for
 > smaller models that struggle with implicit structural priors. A deterministic
 > label filter (`WHERE NOT 'SubmodelTemplate' IN labels(n)`) in all production
-> queries mitigates template-contamination risk. Evaluation of grounding benefit
-> vs. contamination risk across model sizes is left for future work."*
-
-Text ins Paper einbauen, Länge auf verfügbaren Platz in §Future Work abstimmen.
+> queries mitigates template-contamination risk, exemplifying the
+> layered-determinism pattern at the schema level. Measuring the grounding
+> benefit against contamination risk across model sizes is left for future work."*
 
 ### T2 — (Optional, kein Abgabe-Druck) Konzept-Skizze für Implementierung
 
@@ -52,9 +56,9 @@ eine spätere Evaluation. Kein Code, nur Datenmodell-Skizze.
 
 ## Acceptance Criteria
 
-- Future-Work-Bullet ist im Paper §Ausblick eingebaut
-- Layered-Determinism-Bezug ist explizit (deterministischer Filter als Schutzmechanismus)
-- Kein Implementierungs-Code committed (das ist Future Work)
+- ✅ Future-Work-Bullet ist im Paper §Ausblick eingebaut
+- ✅ Layered-Determinism-Bezug ist explizit (deterministischer Filter als Schutzmechanismus)
+- ✅ Kein Implementierungs-Code committed (das ist Future Work)
 
 ## References
 

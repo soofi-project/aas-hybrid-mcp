@@ -178,6 +178,7 @@ aus [[task-paper-future-work-template-cypher]]. Konkret:
 - Reichen B1-B6 für die Skalierungs-Aussage, oder braucht es Queries mit gestaffelter Schwierigkeit?
 - 4B und 0.6B (08b) wurden aufgenommen — Skalierungs-Achse ist jetzt vollständig.
 - Thinking-Mode konstant `false` halten (`AGENT_DEFAULT_THINKING`), nicht als Variable mitvariieren — Confound vermeiden.
+- **Temperature: ausschließlich T=0.7** — T=0.0 aus Eval-Protokoll gestrichen. Grund: Greedy Decoding erzeugt deterministische Failure-Loops bei Multi-Step Tool Use (empirisch beobachtet: 122b wiederholt bei T=0.0 dieselbe Abfrage endlos; getestet auf Cortecs AI, kein vLLM-Konfig-Artefakt). Standard gemäß BFCL + AgentBench.
 
 ## References
 

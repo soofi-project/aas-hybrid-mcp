@@ -20,6 +20,24 @@ Die qwen35-122b-Eval-Daten (T=0.7) liefern die erste empirische Evidenz für die
 Blockierend: T=0.0-Testläufe für alle Modelle der Qwen3.5-Familie müssen erst abgeschlossen sein.
 Erst dann ist der Claim belastbar genug fürs Paper.
 
+## Update 2026-05-22 — T=0-Hypothese widerlegt
+
+Getestet auf Cortecs AI (externer Endpunkt, kein vLLM-Konfig-Artefakt):
+- 122b führt auch bei T=0.7 nur selten Tool Calls aus — das Problem ist modell-seitig, nicht konfigurationsbedingt
+- T=0.0 ist sogar schlechter: Greedy Decoding → deterministischer Loop, Modell wiederholt dieselbe
+  Abfrage endlos weil kein Sampling-Rauschen zur Exploration zwingt
+
+**Konsequenz für Paper-Eval:** T=0.0 wird aus dem gesamten Eval-Protokoll gestrichen.
+Alle Paper-Eval-Läufe (alle Modelle, alle Suiten) laufen ausschließlich mit **T=0.7**.
+Begründung für Paper: agent tasks require exploratory sampling — greedy decoding causes
+deterministic failure loops in multi-step tool use; T=0.7 follows standard practice
+from BFCL and AgentBench.
+
+**Konsequenz für diese Task:** Die Subtasks T1–T3 (T=0.0-Runs, §11-Satz, Eval-Tabellen-Caveat)
+sind obsolet in ihrer ursprünglichen Form. 122b bleibt aus dem quantitativen Vergleich
+ausgeschlossen (→ [[task-paper-122b-tool-call-footnote]]). §11-Satz muss neu formuliert werden:
+nicht „T=0 rehabilitiert das Modell", sondern „T=0 verstärkt das Problem durch Greedy-Loop".
+
 ## Subtasks
 
 ### T1 — T=0.0-Runs auswerten
