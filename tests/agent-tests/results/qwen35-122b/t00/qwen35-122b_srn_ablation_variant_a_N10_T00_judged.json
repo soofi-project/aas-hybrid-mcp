@@ -1,0 +1,967 @@
+{
+  "cases": [
+    "cases/srn_ablation_variant_a.yaml"
+  ],
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
+  "summary": {
+    "totals": {
+      "n": 30,
+      "correct": 0,
+      "correct_rate": 0.0,
+      "manuals_first": 0,
+      "manuals_first_rate": 0.0,
+      "tool_error_free": 30,
+      "tool_error_free_rate": 1.0,
+      "all_good": 0,
+      "all_good_rate": 0.0
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "srn_variant_a_fault_context",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 10,
+        "tool_error_free_rate": 1.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_variant_a_no_element_bypass",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 10,
+        "tool_error_free_rate": 1.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_variant_a_routine_priority",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 10,
+        "tool_error_free_rate": 1.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 30,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 30,
+        "tool_error_free_rate": 1.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.316,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates, but it never identifies MiR100_001 and never attempts or reports a service-request write/validation result.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.287,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer says it needs to identify the Hall 4 robot first and plans checks, but it neither identifies MiR100_001 nor shows any write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.284,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates, but it never identifies MiR100_001 and never attempts or reports a service-request write/validation outcome.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.285,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it neither identifies MiR100_001 nor shows any write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.288,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it never identifies MiR100_001 and never attempts or reports a service-request write/validation result.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.283,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it never identifies MiR100_001 and never attempts or reports the service-request write/validation result.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.287,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it never identifies MiR100_001 and never shows a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.29,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it never identifies MiR100_001 and never reports an attempted write or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.293,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it never identifies MiR100_001 and does not report any attempted write or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_fault_context",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "I will help you resolve the emergency stop for the transport robot in Hall 4 and create the necessary service request.\n\nFirst, I need to identify the specific Asset Administration Shell (AAS) for the robot in Hall 4 to locate its submodels and create the service request.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort CONTAINS 'TransportRobot' AND a.idShort CONTAINS 'Hall4'\nRETURN aas.id, aas.idShort, a.globalAssetId\n```\n\nLet's also check the graph schema to ensure we are using the correct relationship labels.\n\n```cypher\nCALL get_graph_schema()\n```\n\nAnd get the templates index to ensure we can create a conformant Service Request Notification.\n\n```cypher\nCALL get_templates_index()\n```\n\nI will execute these calls in parallel.",
+      "duration_s": 1.284,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to identify the robot and inspect schema/templates; it does not identify MiR100_001 and does not show any write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.464,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to query first and then create the request; it neither identifies UR3e_002 as the Hall 4 UR3e nor attempts a write/returns a validation error, and it says more info must be found before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.465,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to query for the AAS and then create the request later; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more information must be found first.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.461,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create a request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info must be found first.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.473,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create a request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info must be found first.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.467,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create the request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info is needed before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.472,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to first locate the AAS and then create a request; it neither identifies UR3e_002 nor shows a write attempt or surfaced validation error, and it says more information is needed before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.464,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create a request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info is needed before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.464,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create a request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info is needed before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.462,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create a request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info is needed before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_routine_priority",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due.",
+      "final_answer": "To create the service request, I first need to locate the specific AssetAdministrationShell (AAS) for the \"UR3e robot arm\" in \"Hall 4\" to get its ID.\n\nI will:\n1.  Query the graph to find the AAS with `idShort` matching \"UR3e\" or the asset in \"Hall 4\".\n2.  Once the `aas_id` is found, I will create the Service Request Notification (SRN) with `service_type` set to \"Inspection\" and `priority` set to \"Low\" (routine).\n\nLet's start by finding the AAS.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'ur3e' \n   OR toLower(a.assetKind) CONTAINS 'ur3e'\n   OR toLower(aas.idShort) CONTAINS 'hall 4'\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.assetKind\n```",
+      "duration_s": 1.471,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to search for the AAS and then create a request; it neither identifies UR3e_002 nor attempts a write/returns a validation error, and it says more info is needed before proceeding.",
+        "missing_facts": [
+          "The agent identified UR3e_002 as the UR3e in Hall 4",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [
+          "The user must provide additional information before anything can be done"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.891,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to look up the asset plus a query; it does not identify CRX10iA_001 as the target asset or report a write attempt/validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.885,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to find the AAS for urn:asset:crx10ia:001 plus a query; it identifies the target asset but does not show any write attempt or validation error.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.889,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to look up the asset/AAS; it identifies the serial but does not identify CRX10iA_001 as the target asset or show any write attempt/validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.888,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to create a service request and a graph lookup step; it identifies the serial but does not identify CRX10iA_001 or report a write/validation outcome.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.898,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to look up the asset plus a query; it does not identify CRX10iA_001 as the target asset nor show a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.883,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to find the AAS for urn:asset:crx10ia:001 plus a query; it identifies the target asset but does not report any write attempt or validation error.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.86,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan/query to locate the asset by serial number, but it does not identify CRX10iA_001 nor show a write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.89,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is a plan to look up the asset/AAS; it references the serial but does not identify CRX10iA_001 or report any write attempt/validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.888,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to create a service request plus a lookup query; it identifies the serial but does not identify CRX10iA_001 or report a write attempt/validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_variant_a_no_element_bypass",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request.",
+      "final_answer": "I need to create a service request for the robot with serial number `urn:asset:crx10ia:001` that has a motor fault.\n\nFirst, I need to find the AssetAdministrationShell (AAS) associated with this asset. Let me query the graph to locate the AAS for this asset.\n\n```cypher\nMATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:crx10ia:001'\nRETURN aas.id, aas.idShort\n```",
+      "duration_s": 0.897,
+      "tool_call_count": 0,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is only an intent to create a service request plus a lookup query; it identifies the serial but does not identify CRX10iA_001 or report a write attempt/validation error.",
+        "missing_facts": [
+          "The agent identified CRX10iA_001 as the target asset",
+          "A write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": null,
+        "first_query_idx": null,
+        "manual_tools_called": [],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    }
+  ]
+}

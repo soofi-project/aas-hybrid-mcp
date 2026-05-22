@@ -67,7 +67,7 @@ Zwei Achsen: **Qwen3.5** (Skalierung, primäre Forschungsfrage) + **Qwen3.6** (G
 - CRAG: out-of-scope per [[task-paper-crag-removal-and-reframe]]
 
 **Eval-Budget:** 1 Pattern × 9 Modelle × N=10 = **~810 Runs** (Bench B + Bench C kombiniert).
-Cortecs-Kosten (nur 397B, N=10, Bench B+C): ~15–25 €. Judge-Kosten (gpt-5.4-mini): ~1–2 $.
+Cortecs-Kosten (nur 397B, N=10, Bench B+C): ~15–25 €. Judge-Kosten (gpt-5.4): ~1–2 $.
 H200-Runs: sequenziell, je ~15–30 Min Reload-Zeit pro Modellwechsel.
 Begründung N=10: Existence-Framing — 6 Cases × 10 = 60 Obs. pro Suite reicht für Capability-Floor-Aussagen; kein Anspruch auf präzise Frequenzschätzung.
 Script: `tests/agent-tests/run_all.sh` — ReAct-only, N=10 für alle Paper-Eval-Suiten.
@@ -127,7 +127,7 @@ python run_tests.py \
   --export results/<slug>_bench_b_N30_judged.json
 ```
 
-Judge-Modell: **gpt-5.4-mini** (independent judge, family-unabhängig von Qwen; OpenAIs aktuell stärkstes kompaktes Modell; gepinnt für Reproduzierbarkeit; im Paper dokumentieren).
+Judge-Modell: **gpt-5.4** (independent judge, family-unabhängig von Qwen; gepinnt für Reproduzierbarkeit; im Paper dokumentieren).
 Vollständiger Workflow: `tests/agent-tests/README.md` → Sektion „Paper eval".
 
 ### T4 — Cypher-vs-JSON-Hypothese empirisch prüfen

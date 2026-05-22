@@ -67,6 +67,44 @@ Die Testfälle in `tests/agent-tests/cases/srn_bypass.yaml` sind bewusst so kons
 
 Diese Designentscheidungen gehören in §10-Evaluation als Methodologie-Satz: *„Queries were formulated using natural asset references (location, serial number) rather than AAS identifiers, reflecting realistic operator input; the term 'quickly' was included to reduce the likelihood of the agent pausing to request clarification."*
 
+### T5 — ZeroToMany List Semantics: Overwrite Risk + Transaction Problem (Paper)
+
+**Befund (2026-05-22):**
+IDTA 02010-1-0-1 definiert *ein* SRN-Submodell pro Asset mit ZeroToMany-Cardinality
+für `ServiceRequestNotification`-Entries. Aktuelle Implementierung (ein Submodell pro
+Notification, UUID-Suffix) ist spec-abweichend aber overwrite-sicher.
+
+Eine spec-konforme Implementierung würde:
+1. Bestehendes SRN-Submodell per semanticId suchen
+2. Neue Entry anhängen
+3. Zähler inkrementieren
+
+Das ist Read → merge → write — nicht atomar. Concurrent Writes würden sich gegenseitig
+überschreiben. Diese Logik gehört *nicht in den Agenten*, sondern in den MCP-Endpunkt
+(serverseitiges Append + optimistic locking oder sequentielles Queue).
+
+Außerdem: Ein Agent mit `put_submodel`-Zugriff (erzwungen für Validierung) könnte
+versehentlich — oder unter Zeitdruck — ein bestehendes ZeroToMany-Submodell durch eine
+frische Ein-Entry-Version ersetzen und damit alle vorherigen Notifications löschen.
+Das ist das strukturelle Overwrite-Risiko.
+
+**Paper-Platzierung:**
+- §Limitations oder §Discussion, als vierter Layered-Determinism-Befund:
+  "Die serverseitige Merge-Logik für Kollektions-Typen ist ein weiteres Beispiel, warum
+  die Tool-Boundary deterministischen Code erfordert — der Agent soll die Entry-Daten
+  liefern, nicht die Konsistenz der gesamten Collection besitzen."
+- Kurz in §Future Work: append-endpoint mit server-seitigem OCC als nächster Schritt
+  nach dem aktuellen put_submodel-First-Step.
+
+**Keine Code-Änderung jetzt.** Aktuelle UUID-Submodell-Strategie bleibt
+als bewusste, dokumentierte Abweichung stehen.
+
+**References:**
+- IDTA 02010-1-0-1 Template: `C:\repo\submodel-templates\published\Service Request Notification\1\0\1\`
+- `NumberOfServiceRequestNotifications` (ZeroToOne counter) + `ServiceRequestNotification` (ZeroToMany)
+- Bestehender Gap in T3 (ZeroToMany-Shell-Validierung) ist verwandt aber anders:
+  T3 = Validator prüft leere Shell durch; T5 = Overwrite + Transaction auf Ebene des Gesamtinhalts
+
 ## Acceptance Criteria
 
 - Messdaten existieren, die zeigen, in wie vielen Runs der Validator via Element-Schreibungen umgangen wurde.

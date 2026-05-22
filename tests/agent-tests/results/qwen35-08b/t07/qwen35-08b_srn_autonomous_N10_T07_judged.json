@@ -2,15 +2,15 @@
   "cases": [
     "cases/srn_autonomous.yaml"
   ],
-  "judge_model": "gpt-5.4-mini",
-  "judge_base_url": "https://api.openai.com",
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
   "summary": {
     "totals": {
       "n": 30,
       "correct": 0,
       "correct_rate": 0.0,
-      "manuals_first": 10,
-      "manuals_first_rate": 0.333,
+      "manuals_first": 7,
+      "manuals_first_rate": 0.233,
       "tool_error_free": 24,
       "tool_error_free_rate": 0.8,
       "all_good": 0,
@@ -23,8 +23,8 @@
         "n": 10,
         "correct": 0,
         "correct_rate": 0.0,
-        "manuals_first": 4,
-        "manuals_first_rate": 0.4,
+        "manuals_first": 2,
+        "manuals_first_rate": 0.2,
         "tool_error_free": 7,
         "tool_error_free_rate": 0.7,
         "all_good": 0,
@@ -49,8 +49,8 @@
         "n": 10,
         "correct": 0,
         "correct_rate": 0.0,
-        "manuals_first": 5,
-        "manuals_first_rate": 0.5,
+        "manuals_first": 4,
+        "manuals_first_rate": 0.4,
         "tool_error_free": 8,
         "tool_error_free_rate": 0.8,
         "all_good": 0,
@@ -63,8 +63,8 @@
         "n": 30,
         "correct": 0,
         "correct_rate": 0.0,
-        "manuals_first": 10,
-        "manuals_first_rate": 0.333,
+        "manuals_first": 7,
+        "manuals_first_rate": 0.233,
         "tool_error_free": 24,
         "tool_error_free_rate": 0.8,
         "all_good": 0,
@@ -84,7 +84,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a request for more information instead of a created service request, so the required service-request facts are unsupported.",
+        "reasoning": "Core answer is a request for the user to provide an AAS/submodel ID, and it does not state that a service request was created.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -117,7 +117,7 @@
       "tool_call_count": 3,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a request for the user to provide the AAS ID, not a created service request; required facts are unsupported and it wrongly asks for additional information.",
+        "reasoning": "Core answer asks the user for an AAS ID before proceeding, so it neither creates the request nor supplies the required request details and it violates the must-not-claim.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -152,7 +152,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a request for more information instead of creating the service request, so the required creation facts are unsupported.",
+        "reasoning": "Core answer is a request for clarification instead of a created service request, so required creation details are missing and it wrongly says more info is needed.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -185,7 +185,7 @@
       "tool_call_count": 0,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/request for more information, so it does not support the required service request creation facts and it wrongly claims additional information is needed.",
+        "reasoning": "Core answer says it cannot create the service request and asks the user for the AAS ID, so it does not provide the required created-request details and violates the no-additional-info rule.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -198,7 +198,7 @@
         "judge_error": false
       },
       "process": {
-        "read_manuals_first": true,
+        "read_manuals_first": false,
         "first_manual_idx": null,
         "first_query_idx": null,
         "manual_tools_called": [],
@@ -218,7 +218,7 @@
       "tool_call_count": 14,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: no valid service request was created for MiR100_001 with High priority, CorrectiveMaintenance, and Open status, so the answer is incorrect.",
+        "reasoning": "Core answer says it cannot identify the Hall 4 robot and asks for additional details instead of confirming a created service request.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -254,7 +254,7 @@
       "tool_call_count": 41,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: no valid service request was created and the answer instead says it cannot definitively identify the robot or proceed, so required facts are unsupported.",
+        "reasoning": "The core answer is an inability-to-complete summary and proposed actions; it does not confirm creation of the required service request and instead asks for/needs additional information.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -304,16 +304,14 @@
       "tool_call_count": 31,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: a troubleshooting summary and refusal to create the request; it does not support the required service request facts and positively asserts a forbidden need for more information/system issues.",
+        "reasoning": "Core answer says it cannot create a service request due to broken schema, so none of the required created-request facts are supported.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
           "ServiceType is CorrectiveMaintenance",
           "Status is Open"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before the request can be created"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -359,7 +357,7 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": false,
-        "reasoning": "The core list is a refusal/guidance workflow, but it does not support the required service request creation facts and it wrongly implies more information/tooling is needed.",
+        "reasoning": "Core list is a workflow saying the user should search for the transport robot and then create an SRN; it does not state that a service request was created for MiR100_001 with the required fields and instead says more information/searching is needed.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -397,7 +395,7 @@
       "tool_call_count": 0,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/instructions, not a created service request; required facts are unsupported and no request for MiR100_001 is confirmed.",
+        "reasoning": "Core answer says it cannot create the service request and asks the user to provide query results instead of confirming creation for MiR100_001.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -410,7 +408,7 @@
         "judge_error": false
       },
       "process": {
-        "read_manuals_first": true,
+        "read_manuals_first": false,
         "first_manual_idx": null,
         "first_query_idx": null,
         "manual_tools_called": [],
@@ -430,7 +428,7 @@
       "tool_call_count": 24,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal to create the service request, so the required SRN facts are unsupported and it wrongly demands more information.",
+        "reasoning": "Core answer says it cannot fulfill the request and recommends the user provide more identifying details, so it neither confirms creation of the required service request nor avoids the forbidden claim.",
         "missing_facts": [
           "A service request was created for MiR100_001 (the transport robot in Hall 4)",
           "Priority is High",
@@ -480,7 +478,7 @@
       "tool_call_count": 9,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/diagnostic asking the user to choose an approach, not a created service request; required facts are unsupported.",
+        "reasoning": "The answer does not present a created service request for UR3e_002 and instead asks for additional direction.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -516,7 +514,7 @@
       "tool_call_count": 1,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a request for more information/UUID conversion, not a created service request; required fields are unsupported and it asks the user for additional information.",
+        "reasoning": "Core list: none; the agent did not state that a service request was created and instead asked for additional information.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -549,7 +547,7 @@
       "tool_call_count": 46,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: three refusal/limitation statements; it does not support the required service request facts and includes an improper need-for-more-info implication.",
+        "reasoning": "Core list is the three numbered statements saying the request cannot be created; it does not provide the required created service request fields and improperly says more information/infrastructure is needed.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -586,16 +584,14 @@
       "tool_call_count": 12,
       "judge": {
         "answer_correct": false,
-        "reasoning": "The core list is a troubleshooting plan and stream error, not a created service request with the required fields.",
+        "reasoning": "The answer contains no service-request core list or created-request fields, so it does not support the required request details.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
           "Priority is Low",
           "Status is Open"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before the request can be created"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -622,7 +618,7 @@
       "tool_call_count": 34,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is absent; the response does not create a service request or provide the required fields.",
+        "reasoning": "Core list contains template/schema placeholders and no created service request; it also says actual creation/querying cannot be done.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -670,7 +666,7 @@
       "tool_call_count": 22,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/request for more information about CRX-10iA/UR3e, not a created service request with the required fields.",
+        "reasoning": "The answer does not create any service request and instead asks for more information after failing to identify the UR3e in Hall 4.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -707,7 +703,7 @@
       "tool_call_count": 23,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: no service request was actually created and the answer asks for more information instead of confirming the required fields; verdict: incorrect.",
+        "reasoning": "The core answer is that the request could not be created and asks the user for a valid AAS ID, so it does not provide the required created service request fields.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -758,7 +754,7 @@
       "tool_call_count": 29,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal asking for more information instead of creating the service request, so the required request details are unsupported and a forbidden extra-information claim is made.",
+        "reasoning": "Core answer says no service request was created and asks the user for more information, so the required created-request fields are unsupported and a must-not-claim is violated.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -796,7 +792,7 @@
       "tool_call_count": 0,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/request for more information, which does not support the required service request facts and includes a forbidden claim about needing additional information.",
+        "reasoning": "Core answer is a refusal plus a list of additional information needed, so it does not create the service request and explicitly says more info is required.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -809,7 +805,7 @@
         "judge_error": false
       },
       "process": {
-        "read_manuals_first": true,
+        "read_manuals_first": false,
         "first_manual_idx": null,
         "first_query_idx": null,
         "manual_tools_called": [],
@@ -829,7 +825,7 @@
       "tool_call_count": 25,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a discussion of templates and query issues, not a created service request for UR3e_002 with the required fields.",
+        "reasoning": "Core list is a troubleshooting/status list about failed queries, not a created service request, so required request fields are unsupported and it asks for more information before creation.",
         "missing_facts": [
           "A service request was created for UR3e_002",
           "ServiceType is Inspection",
@@ -866,14 +862,11 @@
       "tool_call_count": 14,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list claims a service request was created for CRX10iA_001, but the answer does not clearly support that and it does not state the required Open status.",
+        "reasoning": "Core claim is that a service request notification was created successfully, but it does not support that the created request status is Open.",
         "missing_facts": [
-          "A service request was created for CRX10iA_001",
           "Status is Open"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before the request can be created"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -899,14 +892,12 @@
       "tool_call_count": 49,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a meta-instruction instead of a service-request result, so the required creation/status facts are unsupported.",
+        "reasoning": "Core list is empty because the agent did not state that any service request was created; instead it gave meta-instructions, so required facts are unsupported.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before the request can be created"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -933,7 +924,7 @@
       "tool_call_count": 47,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is empty, so the required service request for CRX10iA_001 with status Open is unsupported.",
+        "reasoning": "Core list is empty, so it does not state that a service request was created for CRX10iA_001 or that its status is Open.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
@@ -962,13 +953,13 @@
       "tool_call_count": 41,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: no valid service-request creation for CRX10iA_001 is asserted, and the answer instead gives unrelated failure/context claims.",
+        "reasoning": "Core answer is a refusal/error report saying no service request could be created, so the required creation and Open status facts are missing and it improperly says more information/working server is needed before creation.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
         ],
         "wrong_claims": [
-          "The user must provide additional information before the request can be created"
+          "The answer asserts the request cannot be created without additional information/working server access."
         ],
         "judge_error": false
       },
@@ -993,7 +984,7 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says the request cannot be created yet and asks for more information, which misses the required created/open service request and includes a forbidden extra-information claim.",
+        "reasoning": "Core answer says no service request could be created and asks for more information, so it does not support the required created/Open request.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
@@ -1027,7 +1018,7 @@
       "tool_call_count": 25,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a request for more information/AAS ID rather than a created service request, so the required creation and Open status are not supported.",
+        "reasoning": "The core answer is a request for more information (AAS ID/asset context) rather than confirming creation of a service request, so the required creation and Open status facts are unsupported and it improperly says more info is needed before creation.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
@@ -1073,7 +1064,7 @@
       "tool_call_count": 42,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/limitations summary, not a created service request for CRX10iA_001 with Open status, so the required facts are unsupported.",
+        "reasoning": "The core list is the 'Summary/Card check/Limitations' bullets, and it does not state that a service request was created or that its status is Open; it instead says it can't generate the request due to insufficient info.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
@@ -1108,14 +1099,12 @@
       "tool_call_count": 49,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is absent; the response is a tool-query prompt, not a created service request with status Open.",
+        "reasoning": "The core answer contains no service-request creation result, only a statement about trying a simpler query, so required facts are unsupported.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before the request can be created"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -1141,7 +1130,7 @@
       "tool_call_count": 31,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: it only says it needs more information and asks whether to proceed, so it does not support that a service request was created or that status is Open.",
+        "reasoning": "The core answer says the request was not yet created and asks for confirmation, so it does not support creation or open status and improperly says more info/action is needed first.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"
@@ -1174,7 +1163,7 @@
       "tool_call_count": 14,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says the request cannot be created and asks for more information, so it misses the required created/open service request and violates the must-not-claim.",
+        "reasoning": "The core answer says no service request was created and asks for more information, so it fails the required creation/status facts and violates the must-not-claim.",
         "missing_facts": [
           "A service request was created for CRX10iA_001",
           "Status is Open"

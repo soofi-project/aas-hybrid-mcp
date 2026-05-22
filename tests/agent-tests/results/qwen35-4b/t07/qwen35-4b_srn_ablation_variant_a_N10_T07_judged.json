@@ -2,40 +2,40 @@
   "cases": [
     "cases/srn_ablation_variant_a.yaml"
   ],
-  "judge_model": "gpt-5.4-mini",
-  "judge_base_url": "https://api.openai.com",
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
   "summary": {
     "totals": {
       "n": 30,
-      "correct": 11,
-      "correct_rate": 0.367,
+      "correct": 15,
+      "correct_rate": 0.5,
       "manuals_first": 4,
       "manuals_first_rate": 0.133,
       "tool_error_free": 8,
       "tool_error_free_rate": 0.267,
-      "all_good": 0,
-      "all_good_rate": 0.0
+      "all_good": 1,
+      "all_good_rate": 0.033
     },
     "per_bucket": [
       {
         "variant": "react",
         "case": "srn_variant_a_fault_context",
         "n": 10,
-        "correct": 2,
-        "correct_rate": 0.2,
+        "correct": 3,
+        "correct_rate": 0.3,
         "manuals_first": 3,
         "manuals_first_rate": 0.3,
         "tool_error_free": 2,
         "tool_error_free_rate": 0.2,
-        "all_good": 0,
-        "all_good_rate": 0.0
+        "all_good": 1,
+        "all_good_rate": 0.1
       },
       {
         "variant": "react",
         "case": "srn_variant_a_no_element_bypass",
         "n": 10,
-        "correct": 7,
-        "correct_rate": 0.7,
+        "correct": 10,
+        "correct_rate": 1.0,
         "manuals_first": 1,
         "manuals_first_rate": 0.1,
         "tool_error_free": 5,
@@ -61,14 +61,14 @@
       {
         "variant": "react",
         "n": 30,
-        "correct": 11,
-        "correct_rate": 0.367,
+        "correct": 15,
+        "correct_rate": 0.5,
         "manuals_first": 4,
         "manuals_first_rate": 0.133,
         "tool_error_free": 8,
         "tool_error_free_rate": 0.267,
-        "all_good": 0,
-        "all_good_rate": 0.0
+        "all_good": 1,
+        "all_good_rate": 0.033
       }
     ]
   },
@@ -84,14 +84,11 @@
       "tool_call_count": 10,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list mentions a service request and generic transport robot guidance, but it does not identify MiR100_001 as the Hall 4 robot and does not clearly report a write attempt or validation error.",
+        "reasoning": "Core list: immediate actions and a claimed created service request; it does not identify MiR100_001, though it does assert a write occurred.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified MiR100_001 as the transport robot in Hall 4"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before anything can be done"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -127,14 +124,11 @@
       "tool_call_count": 26,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list mentions a service request for the Hall 4 robot, but it does not identify MiR100_001 and it silently skips the required write/validation signal.",
+        "reasoning": "Core list is the service request details and immediate actions; it reports a write with Status Open, but never identifies the Hall 4 transport robot as MiR100_001.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The answer did not identify MiR100_001 as the transport robot in Hall 4"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before anything can be done"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -173,7 +167,7 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 identified and service request created/open; the write/validation outcome is supported by the creation confirmation.",
+        "reasoning": "Core claims: identified the Hall 4 transport robot as MiR100_001 and positively asserted a created service request with Status Open; this satisfies all required facts and includes no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -213,12 +207,9 @@
       "duration_s": 44.759,
       "tool_call_count": 14,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: the agent says MiR100 transport robot in Hall 4 and that a service request was created; it does not identify MiR100_001 and does not show a write attempt or validation error.",
-        "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list: asset identified as the Hall 4 robot and a created service request with Status Open; this supports MiR100_001 identification and confirms a write was attempted without requiring more info.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -233,7 +224,7 @@
         "tool_error_count": 0,
         "tool_errors": []
       },
-      "all_good": false
+      "all_good": true
     },
     {
       "case": "srn_variant_a_fault_context",
@@ -246,13 +237,13 @@
       "tool_call_count": 23,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list names MiR250_001/MiR250_002 and asks for clarification, but it never identifies MiR100_001 or attempts a write/service request.",
+        "reasoning": "Core list names MiR250_001 and MiR250_002 and asks for clarification; it neither identifies MiR100_001 in Hall 4 nor attempts/reports the service-request write.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "Did not identify MiR100_001 as the transport robot in Hall 4",
+          "Did not attempt a write or report a validation error for creating the service request"
         ],
         "wrong_claims": [
-          "The user must provide additional information before anything can be done"
+          "Asserted that additional user clarification is needed before anything can be done"
         ],
         "judge_error": false
       },
@@ -292,14 +283,11 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: a service request was created for the UR3e robot in Hall 4; this misses the required MiR100_001 identification and the write/validation signal, and it positively asserts the wrong robot.",
+        "reasoning": "Core list is the service request summary; it reports a created request for a UR3e robot in Hall 4, but does not identify MiR100_001 and thus fails despite attempting a write.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified MiR100_001 as the transport robot in Hall 4"
         ],
-        "wrong_claims": [
-          "The service request was created for the UR3e robot in Hall 4"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -347,7 +335,7 @@
       "tool_call_count": 26,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list supports MiR100_001 as the Hall 4 transport robot and confirms a service request write was completed with Status Open.",
+        "reasoning": "Core list: emergency-stop steps and a service-request summary; it identifies MiR100_001 as the Hall 4 robot and positively asserts the service request was created with Status Open.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -386,14 +374,11 @@
       "tool_call_count": 20,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list includes a created service request and emergency stop guidance, but it does not identify MiR100_001 as the Hall 4 robot and it does not clearly report a write attempt or validation error.",
+        "reasoning": "Core list: emergency stop procedures and a created service request; it reports a write succeeded but never identifies MiR100_001 as the Hall 4 transport robot.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified MiR100_001 as the transport robot in Hall 4"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before anything can be done"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -440,14 +425,11 @@
       "tool_call_count": 23,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list identifies UR3e_002 in Hall4 and claims a service request was created, but it does not support MiR100_001 and introduces a wrong robot identity.",
+        "reasoning": "Core list names UR3e_002 in Hall4 and a created service request, so it fails because it does not identify MiR100_001 as the Hall 4 transport robot.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified MiR100_001 as the transport robot in Hall 4"
         ],
-        "wrong_claims": [
-          "The user must provide additional information before anything can be done"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -496,10 +478,9 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: service request created and emergency-stop actions; it does not identify MiR100_001 and does not show a write attempt or validation error.",
+        "reasoning": "Core list is the claimed successful service request creation and action plan, but it never identifies MiR100_001 as the Hall 4 transport robot.",
         "missing_facts": [
-          "The agent identified MiR100_001 as the transport robot in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified MiR100_001 as the transport robot in Hall 4"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -528,10 +509,9 @@
       "tool_call_count": 14,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: a service request for the UR3e robot arm in Hall 4 was created, but it does not identify UR3e_002 and does not report a write attempt or validation error.",
+        "reasoning": "Core list: a created service request summary for 'the UR3e robot arm in Hall 4'; incorrect because it never identifies the robot as UR3e_002, though it does assert a write occurred.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The answer does not identify UR3e_002 as the UR3e in Hall 4."
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -576,12 +556,13 @@
       "tool_call_count": 8,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the service request details for UR3e_001; it does not identify UR3e_002 and gives no write attempt or validation error.",
+        "reasoning": "Core list is the service request details; it reports a write success but identifies the Hall 4 UR3e as UR3e_001 instead of required UR3e_002.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified UR3e_002 as the UR3e in Hall 4"
         ],
-        "wrong_claims": [],
+        "wrong_claims": [
+          "AAS ID: urn:aas:ur3e:001 (UR3e_001) as the UR3e robot arm in Hall 4"
+        ],
         "judge_error": false
       },
       "process": {
@@ -617,7 +598,7 @@
       "tool_call_count": 10,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the service request for UR3e_002 in Hall 4 was created/registered, which supports the required identification and write attempt.",
+        "reasoning": "Core list is the created service request details, which correctly identify UR3e_002 in Hall 4 and positively assert that the write succeeded.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -652,7 +633,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for UR3e_002 in Hall 4 with an attempted write/registration; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the confirmation fields for the created service request; it identifies UR3e_002 in Hall 4 and positively states the request was created/registered, with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -697,10 +678,9 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the service request summary; it misidentifies the Hall 4 UR3e as UR3e_001 instead of UR3e_002, so the required identification is missing.",
+        "reasoning": "Core list is the created service request summary, and it incorrectly identifies the Hall 4 UR3e as UR3e_001 though it does report a write outcome.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified UR3e_002 as the UR3e in Hall 4"
         ],
         "wrong_claims": [
           "Asset: UR3e_001 (located in Hall 4)"
@@ -749,14 +729,11 @@
       "tool_call_count": 8,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the SRN was created for UR3e_001, not UR3e_002, and the answer does not show a write attempt or validation error for the required UR3e_002 target.",
+        "reasoning": "Core list: the created SRN summary names UR3e_001 in Hall 4; this fails because it did not identify UR3e_002, though it did report a write attempt.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The agent identified UR3e_002 as the UR3e in Hall 4"
         ],
-        "wrong_claims": [
-          "The answer positively asserts the request was created for UR3e_001 instead of UR3e_002"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -801,15 +778,11 @@
       "tool_call_count": 17,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the created service request targets UR3e_001, not the required UR3e_002, so the required identification is unsupported.",
+        "reasoning": "The core answer lists a created service request for UR3e_001, so it fails because it did not identify UR3e_002 as the UR3e in Hall 4, though it did report a write attempt/success.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported"
+          "The agent identified UR3e_002 as the UR3e in Hall 4"
         ],
-        "wrong_claims": [
-          "The service request was created for UR3e_001 as the UR3e in Hall 4",
-          "The user may need to let me know if the request was intended for UR3e_002 instead"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -854,10 +827,10 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: it asks for clarification instead of identifying UR3e_002 and attempting a write/validation error, so required facts are missing and a forbidden claim is made.",
+        "reasoning": "Core answer asks for clarification instead of identifying a Hall 4 UR3e or attempting the service-request write.",
         "missing_facts": [
           "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "A write was attempted or a validation error was reported"
         ],
         "wrong_claims": [
           "The user must provide additional information before anything can be done"
@@ -887,10 +860,9 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is the service request details, but it does not identify UR3e_002 as the Hall 4 robot and does not show a write attempt or validation error.",
+        "reasoning": "Core list is the service request summary; it shows a write was attempted, but it does not identify the Hall 4 UR3e specifically as UR3e_002.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "The answer does not identify UR3e_002 as the UR3e in Hall 4"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -926,12 +898,13 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: a service request for Hall4 was created, but it does not identify UR3e_002 as the UR3e in Hall 4 and does not show a write attempt or validation error.",
+        "reasoning": "Core list is the created service request details; it does not identify UR3e_002 and instead asserts a Hall4-level asset.",
         "missing_facts": [
-          "The agent identified UR3e_002 as the UR3e in Hall 4",
-          "A write was attempted or a validation error was reported (not silently skipped)"
+          "Did not identify UR3e_002 as the UR3e in Hall 4"
         ],
-        "wrong_claims": [],
+        "wrong_claims": [
+          "Asserted the asset as Hall4 (containing UR3e robot) rather than identifying the specific UR3e_002 robot arm"
+        ],
         "judge_error": false
       },
       "process": {
@@ -968,7 +941,7 @@
       "tool_call_count": 5,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with a write confirmed; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "The core list is the created service request details, which identify robot CRX10iA_001 as the target asset and positively assert that the service request was created/registered.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1005,12 +978,9 @@
       "duration_s": 4.159,
       "tool_call_count": 6,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: a service request for CRX10iA_001 was created, but the target asset is not identified as CRX10iA_001 and no write attempt or validation error is reported.",
-        "missing_facts": [
-          "The agent identified CRX10iA_001 as the target asset",
-          "A write was attempted or a validation error was reported"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core answer is the created service request details, which identify asset crx10ia:001/CRX10iA_001 and positively report a successful write with no forbidden claim.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -1047,7 +1017,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the service request notification for AAS urn:aas:crx10ia:001 / robot urn:asset:crx10ia:001 was created and registered; this supports the target asset and a successful write.",
+        "reasoning": "Core list is the created service request details for AAS urn:aas:crx10ia:001, which identifies CRX10iA_001 and confirms a write was performed with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1085,7 +1055,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for urn:aas:crx10ia:001 with motor fault; the target asset is identified and a write/registration is confirmed.",
+        "reasoning": "Core list is the created service request details; it identifies the target asset via AAS ID urn:aas:crx10ia:001 corresponding to CRX10iA_001 and positively reports a successful write.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1111,7 +1081,7 @@
       "tool_call_count": 3,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the service request summary for CRX10iA_001 with a successful creation/write confirmation; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request summary, which identifies asset CRX10iA_001 and confirms a successful write by stating the service request was created.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1137,7 +1107,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the service request was created for CRX10iA_001 with high priority and motor_fault; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the created service request details, which identify urn:aas:crx10ia:001 / serial urn:asset:crx10ia:001 as the target asset and explicitly state the request was created successfully.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1175,7 +1145,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with a write confirmed; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request summary bullets, which identify asset CRX10iA_001 and state the request was created successfully, so all required facts are supported with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1201,7 +1171,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for urn:asset:crx10ia:001 with a successful write/registration; verdict: correct.",
+        "reasoning": "Core list is the service request summary, which identifies the target asset as CRX10iA_001 via serial/AAS and positively states the service request was created/registered, so it passes.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1226,12 +1196,9 @@
       "duration_s": 18.377,
       "tool_call_count": 10,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: the created SRN details; it does not identify CRX10iA_001 as the target asset and uses a different asset identifier, so the required facts are not fully supported.",
-        "missing_facts": [
-          "The agent identified CRX10iA_001 as the target asset",
-          "A write was attempted or a validation error was reported"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list is the created service request details (ID, Asset, Type, Priority, Issue); it identifies the target asset and positively states the request was created/registered.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -1274,12 +1241,9 @@
       "duration_s": 12.522,
       "tool_call_count": 6,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: service request details for urn:aas:crx10ia:001; the target asset is not identified as CRX10iA_001 and no write/validation error is explicitly reported.",
-        "missing_facts": [
-          "The agent identified CRX10iA_001 as the target asset",
-          "A write was attempted or a validation error was reported"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list is the SRN details, which identify asset urn:aas:crx10ia:001 / CRX10iA_001 and positively state the service request was created, so all required facts are supported with no forbidden claim.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },

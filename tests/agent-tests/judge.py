@@ -486,7 +486,6 @@ async def run(
     output_path.write_text(
         json.dumps(
             {
-                "input": str(input_path),
                 "cases": cases_paths,
                 "judge_model": cfg.model,
                 "judge_base_url": cfg.base_url,

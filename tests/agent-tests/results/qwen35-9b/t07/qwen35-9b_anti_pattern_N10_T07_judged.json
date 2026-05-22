@@ -2,13 +2,13 @@
   "cases": [
     "cases/anti_pattern_idShort_lookup.yaml"
   ],
-  "judge_model": "gpt-5.4-mini",
-  "judge_base_url": "https://api.openai.com",
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
   "summary": {
     "totals": {
       "n": 20,
-      "correct": 16,
-      "correct_rate": 0.8,
+      "correct": 15,
+      "correct_rate": 0.75,
       "manuals_first": 7,
       "manuals_first_rate": 0.35,
       "tool_error_free": 1,
@@ -21,8 +21,8 @@
         "variant": "react",
         "case": "mir100_max_speed_no_substring_lookup",
         "n": 10,
-        "correct": 6,
-        "correct_rate": 0.6,
+        "correct": 5,
+        "correct_rate": 0.5,
         "manuals_first": 6,
         "manuals_first_rate": 0.6,
         "tool_error_free": 1,
@@ -48,8 +48,8 @@
       {
         "variant": "react",
         "n": 20,
-        "correct": 16,
-        "correct_rate": 0.8,
+        "correct": 15,
+        "correct_rate": 0.75,
         "manuals_first": 7,
         "manuals_first_rate": 0.35,
         "tool_error_free": 1,
@@ -71,12 +71,12 @@
       "tool_call_count": 17,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the MiR100 maximum speed is 1.0 with maximum load; this misses the required 1.5 m/s and positively asserts the wrong speed.",
+        "reasoning": "The core answer asserts the MiR100 maximum speed is 1.0, so it misses the required 1.5 m/s fact.",
         "missing_facts": [
           "MiR100 maximum speed is 1.5 m/s"
         ],
         "wrong_claims": [
-          "The maximum speed of the MiR100 is 1.0 (with maximum load)"
+          "The maximum speed of the MiR100 is 1.0 (with maximum load) as the answer to the question."
         ],
         "judge_error": false
       },
@@ -123,7 +123,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s; this is supported and no must-not-claim is positively asserted.",
+        "reasoning": "The core list gives two speed values and explicitly states the MiR100 maximum speed is 1.5 m/s, so all required facts are supported with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -161,7 +161,7 @@
       "tool_call_count": 14,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s; this required fact is supported and no must-not-claim is violated.",
+        "reasoning": "Core list states SpeedMaxEmptyAsSpecified 1.5 and SpeedMaxWithMaxLoadAsSpecified 1.0, and explicitly concludes the MiR100 maximum speed is 1.5 m/s, so all required facts are supported with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -208,9 +208,11 @@
       "duration_s": 9.425,
       "tool_call_count": 8,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: MiR100 maximum speed is 1.5; this matches the required fact and no forbidden claim is asserted.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core list: speeds 1.5 when empty and 1.0 with max load; verdict: incorrect because it does not support the required fact that the MiR100 maximum speed is 1.5 m/s and instead says the units are unspecified/typically km/h.",
+        "missing_facts": [
+          "MiR100 maximum speed is 1.5 m/s"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -256,12 +258,15 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the stated maximum speed values; the answer gives 1.5 as a speed but incorrectly labels it as km/h instead of the required m/s.",
+        "reasoning": "Core list: maximum speed values given as 1.0 full-load and 1.5 empty, but the answer does not support the required fact that MiR100 maximum speed is 1.5 m/s and instead positively asserts km/h.",
         "missing_facts": [
           "MiR100 maximum speed is 1.5 m/s"
         ],
         "wrong_claims": [
-          "Maximum speed empty: 1.5 km/h"
+          "Maximum speed empty: 1.5 km/h",
+          "Maximum speed with full load: 1.0 km/h",
+          "speed is typically measured in km/h",
+          "1.5 km/h (empty) is consistent with typical MiR100 AGV specifications"
         ],
         "judge_error": false
       },
@@ -296,7 +301,7 @@
       "tool_call_count": 11,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the MiR100 maximum speed is 1.5 m/s, which is supported; the extra 1.0 m/s loaded-speed mention is allowed.",
+        "reasoning": "Core list is the two-row speed table, and it correctly includes the MiR100 empty/no-load maximum speed of 1.5 m/s; mentioning the loaded speed of 1.0 m/s is allowed.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -332,7 +337,7 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the answer asserts MiR100 maximum speed is 1.0 m/s, which conflicts with the required 1.5 m/s.",
+        "reasoning": "The core answer asserts MiR100 maximum speed as 1.0 m/s under maximum load, so it misses the required 1.5 m/s maximum speed.",
         "missing_facts": [
           "MiR100 maximum speed is 1.5 m/s"
         ],
@@ -374,7 +379,7 @@
       "tool_call_count": 5,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s (empty/no load), which is supported; no forbidden claim is positively asserted.",
+        "reasoning": "The core list states MiR100 speeds by load condition, including the required maximum speed of 1.5 m/s when empty, and adds 1.0 m/s with max load without contradiction.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -412,13 +417,13 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the agent claims MiR100 maximum speed is 1.0 km/h loaded and 1.5 km/h empty; the required maximum speed 1.5 m/s is not supported and the units/value are wrong.",
+        "reasoning": "Core list: 1.0 km/h with max load and 1.5 km/h when empty; this does not support the required fact that MiR100 maximum speed is 1.5 m/s.",
         "missing_facts": [
           "MiR100 maximum speed is 1.5 m/s"
         ],
         "wrong_claims": [
-          "MiR100 maximum speed is 1.0 km/h when carrying maximum load",
-          "MiR100 maximum speed is 1.5 km/h when empty"
+          "Speed is measured in km/h",
+          "The maximum speed of the MiR100 is 1.0 km/h when carrying maximum load and 1.5 km/h when empty"
         ],
         "judge_error": false
       },
@@ -463,7 +468,7 @@
       "tool_call_count": 3,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100 maximum speed is 1.5 m/s; this is supported and no forbidden claim is positively asserted.",
+        "reasoning": "Core list gives two speed values and explicitly states the MiR100 maximum speed is 1.5 m/s, so all required facts are supported with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -489,7 +494,7 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is asserted.",
+        "reasoning": "Core answer: 'The maximum payload of the UR3e robot is 3 kg'; this supports the required fact and makes no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -536,7 +541,7 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the UR3e robot has a maximum payload of 3 kg; this matches the required fact and includes no forbidden claim.",
+        "reasoning": "Core list states the UR3e maximum payload is 3 kg, which matches the required fact with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -572,7 +577,7 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is made.",
+        "reasoning": "Core answer: 'the maximum payload of the UR3e is 3 kg'; this supports the required fact and includes no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -620,7 +625,7 @@
       "tool_call_count": 3,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR3e has a maximum payload of 3 kg; this matches the required fact and no forbidden claim is asserted.",
+        "reasoning": "Core claim: the UR3e has a maximum payload of 3 kg; this matches the required fact with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -656,7 +661,7 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: \"The UR3e robotic arm has a maximum payload of 3 kg\"; this matches the required fact and includes no forbidden claim.",
+        "reasoning": "Core answer states the UR3e maximum payload is 3 kg, which matches the required fact with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -704,7 +709,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR3e maximum payload is 3 kg; this is supported and no forbidden claim is asserted.",
+        "reasoning": "Core claim: UR3e maximum payload is 3 kg; this matches the required fact and includes no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -740,7 +745,7 @@
       "tool_call_count": 11,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is made.",
+        "reasoning": "Core answer: 'UR3e robot has a maximum payload of 3 kg'; this supports the required fact and makes no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -796,7 +801,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: “The maximum payload of the UR3e is 3 kg” — this matches the required fact and includes no forbidden claim.",
+        "reasoning": "Core answer states 'the maximum payload of the UR3e is 3 kg,' which matches the required fact and includes no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -834,7 +839,7 @@
       "tool_call_count": 9,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is made.",
+        "reasoning": "Core claim: 'The UR3e robot has a maximum payload of 3 kg'; this supports the required fact and includes no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -872,7 +877,7 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR3e maximum payload is 3 kg; this matches the required fact and no forbidden claim is asserted.",
+        "reasoning": "Core answer states the UR3e maximum payload is 3 kg, which matches the required fact with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false

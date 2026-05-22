@@ -38,6 +38,11 @@ compliance, paper-summary digests (react / plan-and-solve / reflexion /
 crag / multiagent-debate / autogen / self-refine), Bench-B protocol, and paper
 build setup.
 
+## Language
+
+All files written to the filesystem (docs, comments, READMEs, YAML, scripts)
+must be in **English**. Conversation with the user is in **German**.
+
 ## Data sovereignty
 
 The whole stack is self-hostable on H200 / EU cloud — no data leaves the premises.

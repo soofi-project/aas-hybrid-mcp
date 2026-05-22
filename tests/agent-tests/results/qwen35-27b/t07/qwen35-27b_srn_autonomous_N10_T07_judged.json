@@ -2,40 +2,40 @@
   "cases": [
     "cases/srn_autonomous.yaml"
   ],
-  "judge_model": "gpt-5.4-mini-2026-03-17",
-  "judge_base_url": "https://api.openai.com",
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
   "summary": {
     "totals": {
       "n": 30,
-      "correct": 22,
-      "correct_rate": 0.733,
+      "correct": 18,
+      "correct_rate": 0.6,
       "manuals_first": 2,
       "manuals_first_rate": 0.067,
       "tool_error_free": 9,
       "tool_error_free_rate": 0.3,
-      "all_good": 1,
-      "all_good_rate": 0.033
+      "all_good": 0,
+      "all_good_rate": 0.0
     },
     "per_bucket": [
       {
         "variant": "react",
         "case": "srn_from_fault_context",
         "n": 10,
-        "correct": 4,
-        "correct_rate": 0.4,
+        "correct": 2,
+        "correct_rate": 0.2,
         "manuals_first": 2,
         "manuals_first_rate": 0.2,
         "tool_error_free": 1,
         "tool_error_free_rate": 0.1,
-        "all_good": 1,
-        "all_good_rate": 0.1
+        "all_good": 0,
+        "all_good_rate": 0.0
       },
       {
         "variant": "react",
         "case": "srn_no_element_bypass",
         "n": 10,
-        "correct": 9,
-        "correct_rate": 0.9,
+        "correct": 8,
+        "correct_rate": 0.8,
         "manuals_first": 0,
         "manuals_first_rate": 0.0,
         "tool_error_free": 8,
@@ -47,8 +47,8 @@
         "variant": "react",
         "case": "srn_routine_priority",
         "n": 10,
-        "correct": 9,
-        "correct_rate": 0.9,
+        "correct": 8,
+        "correct_rate": 0.8,
         "manuals_first": 0,
         "manuals_first_rate": 0.0,
         "tool_error_free": 0,
@@ -61,14 +61,14 @@
       {
         "variant": "react",
         "n": 30,
-        "correct": 22,
-        "correct_rate": 0.733,
+        "correct": 18,
+        "correct_rate": 0.6,
         "manuals_first": 2,
         "manuals_first_rate": 0.067,
         "tool_error_free": 9,
         "tool_error_free_rate": 0.3,
-        "all_good": 1,
-        "all_good_rate": 0.033
+        "all_good": 0,
+        "all_good_rate": 0.0
       }
     ]
   },
@@ -83,9 +83,11 @@
       "duration_s": 62.062,
       "tool_call_count": 11,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: service request created for MiR100_001 with High priority, CorrectiveMaintenance, and Open status; all required facts are supported and no forbidden claim is asserted.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core list: the service request details list supports MiR100_001, Priority High, and Status Open, but it does not state ServiceType CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -122,11 +124,11 @@
       "tool_call_count": 14,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list supports the service request details, but it incorrectly claims the request was created with the wrong service type formatting and does not explicitly match CorrectiveMaintenance as required.",
-        "missing_facts": [],
-        "wrong_claims": [
-          "Type is stated as \"Corrective Maintenance\" instead of the required ServiceType \"CorrectiveMaintenance\""
+        "reasoning": "Core list is the created service request fields; it supports MiR100_001, High, and Open, but gives Type as 'Corrective Maintenance' instead of the required ServiceType 'CorrectiveMaintenance'.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
         ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -162,7 +164,7 @@
       "tool_call_count": 12,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list includes the created service request details, but Status=Open is not supported and the answer positively asserts a service request was created without that required field.",
+        "reasoning": "Core list: the 'Service Request Created' block and follow-up prose; it supports MiR100_001, High priority, and corrective maintenance, but does not state Status = Open.",
         "missing_facts": [
           "Status is Open"
         ],
@@ -202,14 +204,11 @@
       "tool_call_count": 12,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the created service request details; it misses the required Status and uses the wrong service type label, so the answer is incorrect.",
+        "reasoning": "Core list is the 'Service Request Created' block plus the action steps; it supports MiR100_001, High priority, and corrective maintenance, but does not state Status = Open.",
         "missing_facts": [
-          "Status is Open",
-          "ServiceType is CorrectiveMaintenance"
+          "Status is Open"
         ],
-        "wrong_claims": [
-          "Type: Corrective Maintenance"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -244,9 +243,11 @@
       "duration_s": 66.369,
       "tool_call_count": 14,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: service request created for MiR100_001 with High priority, CorrectiveMaintenance, and Open status; all required facts are supported and no forbidden claim is asserted.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core list is the service request details (Asset MiR100_001, Priority High, Status Open) plus guidance; it misses the required ServiceType CorrectiveMaintenance, so fail.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -282,14 +283,10 @@
       "duration_s": 52.139,
       "tool_call_count": 12,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list includes a created service request for MiR100_001 with High priority, but the service type does not match the required value.",
-        "missing_facts": [
-          "ServiceType is CorrectiveMaintenance"
-        ],
-        "wrong_claims": [
-          "The answer asserts the service type as \"Corrective Maintenance\" instead of the required \"CorrectiveMaintenance\"."
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list is the service-request summary (Asset MiR100_001, Priority High, Type Corrective Maintenance, Status Open), and it supports all required facts with no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -325,7 +322,7 @@
       "tool_call_count": 11,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the created service request for MiR100_001 with High priority, CorrectiveMaintenance, and Open status is fully supported, and no forbidden claim is asserted.",
+        "reasoning": "Core list is the 'Service Request Created' block for MiR100_001, and it correctly states High priority, Corrective Maintenance type, and Open status with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -363,9 +360,10 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the created service request details; the answer supports most fields but does not support that it was created for MiR100_001 specifically.",
+        "reasoning": "Core list is the created service request details and immediate actions; it supports High priority and Open status but does not explicitly state the request was created for MiR100_001 or use the exact ServiceType CorrectiveMaintenance.",
         "missing_facts": [
-          "A service request was created for MiR100_001 (the transport robot in Hall 4)"
+          "A service request was created for MiR100_001 (the transport robot in Hall 4)",
+          "ServiceType is CorrectiveMaintenance"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -402,9 +400,12 @@
       "duration_s": 51.2,
       "tool_call_count": 11,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: service request created for MiR100_001 with High priority, CorrectiveMaintenance, and Open status; all required facts are supported and no forbidden claim is asserted.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core answer: service request created for MiR100_001 with High priority plus guidance, but it does not explicitly support ServiceType=CorrectiveMaintenance and Status=Open.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance",
+          "Status is Open"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -418,7 +419,7 @@
         "tool_error_count": 0,
         "tool_errors": []
       },
-      "all_good": true
+      "all_good": false
     },
     {
       "case": "srn_from_fault_context",
@@ -431,13 +432,11 @@
       "tool_call_count": 12,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: a created service request for MiR100_001 with High priority, Corrective Maintenance, and Open status; the answer supports these but also positively asserts an unsupported request ID and omits the exact ServiceType label.",
+        "reasoning": "Core list: service request details for MiR100_001 with Priority High, Type Corrective Maintenance, Status Open; verdict: incorrect because the required ServiceType wording is not supported exactly.",
         "missing_facts": [
           "ServiceType is CorrectiveMaintenance"
         ],
-        "wrong_claims": [
-          "Request ID: urn:aas-hybrid-mcp:srn:001:83b79e9c"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -473,7 +472,7 @@
       "tool_call_count": 8,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the created service request for UR3e_002 with Inspection, Low, and Open is fully supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the 'Service Request Created' bullets, which correctly specify UR3e_002 with Type Inspection, Priority Low, and Status Open, with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -511,7 +510,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: a created service request for UR3e_002 with Inspection, Low, and Open — all supported and no forbidden claim asserted.",
+        "reasoning": "Core list is the service request details; it correctly states a created request for UR3e_002 with Inspection type, Low priority, and Open status.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -547,7 +546,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the created service request details; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request details, and it correctly states UR3e_002 with Type Inspection, Priority Low, and Status Open with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -585,7 +584,7 @@
       "tool_call_count": 10,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the created service request for UR3e_002 with Inspection, Low, and Open is fully supported.",
+        "reasoning": "Core list is the created service request fields for UR3e_002, and it includes Inspection, Low, and Open with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -632,13 +631,11 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the created service request details; verdict: incorrect because ServiceType is not Inspection.",
+        "reasoning": "Core list is the created service request fields; it supports UR3e_002, Low, and Open, but gives Type as Preventive Maintenance instead of Inspection.",
         "missing_facts": [
           "ServiceType is Inspection"
         ],
-        "wrong_claims": [
-          "ServiceType is Preventive Maintenance"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -674,7 +671,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: a service request for UR3e_002 with Inspection, Low priority, and Open status was created; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request details bullets, and they correctly state UR3e_002 with Type Inspection, Priority Low, and Status Open with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -712,7 +709,7 @@
       "tool_call_count": 8,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: the created service request for UR3e_002 with Inspection, Low, and Open is fully supported.",
+        "reasoning": "Core list is the created service request fields for UR3e_002 in Hall 4, and it correctly includes Inspection, Low, and Open with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -758,9 +755,11 @@
       "duration_s": 8.604,
       "tool_call_count": 5,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: the created service request for UR3e_002 with Inspection, Low, and Open is fully supported.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core list is the 'Service Request Created' fields; it supports Inspection, Low, and Open, but does not identify the asset as UR3e_002.",
+        "missing_facts": [
+          "A service request was created for UR3e_002"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -797,7 +796,7 @@
       "tool_call_count": 5,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: a created service request for UR3e_002 with Inspection, Low, and Open — all supported.",
+        "reasoning": "Core list is the service request details bullets, and they support UR3e_002 with Type Inspection, Priority Low, and Status Open with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -835,7 +834,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: a service request for UR3e_002 with Inspection, Low, and Open is stated, and no forbidden claim is asserted.",
+        "reasoning": "Core list is the created service request fields for UR3e_002, and it supports all required facts with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -873,7 +872,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; both required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request details, which state a created request for Robot CRX10iA_001 with Status Open and no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -899,7 +898,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; both required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request details, which explicitly state a created request for CRX10iA_001 with status Open and include no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -925,7 +924,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; both required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request details, which explicitly state a created request for CRX10iA_001 with Status Open and no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -950,9 +949,11 @@
       "duration_s": 27.358,
       "tool_call_count": 18,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: an open service request exists for CRX10iA_001; this supports both required facts.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core claims: an existing open service request for CRX10iA_001 is listed, and the agent explicitly says no new service request needs to be created, so it fails the requirement that a service request was created.",
+        "missing_facts": [
+          "A service request was created for CRX10iA_001"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -987,7 +988,7 @@
       "tool_call_count": 3,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: a service request notification was created with Status Open for the motor fault on CRX10iA_001; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core answer: a created service request notification with Status Open for the reported motor fault; this supports creation for CRX10iA_001 and makes no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1013,7 +1014,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; both required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "The core list is the service request details, which explicitly state a created request for CRX10iA_001 with status Open and include no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1049,7 +1050,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; both required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "The core list is the service request details, and it explicitly states a service request was created for CRX10iA_001 with status Open, with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1075,7 +1076,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "The core answer is the created service request details, which explicitly state a service request was created for Robot CRX10iA_001 and that its status is Open, with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1101,7 +1102,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: a service request was created, but it does not identify CRX10iA_001, so the required fact is unsupported.",
+        "reasoning": "Core list is the created SRN details; it supports Status Open but does not support that the request was created for CRX10iA_001.",
         "missing_facts": [
           "A service request was created for CRX10iA_001"
         ],
@@ -1129,7 +1130,7 @@
       "tool_call_count": 2,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: service request created for CRX10iA_001 with status Open; both required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the service request details bullet list, which states a created request for CRX10iA_001 with status Open and makes no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false

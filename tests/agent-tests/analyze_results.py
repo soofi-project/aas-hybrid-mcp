@@ -1,12 +1,12 @@
 """Analyse judged result files and write a Markdown report.
 
 Usage:
-    python analyze_results.py qwen36-27b
-    python analyze_results.py qwen35-2b
+    python analyze_results.py <model> <temp>
+    python analyze_results.py qwen35-2b t07
 
-The argument is a model prefix.  The script globs
-``results/{prefix}_*_judged.json``, analyses all records, and writes
-``results/analysis_{prefix}.md``.
+Both arguments are required.  The script globs
+``results/{model}/{temp}/{model}_*_judged.json``, analyses all records,
+and writes ``results/{model}/{temp}/analysis_{model}_{temp}.md``.
 """
 
 from __future__ import annotations
@@ -336,10 +336,16 @@ def print_rich(prefix: str, records: list[dict], per_file: list[dict]) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    prefix = sys.argv[1] if len(sys.argv) > 1 else "qwen36-27b"
+    if len(sys.argv) < 3:
+        print("Usage: python analyze_results.py <model> <temp>", file=sys.stderr)
+        print("Example: python analyze_results.py qwen35-2b t07", file=sys.stderr)
+        sys.exit(1)
+
+    prefix = sys.argv[1]
+    temp = sys.argv[2]
 
     script_dir = Path(__file__).parent
-    results_dir = script_dir / "results"
+    results_dir = script_dir / "results" / prefix / temp
 
     records, labels = load_records(prefix, results_dir)
     per_file = per_file_stats(records, labels)
@@ -347,7 +353,7 @@ def main() -> None:
     print_rich(prefix, records, per_file)
 
     md = build_markdown(prefix, records, per_file)
-    out_path = results_dir / f"analysis_{prefix}.md"
+    out_path = results_dir / f"analysis_{prefix}_{temp}.md"
     out_path.write_text(md, encoding="utf-8")
     print(f"\nReport written to {out_path}")
 

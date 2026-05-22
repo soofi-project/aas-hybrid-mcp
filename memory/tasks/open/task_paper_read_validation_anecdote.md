@@ -162,7 +162,24 @@ Nachteil: verliert den paper-würdigen Punkt fast komplett.
   (kein URN-Leak im Fließtext).
 - Keine harten IDTA-URIs.
 
-### T4: Cross-Refs & Konsistenz
+### T4: §13 Future-Work-Erweiterung (optional, falls Platz)
+
+Falls Budget es erlaubt: in §13 erwähnen, dass das Read-Validator-System
+prinzipiell weitere Regeln unterstützen kann — zwei konkrete Beispiele:
+
+- **LIMIT-Enforcement:** MATCH auf Top-Level-Knoten (z. B.
+  `AssetAdministrationShell`, `Submodel`) ohne ID-/semanticId-Filter und
+  ohne LIMIT erzeugt bei großen Datenbeständen Full-Graph-Scans. Eine
+  zusätzliche Validator-Regel würde solche Queries abfangen.
+- **Cursor-basiertes Paginieren:** statt `SKIP N` (O(n)) den Cursor-Ansatz
+  (`WHERE id > $last_id ORDER BY id ASC LIMIT N`) als Manual-Rezept und
+  optional als Validator-Empfehlung verankern.
+
+Zeigt Erweiterbarkeit ohne Implementierungsverpflichtung. Passt als 2–3
+Sätze ans Ende der §13-Validator-Passage aus
+[[task-paper-write-validation-defense]].
+
+### T5: Cross-Refs & Konsistenz
 
 - Konsistenz mit [[task-paper-modeling-vs-pragmatics-anecdote]] und
   Write-Validation-Befund prüfen — gemeinsame Klammer „Layered Determinism"

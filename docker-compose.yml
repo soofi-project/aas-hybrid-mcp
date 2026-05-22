@@ -235,6 +235,8 @@ services:
         condition: service_healthy
       aas-environment:
         condition: service_healthy
+      embedding-service:
+        condition: service_healthy
     volumes:
       - ./kafka-connect-rag/config/http-sink-connector.json:/etc/kafka-connect/config/http-sink-connector.json
       - ./logs:/tmp/kafka-logs
@@ -419,6 +421,12 @@ services:
       - BASYX_SUBMODEL_REPO=http://aas-environment:8081
     depends_on:
       - weaviate
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:

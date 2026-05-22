@@ -2,33 +2,33 @@
   "cases": [
     "cases/bench_b.yaml"
   ],
-  "judge_model": "gpt-5.4-mini",
-  "judge_base_url": "https://api.openai.com",
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
   "summary": {
     "totals": {
       "n": 60,
-      "correct": 31,
-      "correct_rate": 0.517,
+      "correct": 37,
+      "correct_rate": 0.617,
       "manuals_first": 22,
       "manuals_first_rate": 0.367,
       "tool_error_free": 13,
       "tool_error_free_rate": 0.217,
-      "all_good": 5,
-      "all_good_rate": 0.083
+      "all_good": 6,
+      "all_good_rate": 0.1
     },
     "per_bucket": [
       {
         "variant": "react",
         "case": "bench_b_B1_hall3_contents",
         "n": 10,
-        "correct": 4,
-        "correct_rate": 0.4,
+        "correct": 6,
+        "correct_rate": 0.6,
         "manuals_first": 6,
         "manuals_first_rate": 0.6,
         "tool_error_free": 4,
         "tool_error_free_rate": 0.4,
-        "all_good": 2,
-        "all_good_rate": 0.2
+        "all_good": 3,
+        "all_good_rate": 0.3
       },
       {
         "variant": "react",
@@ -73,8 +73,8 @@
         "variant": "react",
         "case": "bench_b_B5_hall4_red_status_light",
         "n": 10,
-        "correct": 4,
-        "correct_rate": 0.4,
+        "correct": 7,
+        "correct_rate": 0.7,
         "manuals_first": 1,
         "manuals_first_rate": 0.1,
         "tool_error_free": 0,
@@ -86,8 +86,8 @@
         "variant": "react",
         "case": "bench_b_B6_heaviest_payload_comparison",
         "n": 10,
-        "correct": 8,
-        "correct_rate": 0.8,
+        "correct": 9,
+        "correct_rate": 0.9,
         "manuals_first": 7,
         "manuals_first_rate": 0.7,
         "tool_error_free": 2,
@@ -100,14 +100,14 @@
       {
         "variant": "react",
         "n": 60,
-        "correct": 31,
-        "correct_rate": 0.517,
+        "correct": 37,
+        "correct_rate": 0.617,
         "manuals_first": 22,
         "manuals_first_rate": 0.367,
         "tool_error_free": 13,
         "tool_error_free_rate": 0.217,
-        "all_good": 5,
-        "all_good_rate": 0.083
+        "all_good": 6,
+        "all_good_rate": 0.1
       }
     ]
   },
@@ -123,12 +123,10 @@
       "tool_call_count": 9,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the 5-item device list; it misses the required Hall 3 device set and includes forbidden Hall3 as an item.",
-        "missing_facts": [
-          "MiR250_001 is located in Hall 3"
-        ],
+        "reasoning": "Core list has 5 items—EntryNode/Hall3, UR20_001, MiR250_002, UR3e_001, and MiR250_001—and it fails because Hall3 is listed as a device and MiR250_001 is given the forbidden MiR100_001 asset ID.",
+        "missing_facts": [],
         "wrong_claims": [
-          "The enumerated answer list includes Hall3/urn:asset:hall3 as a located device",
+          "The enumerated answer list contains Hall3/urn:asset:hall3 as a located device",
           "MiR100_001 is located in Hall 3"
         ],
         "judge_error": false
@@ -175,7 +173,7 @@
       "tool_call_count": 9,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list of 4 devices in Hall 3 is fully supported and no forbidden device is positively asserted.",
+        "reasoning": "Core list has exactly four devices—MiR250_001, UR3e_001, MiR250_002, and UR20_001—and it matches all required facts with no forbidden device asserted.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -203,7 +201,7 @@
       "tool_call_count": 5,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list contains the four required devices in Hall 3 and no forbidden device is positively asserted.",
+        "reasoning": "Core list has exactly four devices—MiR250_001, UR3e_001, MiR250_002, and UR20_001—and it matches all required Hall 3 devices with no forbidden items asserted.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -231,15 +229,10 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list includes EntryNode and omits UR3e_002/CRX10iA_001 issues aside, but it fails required Hall 3 devices because UR20_001 is not clearly supported as a located device and the answer positively asserts an extra non-required item (EntryNode) instead of exactly the four required devices.",
-        "missing_facts": [
-          "MiR250_001 is located in Hall 3",
-          "MiR250_002 is located in Hall 3",
-          "UR3e_001 is located in Hall 3",
-          "UR20_001 is located in Hall 3"
-        ],
+        "reasoning": "Core list: EntryNode, UR20_001, MiR250_002, UR3e_001, MiR250_001; incorrect because it adds an extra non-device item instead of exactly the 4 required devices.",
+        "missing_facts": [],
         "wrong_claims": [
-          "EntryNode is one of the devices located in Hall 3"
+          "The enumerated answer list contains a 5th item that is the hall itself treated as one of the located devices"
         ],
         "judge_error": false
       },
@@ -276,7 +269,7 @@
       "tool_call_count": 18,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: UR20_001, MiR250_001, MiR250_002, and UR3e_001 are all supported as located in Hall 3, with no prohibited device asserted as located there.",
+        "reasoning": "Core list contains exactly UR20_001, MiR250_001, MiR250_002, and UR3e_001 as devices in Hall 3, so all required facts are supported with no forbidden claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -315,7 +308,7 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_001, MiR250_002, UR20_001, and UR3e_001 are all supported as located in Hall 3, with no forbidden device positively asserted.",
+        "reasoning": "Core list has exactly four devices—MiR250_001, MiR250_002, UR20_001, and UR3e_001—and it includes all required Hall 3 devices with no forbidden items asserted.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -352,14 +345,10 @@
       "duration_s": 29.169,
       "tool_call_count": 26,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "The core list omits UR3e_002? No—the core list includes the wrong device set and misses one required device, so the answer is incorrect.",
-        "missing_facts": [
-          "UR3e_001 is located in Hall 3"
-        ],
-        "wrong_claims": [
-          "UR20_001 is located in Hall 3 is supported, but the core list includes Hall3 as a container mention only; no must-not-claim is positively asserted."
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list has exactly four devices—MiR250_001, MiR250_002, UR20_001, and UR3e_001—as located in Hall 3, with no forbidden device asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -395,7 +384,7 @@
       "tool_call_count": 19,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is absent; the response does not identify any devices located in Hall 3.",
+        "reasoning": "Core list is empty; the answer provides no devices, so required Hall 3 devices are missing.",
         "missing_facts": [
           "MiR250_001 is located in Hall 3",
           "MiR250_002 is located in Hall 3",
@@ -427,13 +416,9 @@
       "duration_s": 9.134,
       "tool_call_count": 7,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list is the 4 devices in Hall 3, but UR3e_001 is supported while MiR250_001, MiR250_002, and UR20_001 are not all explicitly supported as located in Hall 3 in the answer text.",
-        "missing_facts": [
-          "MiR250_001 is located in Hall 3",
-          "MiR250_002 is located in Hall 3",
-          "UR20_001 is located in Hall 3"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list has exactly four devices—MiR250_001, UR3e_001, MiR250_002, and UR20_001—and it supports all required Hall 3 facts with no forbidden items asserted.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -447,7 +432,7 @@
         "tool_error_count": 0,
         "tool_errors": []
       },
-      "all_good": false
+      "all_good": true
     },
     {
       "case": "bench_b_B1_hall3_contents",
@@ -460,10 +445,10 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the Hall 3 device table; it misses no required devices but incorrectly includes EntryNode as an extra listed item.",
+        "reasoning": "Core list is the table rows UR20_001, UR3e_001, MiR250_001, MiR250_002, and EntryNode; required four devices are supported but the list includes an extra non-device item so it is not exactly the 4 devices.",
         "missing_facts": [],
         "wrong_claims": [
-          "The enumerated Hall 3 device list includes an extra item, EntryNode, beyond the required four devices."
+          "The core list includes an extra 5th item: EntryNode, so the answer does not contain exactly the 4 devices located in Hall 3."
         ],
         "judge_error": false
       },
@@ -500,15 +485,13 @@
       "tool_call_count": 38,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list names the three MiR robots, but it fails to support their required hall locations and instead claims no location data is stored.",
+        "reasoning": "Core list names the three MiR robots, but the answer fails to provide the required hall locations and instead asserts no location data is stored.",
         "missing_facts": [
-          "MiR100_001 is an autonomous transport robot located in Hall 4",
-          "MiR250_001 is an autonomous transport robot located in Hall 3",
-          "MiR250_002 is an autonomous transport robot located in Hall 3"
+          "MiR100_001 is located in Hall 4",
+          "MiR250_001 is located in Hall 3",
+          "MiR250_002 is located in Hall 3"
         ],
-        "wrong_claims": [
-          "Currently, no location data is stored in the AAS system for these autonomous transport robots."
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -553,7 +536,7 @@
       "tool_call_count": 4,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 in Hall4, MiR250_001 in Hall3, and MiR250_002 in Hall3; all required facts are supported and no forbidden AMRs are positively asserted.",
+        "reasoning": "Core list is the three MiR robots—MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3—and all required facts are correctly supported with no forbidden AMR claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -589,15 +572,13 @@
       "tool_call_count": 12,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: three MiR robots, but the answer fails to support their required hall locations.",
+        "reasoning": "Core list: MiR100_001, MiR250_001, and MiR250_002 as autonomous transport robots, but the answer explicitly says location information is unavailable, so the required hall mappings are missing.",
         "missing_facts": [
-          "MiR100_001 is an autonomous transport robot located in Hall 4",
-          "MiR250_001 is an autonomous transport robot located in Hall 3",
-          "MiR250_002 is an autonomous transport robot located in Hall 3"
+          "MiR100_001 is located in Hall 4",
+          "MiR250_001 is located in Hall 3",
+          "MiR250_002 is located in Hall 3"
         ],
-        "wrong_claims": [
-          "The answer asserts that the current AAS data does not contain specific location information for these autonomous transport robots, which contradicts the required hall mappings."
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -621,11 +602,13 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list includes extra non-AMR robots and the hall mapping is not restricted to the three required MiR transport robots, so the answer is incorrect.",
+        "reasoning": "The core list of autonomous transport robots includes the three required MiR robots with correct halls, but it also positively includes UR3e_001, UR20_001, UR3e_002, and CRX10iA_001 as transport robots, which is forbidden.",
         "missing_facts": [],
         "wrong_claims": [
-          "Enumerates UR3e_001, UR20_001, UR3e_002, and CRX10iA_001 as autonomous transport robots in the core list",
-          "Presents MiR robots alongside additional non-AMR devices as part of the autonomous transport robot enumeration"
+          "The enumerated autonomous transport robot list includes UR3e_001",
+          "The enumerated autonomous transport robot list includes UR20_001",
+          "The enumerated autonomous transport robot list includes UR3e_002",
+          "The enumerated autonomous transport robot list includes CRX10iA_001"
         ],
         "judge_error": false
       },
@@ -662,7 +645,7 @@
       "tool_call_count": 27,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3; all required facts are supported and no forbidden AMR is enumerated.",
+        "reasoning": "Core list is the 3 autonomous transport robots MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3; all required facts are supported and no forbidden AMR claims are made.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -701,7 +684,7 @@
       "tool_call_count": 17,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3; all required facts are supported and no forbidden AMRs are enumerated.",
+        "reasoning": "Core list is the 3 autonomous transport robots MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3; all required facts are supported and no forbidden AMR claims are made.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -727,17 +710,13 @@
       "tool_call_count": 45,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list includes the three MiR robots, but their locations are not supported and one is explicitly said to be untracked, so the verdict is incorrect.",
+        "reasoning": "Core list: MiR100_001, MiR250_001, and MiR250_002, but it fails because it does not provide the required hall locations and instead says location is not currently tracked.",
         "missing_facts": [
-          "MiR100_001 is an autonomous transport robot located in Hall 4",
-          "MiR250_001 is an autonomous transport robot located in Hall 3",
-          "MiR250_002 is an autonomous transport robot located in Hall 3"
+          "MiR100_001 is located in Hall 4",
+          "MiR250_001 is located in Hall 3",
+          "MiR250_002 is located in Hall 3"
         ],
-        "wrong_claims": [
-          "MiR100_001: Position/Location not currently tracked in the AAS data",
-          "MiR250_001: Position/Location not currently tracked in the AAS data",
-          "MiR250_002: Position/Location not currently tracked in the AAS data"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -784,7 +763,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_001 in Hall 3, MiR250_002 in Hall 3, and MiR100_001 in Hall 4; all required facts are supported and no forbidden AMR is enumerated.",
+        "reasoning": "Core list is the three MiR robots with locations: MiR250_001 in Hall 3, MiR250_002 in Hall 3, and MiR100_001 in Hall 4; all required facts are supported and no forbidden AMR claims are made.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -810,7 +789,7 @@
       "tool_call_count": 26,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3; all required facts are supported and no forbidden AMR items are enumerated.",
+        "reasoning": "Core list names exactly three autonomous transport robots—MiR100_001 in Hall4, MiR250_001 in Hall3, and MiR250_002 in Hall3—and all required hall mappings are correct with no forbidden AMR claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -858,7 +837,7 @@
       "tool_call_count": 12,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3; all required facts are supported and no forbidden AMR is enumerated.",
+        "reasoning": "Core list names exactly three autonomous transport robots—MiR100_001 in Hall 4, MiR250_001 in Hall 3, and MiR250_002 in Hall 3—and all required facts are supported with no forbidden AMR claims.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -894,7 +873,7 @@
       "tool_call_count": 10,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 as the robot exceeding 200 kg with 250 kg capacity; all required facts are supported and MiR100 is only excluded, not claimed eligible.",
+        "reasoning": "Core list names MiR250_Type at 250 kg as exceeding 200 kg, and mentions MiR100 only to exclude it, so all required facts are supported with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -933,7 +912,7 @@
       "tool_call_count": 17,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 / MiR250_001 / MiR250_002 as the robot(s) carrying more than 200 kg; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list: MiR250 transport robot / MiR250_Type with instances MiR250_001 and MiR250_002; it correctly states MiR250 carries 250 kg and excludes MiR100.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -961,12 +940,9 @@
       "duration_s": 11.595,
       "tool_call_count": 10,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list is MiR250_Type, but the answer does not support the required MiR250/MiR250_001/MiR250_002 naming and includes a MiR100 comparison that is fine but not enough to fix the missing required fact.",
-        "missing_facts": [
-          "MiR250 (MiR250_001 and/or MiR250_002) is the robot that can carry more than 200 kg",
-          "MiR250 payload capacity is 250 kg"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core answer list: MiR250_Type as the robot over 200 kg with 250 kg payload; this supports all required facts and does not assert MiR100 qualifies.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -1012,7 +988,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 carries 250 kg and exceeds 200 kg; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list names MiR250 (250 kg) and MiR100 (100 kg), and the answer correctly states only MiR250 exceeds 200 kg.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1051,7 +1027,7 @@
       "tool_call_count": 10,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250; it correctly supports the >200 kg criterion with 250 kg and does not assert MiR100 meets it.",
+        "reasoning": "Core list is the table and statement naming MiR250 as >200 kg with 250 kg payload, while MiR100 is explicitly excluded, so the answer is correct.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1089,7 +1065,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 can carry more than 200 kg and has a 250 kg payload; no forbidden MiR100 claim is asserted.",
+        "reasoning": "Core list names MiR100 and MiR250 with capacities, and the answer correctly identifies MiR250 as the transport robot over 200 kg at 250 kg without asserting MiR100 qualifies.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1126,9 +1102,12 @@
       "duration_s": 8.661,
       "tool_call_count": 8,
       "judge": {
-        "answer_correct": true,
-        "reasoning": "Core list: MiR250_Type as the >200 kg robot with 250 kg capacity; verdict: correct.",
-        "missing_facts": [],
+        "answer_correct": false,
+        "reasoning": "Core list names MiR100_Type and MiR250_Type; although it states a 250 kg robot exceeds 200 kg, it does not support the required fact using the required robot name MiR250 (MiR250_001 and/or MiR250_002).",
+        "missing_facts": [
+          "MiR250 (MiR250_001 and/or MiR250_002) is the robot that can carry more than 200 kg",
+          "MiR250 payload capacity is 250 kg"
+        ],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -1172,7 +1151,7 @@
       "tool_call_count": 11,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 is identified as the robot that can carry more than 200 kg, with 250 kg capacity; no forbidden claim is asserted.",
+        "reasoning": "The core list names MiR250_Type as >200 kg and the answer explicitly states MiR250 can carry 250 kg, while MiR100 is only excluded as exactly 200 kg.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1220,7 +1199,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_Type can carry more than 200 kg at 250 kg; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core answer lists MiR250_Type as the only robot over 200 kg and states its payload is 250 kg; MiR100_Type is explicitly excluded at 100 kg.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1248,7 +1227,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 can carry more than 200 kg and has a 250 kg payload; no forbidden claim is asserted.",
+        "reasoning": "Core list names MiR100 at 100 kg and MiR250 at 250 kg, and the answer correctly identifies MiR250 as the only robot carrying more than 200 kg.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1286,10 +1265,10 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says the MiR250 manual content is not indexed and no emergency-stop specifics are found, so it fails the required MiR250-manual facts.",
+        "reasoning": "Core answer says no MiR250 emergency-stop content was found and only lists document/indexing status, so it does not provide manual-specific emergency-stop facts.",
         "missing_facts": [
-          "Substantive content from the MiR250 operator manual about emergency stops",
-          "At least one required specific: stop category 0 / STO contactors / SS1 brake, or release sequence, or manual page range around p.83-85"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required specifics are mentioned: stop category 0/STO contactors/SS1 brake, release sequence, or page range around p.83-85"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -1315,14 +1294,13 @@
       "tool_call_count": 19,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/system-status report rather than MiR250 manual emergency-stop content, so the required manual-specific facts are missing and a MiR100/general-standards source is positively invoked.",
+        "reasoning": "Core answer says the MiR250 manual is not indexed and provides no MiR250 emergency-stop content, only general guidance.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one specific manual detail is mentioned: stop category 0 / STO contactors / SS1 brake, or release sequence, or manual page range around p.83-85"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required MiR250-specific details are mentioned (stop category 0/STO/SS1, release sequence, or page range around p.83-85)"
         ],
         "wrong_claims": [
-          "The answer relies on general standards / general MiR portfolio guidance rather than MiR250-specific manual content",
-          "The answer points to MiR100 documentation as the source of the emergency-stop information"
+          "Relies on general MiR portfolio guidance rather than MiR250-specific manual content"
         ],
         "judge_error": false
       },
@@ -1357,15 +1335,12 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a search-limitation and generic/manual-location discussion, but it does not provide MiR250 emergency-stop manual content or any required specifics.",
+        "reasoning": "Core answer says the MiR250 manual exists but does not provide any substantive MiR250 emergency-stop content, instead giving generic AGV safety points.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one required specific is mentioned: stop category 0 / STO contactors / SS1 brake, or release sequence, or manual page range around p.83-85"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required MiR250-specific specifics are mentioned: stop category 0/STO/SS1 brake, release sequence, or page range around p.83-85"
         ],
-        "wrong_claims": [
-          "It relies on generic AGV safety prose instead of MiR250-specific manual content",
-          "It effectively points to MiR100/other manuals as the source of emergency-stop content rather than the MiR250 manual"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -1402,10 +1377,10 @@
       "tool_call_count": 24,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal/explanation about the MiR250 manual being unindexed, which does not support any required manual-specific emergency-stop facts.",
+        "reasoning": "Core answer says the MiR250 manual exists but is not indexed and gives no emergency-stop content from the manual, so required manual-specific facts are missing.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one required specific is mentioned: stop category 0 / STO contactors / SS1 brake, or the release sequence, or the manual page range around p.83-85"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required specifics are mentioned: stop category 0/STO contactors/SS1 brake, release sequence, or page range around p.83-85"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -1450,14 +1425,12 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a search-status summary, but it does not provide MiR250 manual emergency-stop specifics required by the question.",
+        "reasoning": "The core list is a status summary about search/indexing and access steps, not substantive MiR250 manual emergency-stop content, so required manual-specific facts are missing.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one specific manual detail is mentioned: stop category 0 / STO contactors / SS1 brake, or the release sequence, or the manual page range around p.83-85"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required MiR250-specific details are mentioned: stop category 0 / STO contactors / SS1 brake, release sequence, or page range around pp. 83-85"
         ],
-        "wrong_claims": [
-          "The answer implies the MiR250 emergency-stop information could not be found in the manual/indexed sources, rather than answering with MiR250 manual content"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -1500,14 +1473,13 @@
       "tool_call_count": 25,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is a refusal plus unrelated CRX10iA/MiR100 safety text, so it does not support MiR250 manual-specific emergency-stop facts.",
+        "reasoning": "Core list says MiR250 manual content could not be found and only gives general/other-device safety passages, so it does not provide MiR250-specific emergency-stop manual content.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one MiR250-specific emergency-stop detail is mentioned (stop category 0 / STO contactors / SS1 brake, release sequence, or manual page range around p.83-85)"
+          "Substantive content from the MiR250 operator manual about emergency stops",
+          "At least one required MiR250-specific detail such as stop category 0/STO/SS1, the E-stop release sequence, or page range around p.83-85"
         ],
         "wrong_claims": [
-          "The answer relies on general safety documentation instead of MiR250-specific manual content",
-          "The answer uses content from a different device's manual (CRX10iA / MiR100) rather than the MiR250 operator manual"
+          "Relies on general safety documentation and passages from CRX10iA/MiR100 instead of MiR250-specific manual content"
         ],
         "judge_error": false
       },
@@ -1544,13 +1516,13 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says the MiR250 manual content is unavailable/not indexed and only cites other documents, so it lacks MiR250-specific emergency-stop facts required by the question.",
+        "reasoning": "Core answer says the MiR250 manual is not indexed and gives no MiR250 emergency-stop content, while adding MiR100/general safety items.",
         "missing_facts": [
-          "Substantive content from the MiR250 operator manual about emergency stops",
-          "At least one specific manual detail such as stop category 0 / STO contactors / SS1 brake, release sequence, or page range around p.83-85"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required MiR250-specific details are mentioned (stop category 0/STO/SS1, release sequence, or page range around p.83-85)"
         ],
         "wrong_claims": [
-          "The answer relies on other documents (MiR100/CRX10iA/general safety procedures) rather than MiR250 manual content"
+          "Offers MiR100 emergency-stop content as what it could find for a question specifically about MiR250"
         ],
         "judge_error": false
       },
@@ -1585,14 +1557,14 @@
       "tool_call_count": 15,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: it says there is no MiR250 manual content and instead cites MiR100 standards; this misses the required MiR250-specific emergency-stop details and relies on the wrong manual.",
+        "reasoning": "Core list cites MiR100 standards and emergency-stop-box notes instead of substantive MiR250 manual emergency-stop content, so required MiR250-specific facts are missing and a forbidden source is positively asserted.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one required specific from the MiR250 manual is mentioned (stop category 0 / STO contactors / SS1 brake, or release sequence, or manual page range around p.83-85)"
+          "Substantive content from the MiR250 operator manual about emergency stops is not cited.",
+          "None of the required MiR250-specific specifics appear: stop category 0/STO contactors/SS1 brake, release sequence, or page range around p.83-85."
         ],
         "wrong_claims": [
-          "The answer relies on general standards (EN 13850, ISO) without any MiR250-specific manual content",
-          "Content is sourced from MiR100 manual (different device) when the question targets MiR250"
+          "The answer relies on general standards (EN 13850, etc.) without MiR250-specific manual content.",
+          "The answer positively sources content from the MiR100 manual even though the question targets MiR250."
         ],
         "judge_error": false
       },
@@ -1627,14 +1599,12 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says the MiR250 manual exists but no emergency-stop specifics can be retrieved; it fails to cite substantive MiR250 manual content or any required emergency-stop detail.",
+        "reasoning": "Core answer says the MiR250 manual exists but no indexed text could be retrieved, so it does not provide any substantive MiR250 emergency-stop manual content.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one required specific is mentioned (stop category 0 / STO contactors / SS1 brake, release sequence, or manual page range around p.83-85)"
+          "Substantive content from the MiR250 operator manual about emergency stops",
+          "At least one required specific such as stop category 0/STO/SS1, the E-stop release sequence, or page range around p.83-85"
         ],
-        "wrong_claims": [
-          "The answer relies on general standards (EN 13850, ISO) without any MiR250-specific manual content"
-        ],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -1668,10 +1638,10 @@
       "tool_call_count": 10,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says the manual content is unavailable and gives no MiR250 emergency-stop specifics, so the required manual-based facts are missing.",
+        "reasoning": "Core list is file/location/access notes for MiR250.pdf plus a statement that emergency-stop details cannot be provided; it does not cite any substantive MiR250 manual content or required specific emergency-stop detail.",
         "missing_facts": [
-          "The answer cites substantive content from the MiR250 operator manual about emergency stops",
-          "At least one specific manual detail is mentioned (stop category 0 / STO contactors / SS1 brake, or release sequence, or manual page range around p.83-85)"
+          "No substantive content from the MiR250 operator manual about emergency stops is cited",
+          "None of the required specifics are mentioned: stop category 0/STO contactors/SS1 brake, release sequence, or page range around p.83-85"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -1697,10 +1667,10 @@
       "tool_call_count": 26,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list is general red-light troubleshooting guidance, but it does not identify the Hall 4 robot as MiR100_001/MiR100 and lacks MiR100-manual troubleshooting content.",
+        "reasoning": "Core list is general recommendations and AGV troubleshooting; it does not identify the Hall 4 robot as MiR100_001 and does not provide MiR100-manual troubleshooting for the red light beyond generic advice.",
         "missing_facts": [
-          "The robot in Hall 4 is identified as MiR100_001 (or simply MiR100)",
-          "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
+          "The robot in Hall 4 is identified as MiR100_001 (or MiR100).",
+          "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check."
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -1746,11 +1716,9 @@
       "duration_s": 184.846,
       "tool_call_count": 28,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: the answer identifies Hall 4 as MiR100 but does not provide MiR100 manual troubleshooting for the red light, so the required fix guidance is unsupported.",
-        "missing_facts": [
-          "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core answer identifies the Hall 4 robot as MiR100 and provides MiR100-manual troubleshooting via diagnostics/web interface steps; it does not answer for MiR250.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -1805,7 +1773,7 @@
       "tool_call_count": 24,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list identifies MiR100_001 and provides MiR100 troubleshooting/diagnostic guidance, so all required facts are supported and no forbidden MiR250 claim is asserted.",
+        "reasoning": "Core list: identifies the Hall 4 robot as MiR100_001 and gives MiR100 troubleshooting via diagnostics/HMI checks; no MiR250 misidentification.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1840,15 +1808,10 @@
       "duration_s": 182.74,
       "tool_call_count": 32,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list identifies MiR100 in Hall 4 and gives some MiR100 troubleshooting, but it does not support the required red-light meaning and includes unsupported/irrelevant claims.",
-        "missing_facts": [
-          "The robot in Hall 4 is identified as MiR100_001 (or simply MiR100)",
-          "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
-        ],
-        "wrong_claims": [
-          "The answer asserts that a red status light typically indicates a more serious fault than the yellow-purple 'lost' condition without support from the MiR100 manual"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list identifies the Hall 4 robot as MiR100 and gives MiR100 manual troubleshooting via diagnostics/manual-operation/retraining/support; no MiR250 answer is asserted.",
+        "missing_facts": [],
+        "wrong_claims": [],
         "judge_error": false
       },
       "process": {
@@ -1911,7 +1874,7 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001/MiR100 is identified and MiR100 manual troubleshooting is provided; verdict: correct.",
+        "reasoning": "Core list is the 'Immediate Actions Recommended' plus the summary identifying the Hall 4 robot as MiR100_001; it includes MiR100 identification and troubleshooting/diagnostic and emergency-stop guidance, with no MiR250 misidentification.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -1948,12 +1911,9 @@
       "duration_s": 115.481,
       "tool_call_count": 23,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: MiR100_001 is identified, but the answer does not provide MiR100 manual troubleshooting content and instead gives generic guesses; verdict: incorrect.",
-        "missing_facts": [
-          "The robot in Hall 4 is identified as MiR100_001 (or simply MiR100)",
-          "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
-        ],
+        "answer_correct": true,
+        "reasoning": "Core list identifies Hall 4 robot as MiR100_001 and gives troubleshooting steps for a red light (including E-stop and LiDAR/diagnostic checks), with no claim that it is a MiR250.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -1999,7 +1959,7 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 is identified for Hall 4 and MiR100 manual troubleshooting is provided; both required facts are supported and no MiR250 answer is asserted.",
+        "reasoning": "Core list identifies the Hall 4 robot as MiR100_001 and gives MiR100 troubleshooting steps including emergency-stop and sensor/camera checks, with no MiR250 misidentification.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2046,9 +2006,9 @@
       "tool_call_count": 36,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list identifies MiR100_001 in Hall 4, but it does not provide MiR100 manual troubleshooting for the red light; instead it says the red-light meaning is not documented and gives generic recommendations.",
+        "reasoning": "Core answer identifies Hall 4 robot as MiR100_001 and gives recommendations, but it does not provide MiR100 manual troubleshooting content such as emergency stop/protective stop/diagnostic steps/camera check.",
         "missing_facts": [
-          "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
+          "MiR100 manual troubleshooting content covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
         ],
         "wrong_claims": [],
         "judge_error": false
@@ -2095,7 +2055,7 @@
       "tool_call_count": 27,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR100_001 is the Hall 4 robot, and MiR100 manual troubleshooting is provided; both required facts are supported and no MiR250 is asserted as the Hall 4 robot.",
+        "reasoning": "Core answer identifies the Hall 4 robot as MiR100_001 and provides MiR100 troubleshooting steps/diagnostic checks, with no positive claim that it is a MiR250.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2133,7 +2093,7 @@
       "tool_call_count": 22,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list: the answer discusses MiR100 status lights, but it does not identify the Hall 4 robot as MiR100_001/MiR100 and it lacks the required MiR100 manual troubleshooting content.",
+        "reasoning": "Core list is the bullets about MiR100 status lights and generic red-light guesses; it does not identify the Hall 4 robot as MiR100_001/MiR100 in answer to the question and provides no MiR100 manual troubleshooting steps.",
         "missing_facts": [
           "The robot in Hall 4 is identified as MiR100_001 (or simply MiR100)",
           "Troubleshooting content from the MiR100 manual is provided, covering at least one of: emergency stop procedure, protective stop, diagnostic steps, or camera check"
@@ -2184,7 +2144,7 @@
       "tool_call_count": 16,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 is the heaviest at 250 kg, with other robots’ payloads listed for comparison; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the payload comparison table plus the concluding sentence, and it correctly identifies MiR250 as highest at 250 kg while also reporting other robots' payloads.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2220,7 +2180,7 @@
       "tool_call_count": 26,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 has the highest payload at 250 kg, with MiR100 also reported at 100 kg; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core answer identifies MiR250 as heaviest at 250 kg and compares it to MiR100 at 100 kg, so all required facts are supported with no forbidden claim.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2259,7 +2219,7 @@
       "tool_call_count": 21,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 is identified as the heaviest-load robot at 250 kg, with other robot payloads reported; all required facts are supported and no forbidden claim is made.",
+        "reasoning": "Core list is the summary table plus the final statement naming MiR250 at 250 kg as heaviest, with other robots' payloads included; all required facts are supported and no forbidden claim is asserted.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2296,11 +2256,9 @@
       "duration_s": 21.924,
       "tool_call_count": 22,
       "judge": {
-        "answer_correct": false,
-        "reasoning": "Core list: the comparison table and final sentence; verdict: incorrect because the robot is named as MiR250_Type rather than MiR250, so the required identification is not supported exactly.",
-        "missing_facts": [
-          "MiR250 is identified as the robot with the highest payload capacity"
-        ],
+        "answer_correct": true,
+        "reasoning": "The core list is the payload table of robots, and it correctly identifies MiR250_Type as highest at 250 kg while also reporting other robots' payloads.",
+        "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
       },
@@ -2357,7 +2315,7 @@
       "tool_call_count": 23,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250 is identified as the heaviest at 250 kg, with other robots’ payloads also reported; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the ranked table of robots with max loads; it correctly identifies MiR250 as highest at 250 kg and includes other robots' payloads for comparison.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2404,7 +2362,7 @@
       "tool_call_count": 6,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_Type is identified as the heaviest with 250 kg, and other robots’ payloads are also reported; verdict: correct.",
+        "reasoning": "Core list is the Robot Load Summary plus the concluding sentence naming MiR250_Type at 250 kg as heaviest; all required facts are supported and no forbidden claim is asserted.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2432,7 +2390,7 @@
       "tool_call_count": 7,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_Type at 250 kg with other robots’ payloads listed; all required facts are supported and no forbidden claim is asserted.",
+        "reasoning": "Core list is the ranked table of robots and payloads, and it correctly identifies MiR250_Type/MiR250 as highest at 250 kg while also listing other robots' payloads.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2479,7 +2437,7 @@
       "tool_call_count": 13,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_Type is identified as the heaviest-load robot at 250 kg, with other robot payloads also reported; verdict: correct.",
+        "reasoning": "Core list is the payload table plus the concluding statement, and it correctly identifies MiR250_Type as highest at 250 kg while also reporting other robots' payloads.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false
@@ -2527,15 +2485,14 @@
       "tool_call_count": 11,
       "judge": {
         "answer_correct": false,
-        "reasoning": "Core list says UR20 is heaviest at 20 kg, but the required answer is MiR250 at 250 kg with another robot’s payload also reported.",
+        "reasoning": "Core list is the payload table and final statement naming UR20 as heaviest; this contradicts the required answer and omits MiR250 at 250 kg plus any valid comparison including MiR250.",
         "missing_facts": [
           "MiR250 is identified as the robot with the highest payload capacity",
-          "The payload value 250 kg is mentioned for MiR250",
-          "Payload data from at least one OTHER robot is reported in the answer"
+          "The payload value 250 kg is mentioned for MiR250"
         ],
         "wrong_claims": [
-          "A robot other than MiR250 has the highest payload",
-          "MiR250 payload is anything other than 250 kg"
+          "A robot other than MiR250 has the highest payload: UR20 is asserted as heaviest",
+          "MiR250 is asserted not to have payload data instead of 250 kg"
         ],
         "judge_error": false
       },
@@ -2563,7 +2520,7 @@
       "tool_call_count": 17,
       "judge": {
         "answer_correct": true,
-        "reasoning": "Core list: MiR250_Type at 250 kg is identified as the heaviest, with other robots’ payloads also reported; all required facts are supported and no forbidden claim is made.",
+        "reasoning": "Core list is the payload tables plus the concluding ranking, and it correctly identifies MiR250_Type as highest at 250 kg while also reporting other robots' payloads.",
         "missing_facts": [],
         "wrong_claims": [],
         "judge_error": false

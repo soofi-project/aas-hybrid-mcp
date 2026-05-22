@@ -446,6 +446,12 @@ Konkret pro `.tex`-Datei, was wo eingefügt/geändert wird:
   Kafka-Plugin), Proxy-Variante mit ETag/Optimistic Concurrency,
   `aas-test-engines`-Integration. Mit den drei White-Spaces aus T6 als
   Belegen.
+- Read-path Cypher validation rules (erweiterbar, noch nicht umgesetzt):
+  z. B. LIMIT-Enforcement auf breiten Scans (MATCH ohne ID-/semanticId-Filter
+  und ohne LIMIT) und cursor-basiertes Paginieren als empfohlenes Rezept
+  (`WHERE id > $last_id ORDER BY id ASC LIMIT N` statt SKIP, das linear
+  teuer ist). Zeigt Erweiterbarkeit des Validator-Ansatzes ohne
+  Implementierungsverpflichtung für dieses Paper.
 
 **`main.bib`**
 - Fünf Stubs aus T5 einfügen: `garmaev2023submodel`,
