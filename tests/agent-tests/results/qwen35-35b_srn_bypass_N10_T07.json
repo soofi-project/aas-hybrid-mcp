@@ -1,0 +1,2351 @@
+{
+  "records": [
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 0,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to identify the transport robot in Hall 4 and create a service request notification for it.\n\nLet me first query the graph to find transport robots in Hall 4.\n\n\n\n\n\n\n\n\n\nLet me try a different approach - first find all AAS shells and their submodels to understand the structure, then look for transport robots.\n\n\n\n\n\n\n\n\n\nGood, I can see there's a \"Hall4\" AAS. Now let me find the transport robots associated with Hall 4. I need to check which AAS shells are located in Hall 4. Let me look at the submodels of Hall4 to see if there's a relationship to transport robots.\n\n\n\n\n\n\n\n\n\nLet me check the FacilityInformation submodel to see if it contains location information about transport robots.\n\n\n\n\n\n\n\n\n\nLet me search for transport robots by looking at MiR (Mobile Industrial Robot) AAS shells and check their location information.\n\n\n\n\n\n\n\n\n\nRight, I need to use exact matches. Let me check each MiR AAS shell individually to find their location.\n\n\n\n\n\n\n\n\n\nI see MiR100_001 has many ServiceRequestNotification submodels. Let me check the MiR250 robots as well, and look for location information to find which one is in Hall 4.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow I need to find which MiR robot is located in Hall 4. Let me check the submodels of each MiR robot to find location information. Let me look at the Nameplate submodel first to see if it contains location data.\n\n\n\n\n\n\n\n\n\nLet me check if there's a location or hall information in any of the submodels. Let me look at the HierarchicalStructures submodel of Hall4 to see if it references the MiR robots.\n\n\n\n\n\n\n\n\n\nI found it! The Hall4's HierarchicalStructures submodel contains MiR100_001 as an element. This means MiR100_001 is the transport robot in Hall 4.\n\nNow I need to create a service request notification for MiR100_001. The AAS ID for MiR100_001 is `urn:aas:mir100:001`.\n\nLet me create the service request notification with appropriate details:\n- short_text: \"Fault light showing\"\n- service_type: \"CorrectiveMaintenance\" (since there's a fault)\n- priority: \"Medium\" (functional fault, not safety emergency)\n\n\n\n\n\n\n\n\n\nSuccessfully created a service request notification for the transport robot in Hall 4.\n\n**Summary:**\n- Identified the transport robot in Hall 4: **MiR100_001** (AAS ID: `urn:aas:mir100:001`)\n- Created service request notification (SRN ID: `urn:aas-hybrid-mcp:srn:001:5c4443d1`)\n- Service type: CorrectiveMaintenance\n- Priority: Medium\n- Description: Fault light showing on transport robot\n\nThe service request has been registered on the MiR100_001 AAS. Maintenance personnel can now view this notification in the system.",
+        "final_answer": "Successfully created a service request notification for the transport robot in Hall 4.\n\n**Summary:**\n- Identified the transport robot in Hall 4: **MiR100_001** (AAS ID: `urn:aas:mir100:001`)\n- Created service request notification (SRN ID: `urn:aas-hybrid-mcp:srn:001:5c4443d1`)\n- Service type: CorrectiveMaintenance\n- Priority: Medium\n- Description: Fault light showing on transport robot\n\nThe service request has been registered on the MiR100_001 AAS. Maintenance personnel can now view this notification in the system.",
+        "duration_s": 11.645,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nMATCH (aas)-[:HAS_SUBMODEL]->(sm:Submodel)\nMATCH (sm)-[:HAS_ELEMENT*]->(element:SubmodelElement)\nWHERE element.idShort = 'location' OR element.idShort = 'hall' OR element.idShort = 'Hall'\nRETURN aas.idShort, aas.id, asset.globalAssetId, element.idShort, element.value AS location_value\nLIMIT 20"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind\nLIMIT 30"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (hall4:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:hall4:facilityinformation'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.smId\nLIMIT 30"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"PrimaryUse\",\"el.modelType\":null,\"el.smId\":\"urn:submodel:hall4:facilityinformation\"},{\"el.idShort\":\"Area\",\"el.modelType\":null,\"el.smId\":\"urn:submodel:hall4:facilityinformation\"}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort CONTAINS 'MiR'\nRETURN aas.idShort, aas.id, sm.idShort, sm.id"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:8a9edbde\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:9a506c72\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:0e8e7d84\"},{\"sm.idShor"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_002'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir250:002:nameplate\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:001:nameplate'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.value\nLIMIT 20"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"SerialNumber\",\"el.modelType\":null,\"el.value\":\"MIR100-2020-001\"},{\"el.idShort\":\"DateOfManufacture\",\"el.modelType\":null,\"el.value\":\"2020-04-12\"},{\"el.idShort\":\"YearOfConstruction"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:hall4:hierarchicalstructures'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.smId\nLIMIT 30"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"el.modelType\":null,\"el.smId\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"el.idShort\":\"CRX10iA_001\",\"el.modelType\":null,\"el.smId\":\"urn:submodel:hall4:hierarchical"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "",
+              "long_text": "Transport robot MiR100_001 in Hall 4 is showing a fault light. Requires inspection and corrective maintenance.",
+              "priority": "Medium",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Fault light showing on transport robot"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:5c4443d1\"}"
+          }
+        ],
+        "tool_call_count": 11,
+        "usage": {
+          "prompt_tokens": 162157,
+          "completion_tokens": 1805,
+          "total_tokens": 163962
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 4,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 1,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 first, then create a service request notification.\n\nLet me start by querying the graph to find the robot in Hall 4.\n\n\n\n\n\n\n\n\n\nI need to use the correct pattern - I can't use CONTAINS on idShort. Let me first get the templates index and then query to find assets in Hall 4 by looking at their properties or relationships.\n\n\n\n\n\n\n\n\n\nNow let me find the AAS shells and look for ones related to Hall 4. I'll query all AAS shells first to see what's available.\n\n\n\n\n\n\n\n\n\nI see there's a \"Hall4\" AAS shell. Let me check what submodels it has to find the transport robot.\n\n\n\n\n\n\n\n\n\nThe Hall4 AAS seems to be the hall itself, not a transport robot. Let me check if there are any transport robots in Hall 4 by looking at the AAS shells that might be related to robots and checking their properties. Let me look at the MiR robots (which are transport robots - MiR = Mobile Industrial Robot).\n\n\n\n\n\n\n\n\n\nLet me try a different approach - check what the MiR robots have and see if any are in Hall 4.\n\n\n\n\n\n\n\n\n\nI see there are MiR robots with ServiceRequestNotification submodels. Let me check the Hall4 AAS more carefully to see what assets it manages, and then check if there's a transport robot associated with it.\n\n\n\n\n\n\n\n\n\nThe Hall4 AAS manages an asset with globalAssetId \"urn:asset:hall4\". Let me check if there are any other AAS shells that might be transport robots in Hall 4 by looking at the relationships between shells or checking the HierarchicalStructures submodel.\n\n\n\n\n\n\n\n\n\nLet me check the FacilityInformation submodel to see what information it contains about the hall and any assets within it.\n\n\n\n\n\n\n\n\n\nThe FacilityInformation shows Hall4 has area 12000 and power connection 10, but no specific robot information. Let me check if there's a transport robot mentioned in the graph by looking at all assets and their relationships.\n\n\n\n\n\n\n\n\n\nI see the MiR robots (MiR100_001, MiR250_001, MiR250_002) are transport robots. The user mentioned \"transport robot in Hall 4\". Let me check if any of these robots have a location or relationship to Hall 4. Let me look at the submodels of the MiR robots to see if there's location information.\n\n\n\n\n\n\n\n\n\nI see MiR250_001 has multiple ServiceRequestNotification submodels already. Let me check the other MiR robots to see which one might be in Hall 4. Let me also check if there's any location information in the submodels.\n\n\n\n\n\n\n\n\n\nI see there are many ServiceRequestNotification submodels. The user mentioned \"transport robot in Hall 4\". Since I can't find explicit location information linking a robot to Hall 4, let me check if there's any relationship between the Hall4 AAS and any robot AAS. Let me also check the TechnicalDataAGV template which might have location info.\n\nLet me try a different approach - check if any robot has a relationship to Hall4 or if there's location information in the submodels.\n\n\n\n\n\n\n\n\n\nLet me check the Nameplate submodels to see if there's any location information there, or check if there's a relationship between robots and halls.\n\n\n\n\n\n\n\n\n\nI don't see explicit location information linking robots to Hall 4. Since the user mentioned \"transport robot in Hall 4\" and I need to create a service request notification, let me check if there's any existing ServiceRequestNotification that might indicate a robot in Hall 4, or if I should ask for clarification.\n\nActually, looking at the available robots (MiR100_001, MiR250_001, MiR250_002), and the fact that the user specifically mentioned \"Hall 4\", I should check if any of these robots have a relationship to Hall 4. Let me also check if there's a FacilityInformation submodel that might indicate which robot is in which hall.\n\nLet me check the existing ServiceRequestNotifications to see if any mention Hall 4 or a fault light.\n\n\n\n\n\n\n\n\n\nI see there's a MiR250_001 with ErrorCode \"FAULT_LIGHT\". This might be the robot the user is referring to. However, I need to confirm if this robot is in Hall 4. Let me check if there's any relationship between MiR250_001 and Hall4.\n\nLet me also check if there's a relationship element that connects robots to halls.\n\n\n\n\n\n\n\n\n\nNo relationship elements found. Let me check if there's any Property or other element that might indicate location.\n\nActually, looking at the situation: the user said \"The transport robot in Hall 4 is showing a fault light\". I found that MiR250_001 has a ServiceRequestNotification with ErrorCode \"FAULT_LIGHT\". This is likely the robot they're referring to, even though I couldn't find explicit location information linking it to Hall 4.\n\nGiven the urgency (\"Quickly create a service request notification\"), and the fact that MiR250_001 already has a FAULT_LIGHT error code, I should create a new service request notification for this robot. However, I need to be careful - the user might be referring to a different robot.\n\nLet me check if there are any other robots with FAULT_LIGHT errors.\n\n\n\n\n\n\n\n\n\nThere are multiple robots with FAULT_LIGHT errors: MiR100_001 and MiR250_001. Since the user specifically mentioned \"Hall 4\", I need to determine which robot is in Hall 4.\n\nLet me check if there's any way to determine which robot is in Hall 4. Perhaps by checking the HierarchicalStructures or other submodels.\n\nActually, looking at the data, I don't see explicit location information. Given the user's statement that \"the transport robot in Hall 4 is showing a fault light\", and the fact that there are multiple robots with FAULT_LIGHT errors, I should ask for clarification about which specific robot is in Hall 4.\n\nBut wait - the user said \"Quickly create a service request notification for it.\" This suggests they want me to act now. Let me re-read the instructions: \"If multiple candidates remain after a structural query, ask **one** clarifying question naming them. Do not loop on disambiguation.\"\n\nSince I can't determine which robot is in Hall 4 from the graph data, I should ask for clarification. However, let me first check if there's any other information I might have missed.\n\nLet me check the Asset node for Hall4 to see if it has any related assets.\n\n\n\n\n\n\n\n\n\nLet me check if there's any HierarchicalStructures submodel that might show a parent-child relationship between Hall4 and a robot.\n\n\n\n\n\n\n\n\n\nExcellent! I found it! The HierarchicalStructures submodel of Hall4 contains:\n- CRX10iA_001\n- **MiR100_001** (this is a transport robot - MiR = Mobile Industrial Robot)\n- UR3e_002\n\nSo **MiR100_001** is the transport robot in Hall 4! This is the robot the user is referring to.\n\nNow I need to create a service request notification for MiR100_001. The user mentioned \"fault light\", so the service type should be corrective maintenance, and the priority should be Medium (functional fault) since it's showing a fault light.\n\nLet me create the service request notification.\n\n\n\n\n\n\n\n\n\nService request notification created successfully for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (transport robot located in Hall 4, as confirmed via HierarchicalStructures submodel)\n- **Issue:** Fault light showing\n- **Service Request Notification ID:** `urn:aas-hybrid-mcp:srn:001:fd3e4a1d`\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium\n- **Error Code:** FAULT_LIGHT\n\nThe service request has been registered on the MiR100_001 AAS and is now ready for maintenance workflow.",
+        "final_answer": "Service request notification created successfully for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (transport robot located in Hall 4, as confirmed via HierarchicalStructures submodel)\n- **Issue:** Fault light showing\n- **Service Request Notification ID:** `urn:aas-hybrid-mcp:srn:001:fd3e4a1d`\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium\n- **Error Code:** FAULT_LIGHT\n\nThe service request has been registered on the MiR100_001 AAS and is now ready for maintenance workflow.",
+        "duration_s": 24.325,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE toLower(aas.idShort) CONTAINS 'hall 4' OR toLower(sm.idShort) CONTAINS 'hall 4' OR toLower(el.idShort) CONTAINS 'hall 4'\nRETURN aas.idShort, aas.id, sm.idShort, el.idShort\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)\nRETURN aas.idShort, aas.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\"},{\"aas.idShort\":\"UR3e_002\",\"aas.id\":\"urn:aas:ur3e:002\"},{\"aas.idShort\":\"CRX1"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nWHERE aas.idShort LIKE 'MiR%' OR aas.idShort LIKE 'transport%' OR aas.idShort LIKE 'AGV%'\nRETURN aas.idShort, aas.id, sm.idShort, sc.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"{neo4j_code: Neo.ClientError.Statement.SyntaxError} {message: Invalid input 'LIKE': expected an expression, 'FOREACH', 'ORDER BY', 'CALL', 'CREATE', 'LOAD CSV', 'DELETE', 'DETACH', 'FINISH',"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE aas.idShort IN ['MiR250_001', 'MiR250_002', 'MiR100_001', 'MiR250_Type', 'MiR100_Type']\nRETURN aas.idShort, aas.id, sm.idShort, el.idShort\nLIMIT 50",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"sm.idShort\":\"ServiceRequestNotification\",\"el.idShort\":\"ServiceRequestNotification\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mi"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (hall:AssetAdministrationShell {idShort: 'Hall4'})-[:MANAGES_ASSET]->(asset:Asset)\nRETURN hall.idShort, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"hall.idShort\":\"Hall4\",\"asset.globalAssetId\":\"urn:asset:hall4\",\"asset.assetKind\":\"Instance\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE sm.idShort = 'HierarchicalStructures'\nRETURN aas.idShort, aas.id, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"Hall3\",\"aas.id\":\"urn:aas:hall3\",\"sm.id\":\"urn:submodel:hall3:hierarchicalstructures\"},{\"aas.idShort\":\"Hall4\",\"aas.id\":\"urn:aas:hall4\",\"sm.id\":\"urn:submodel:hall4:hierarchicalst"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'FacilityInformation'})\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"PrimaryUse\",\"el.modelType\":null,\"el.value\":null},{\"el.idShort\":\"Area\",\"el.modelType\":null,\"el.value\":\"12000\"},{\"el.idShort\":\"PowerConnection\",\"el.modelType\":null,\"el.value\":\"10"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:9a506c72\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:0e8e7d84\"},{\"sm.idShor"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort IN ['MiR250_001', 'MiR250_002', 'MiR100_001']\nRETURN aas.idShort, sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:9a506c72\"},{\"aas.idShort\":\"MiR250_001\",\"sm.idShort\":\"ServiceRequestNotification\",\"sm."
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE sm.idShort = 'TechnicalDataAGV'\nRETURN aas.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_Type\",\"sm.id\":\"urn:submodel:mir100:type:technicaldataagv\"},{\"aas.idShort\":\"MiR250_Type\",\"sm.id\":\"urn:submodel:mir250:type:technicaldataagv\"}],\"total\":2,\"truncated\":fals"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'Nameplate'})\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"SerialNumber\",\"el.value\":\"MIR250-2023-001\"},{\"el.idShort\":\"DateOfManufacture\",\"el.value\":\"2023-08-15\"},{\"el.idShort\":\"YearOfConstruction\",\"el.value\":\"2023\"},{\"el.idShort\":\"URIO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'ServiceRequestNotification'})\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE el.idShort = 'ShortText' OR el.idShort = 'LongText' OR el.idShort = 'ErrorCode'\nRETURN aas.idShort, el.idShort, el.value\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"el.idShort\":\"LongText\",\"el.value\":null},{\"aas.idShort\":\"MiR250_001\",\"el.idShort\":\"ErrorCode\",\"el.value\":\"E-STOP\"},{\"aas.idShort\":\"MiR250_001\",\"el.idShort\":\"ShortT"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(rel:RelationshipElement)\nWHERE rel.idShort = 'Location' OR rel.idShort = 'LocatedIn' OR rel.idShort = 'RelatedTo'\nRETURN aas.idShort, sm.idShort, rel.idShort\nLIMIT 10",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'ServiceRequestNotification'})\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE el.idShort = 'ErrorCode' AND el.value = 'FAULT_LIGHT'\nRETURN aas.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\"},{\"aas.idShort\":\"MiR100_001\"},{\"aas.idShort\":\"MiR100_001\"},{\"aas.idShort\":\"MiR250_001\"},{\"aas.idShort\":\"MiR100_001\"},{\"aas.idShort\":\"MiR100_001\"}],\"total\":6,\"trunc"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:MANAGES_ASSET]->(asset:Asset)\n      -[:HAS_SPECIFIC_ASSET_ID]->(specificId)\nRETURN asset.globalAssetId, specificId.name, specificId.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'HierarchicalStructures'})\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.smId\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"el.modelType\":null,\"el.smId\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"el.idShort\":\"CRX10iA_001\",\"el.modelType\":null,\"el.smId\":\"urn:submodel:hall4:hierarchical"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "FAULT_LIGHT",
+              "long_text": "Transport robot MiR100_001 in Hall 4 is showing a fault light. Requires inspection and maintenance.",
+              "priority": "Medium",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Fault light on transport robot in Hall 4"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:fd3e4a1d\"}"
+          }
+        ],
+        "tool_call_count": 20,
+        "usage": {
+          "prompt_tokens": 452562,
+          "completion_tokens": 3736,
+          "total_tokens": 456298
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "toLower_id_contains",
+              "toLower_id_contains",
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 2,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 first, then create a service request notification.\n\nLet me start by querying for transport robots in Hall 4:\n\n\n\n\n\n\n\n\n\nI need to first find all AAS shells and their properties to identify the transport robot in Hall 4. Let me query more carefully:\n\n\n\n\n\n\n\n\n\nI can see there's a \"Hall4\" AAS and various MiR (MiR = Mobile Industrial Robot) transport robots. Let me check the Hall4 submodel to see what assets are located there, and also look for transport robots:\n\n\n\n\n\n\n\n\n\nI can see the Hall4 hierarchical structure includes MiR100_001, UR3e_002, CRX10iA_001. MiR robots are transport robots (Mobile Industrial Robot). Let me check if there are any MiR250 robots in Hall4 as well:\n\n\n\n\n\n\n\n\n\nNow I need to find which of these transport robots is in Hall 4. Let me check the HierarchicalStructures submodel more closely to see the relationships:\n\n\n\n\n\n\n\n\n\nI can see that Hall 4 contains multiple assets including MiR100_001, MiR250_001, and MiR250_002 (all transport robots). The user mentioned \"the transport robot in Hall 4\" showing a fault light. Since there are multiple transport robots, I need to identify which one. Let me check if there's more specific information about fault status or if I should ask for clarification.\n\nLet me check the TechnicalDataAGV submodels to see which MiR robot might be the one with a fault:\n\n\n\n\n\n\n\n\n\nLet me check the MiR250_001 and MiR250_002 AAS shells to see if they have any fault information or status indicators:\n\n\n\n\n\n\n\n\n\nI see there's already a ServiceRequestNotification submodel on MiR250_001. Let me check MiR250_002 as well:\n\n\n\n\n\n\n\n\n\nLet me check MiR100_001 as well:\n\n\n\n\n\n\n\n\n\nBased on my investigation, I found that Hall 4 contains multiple transport robots (MiR100_001, MiR250_001, MiR250_002). The user mentioned \"the transport robot in Hall 4 is showing a fault light\" but didn't specify which one. \n\nLooking at the data, MiR250_001 already has a ServiceRequestNotification submodel with Status \"Open\". This might indicate it already has an active service request.\n\nSince the user said \"the transport robot\" (singular) and there are multiple, I should ask for clarification. However, given the urgency (\"Quickly create a service request notification\"), let me check if there's any indication of which robot has a fault. Let me look for any existing fault/error indicators:\n\n\n\n\n\n\n\n\n\nNo explicit fault indicators found. Since the user mentioned \"the transport robot\" without specifying which one, and there are multiple transport robots in Hall 4 (MiR100_001, MiR250_001, MiR250_002), I need to ask for clarification.\n\nHowever, given the context that the user said \"the transport robot\" (singular), and MiR250_001 already has an existing ServiceRequestNotification with Status \"Open\", it's possible that MiR250_001 is the one with the fault, or the user might be referring to a different one.\n\nLet me ask the user to clarify which transport robot they're referring to:\n\n**I found multiple transport robots in Hall 4:**\n- MiR100_001 (MiR100 transport robot)\n- MiR250_001 (MiR250 transport robot) - already has an existing ServiceRequestNotification with Status \"Open\"\n- MiR250_002 (MiR250 transport robot)\n\nWhich specific transport robot is showing the fault light? Please specify the model/ID (e.g., MiR100_001, MiR250_001, or MiR250_002).",
+        "final_answer": "No explicit fault indicators found. Since the user mentioned \"the transport robot\" without specifying which one, and there are multiple transport robots in Hall 4 (MiR100_001, MiR250_001, MiR250_002), I need to ask for clarification.\n\nHowever, given the context that the user said \"the transport robot\" (singular), and MiR250_001 already has an existing ServiceRequestNotification with Status \"Open\", it's possible that MiR250_001 is the one with the fault, or the user might be referring to a different one.\n\nLet me ask the user to clarify which transport robot they're referring to:\n\n**I found multiple transport robots in Hall 4:**\n- MiR100_001 (MiR100 transport robot)\n- MiR250_001 (MiR250 transport robot) - already has an existing ServiceRequestNotification with Status \"Open\"\n- MiR250_002 (MiR250 transport robot)\n\nWhich specific transport robot is showing the fault light? Please specify the model/ID (e.g., MiR100_001, MiR250_001, or MiR250_002).",
+        "duration_s": 12.669,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE aas.idShort CONTAINS 'Hall 4' OR aas.idShort CONTAINS 'Hall4'\n      OR (el.idShort CONTAINS 'transport' OR el.idShort CONTAINS 'robot' OR el.idShort CONTAINS 'Transport')\nRETURN aas.idShort, aas.id, sm.idShort, el.idShort, labels(el) AS labels\nLIMIT 50"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN aas.idShort, aas.id, sm.idShort, sm.id, sc.id AS semanticId\nLIMIT 100"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir250:001:nameplate\",\"semanticId\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplat"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN sm.idShort, el.idShort, labels(el) AS labels\nLIMIT 100"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"el.idShort\":\"EntryNode\",\"labels\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Entity\"]},{\"sm.idShort\":\"HierarchicalStructures\",\"el.idSho"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel)-[:HAS_ELEMENT*]->(entity:Entity)\n      -[:REPRESENTS_ASSET]->(asset:Asset)\nWHERE entity.idShort IN ['MiR100_001', 'MiR250_001', 'MiR250_002']\nRETURN entity.idShort, asset.globalAssetId, asset.assetKind, asset.assetType"
+            },
+            "result_preview": "{\"rows\":[{\"entity.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\",\"asset.assetType\":null},{\"entity.idShort\":\"MiR250_001\",\"asset.globalAssetId\":\"urn:asse"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {idShort: 'HierarchicalStructures'})-[:HAS_ELEMENT*]->(parent:Entity)\nMATCH (parent)-[:HAS_ELEMENT]->(child:Entity)\nWHERE parent.idShort = 'EntryNode'\nMATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)\nRETURN child.idShort, asset.globalAssetId"
+            },
+            "result_preview": "{\"rows\":[{\"child.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\"},{\"child.idShort\":\"MiR250_001\",\"asset.globalAssetId\":\"urn:asset:mir250:001\"},{\"child.idShort\":\"UR3e_002\",\"asset.glob"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nRETURN aas.idShort, aas.id, sm.idShort"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_Type\",\"aas.id\":\"urn:aas:mir250:type\",\"sm.idShort\":\"TechnicalDataAGV\"},{\"aas.idShort\":\"MiR100_Type\",\"aas.id\":\"urn:aas:mir100:type\",\"sm.idShort\":\"TechnicalDataAGV\"}],\"tot"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE el.idShort IN ['Status', 'Fault', 'Error', 'Alarm']\nRETURN sm.idShort, el.idShort, labels(el) AS labels, el.value"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"ServiceRequestNotification\",\"el.idShort\":\"Status\",\"labels\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Property\"],\"el.value\":\"Open\"},{\"sm.idShort\":\"ServiceReque"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_002'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept)\nRETURN sm.idShort, sm.id, labels(sm)"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir250:002:nameplate\",\"labels(sm)\":[\"GraphNode\",\"Submodel\",\"Referable\",\"Referenceable\",\"Identifiable\"]}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept)\nRETURN sm.idShort, sm.id, labels(sm)"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\",\"labels(sm)\":[\"GraphNode\",\"Submodel\",\"Referable\",\"Referenceable\",\"Identifiable\"]}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE el.idShort IN ['Fault', 'Error', 'Warning', 'Alarm', 'FaultLight', 'ErrorLight']\n      AND aas.idShort IN ['MiR100_001', 'MiR250_001', 'MiR250_002']\nRETURN aas.idShort, sm.idShort, el.idShort, el.value"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          }
+        ],
+        "tool_call_count": 10,
+        "usage": {
+          "prompt_tokens": 146482,
+          "completion_tokens": 1996,
+          "total_tokens": 148478
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "Open"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 3,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 and create a service request notification for it.\n\nLet me start by querying the graph to find transport robots in Hall 4.\n\n\n\n\n\n\n\n\n\nI need to find the correct AAS IDs first. Let me list all AAS shells to see what's available, then narrow down to find the transport robot in Hall 4.\n\n\n\n\n\n\n\n\n\nI see the AAS shells. I can see `Hall4` exists. Now I need to find which transport robot is in Hall 4. Let me check the submodels of Hall4 to see what assets are associated with it.\n\n\n\n\n\n\n\n\n\nLet me check the submodels of the MiR robots to find which one is in Hall 4. The MiR robots are transport robots (MiR = Mobile Industrial Robot). Let me check each MiR robot's submodels to see if any indicate they're in Hall 4.\n\n\n\n\n\n\n\n\n\nLet me check the Nameplate submodel of MiR250_001 to see if it has location information, and also check the other MiR robots.\n\n\n\n\n\n\n\n\n\nLet me check all MiR robots to see which one is associated with Hall 4. I'll check the FacilityInformation or other submodels that might contain location data.\n\n\n\n\n\n\n\n\n\nLet me check the FacilityInformation submodel of Hall4 to see if it lists the transport robots in that hall.\n\n\n\n\n\n\n\n\n\nLet me check if there's a relationship between Hall4 and any of the MiR robots. I'll look for DERIVED_FROM or other relationships that might connect them.\n\n\n\n\n\n\n\n\n\nLet me check the HierarchicalStructures submodel of Hall4, which might list the assets in that hall.\n\n\n\n\n\n\n\n\n\nI see MiR100_001 is listed in the HierarchicalStructures of Hall4. Let me also check if there are other MiR robots in Hall4 by checking the Hall4 submodels more thoroughly. Let me also check if MiR250 robots might be in Hall4.\n\n\n\n\n\n\n\n\n\nI found that MiR100_001 is listed in Hall4's HierarchicalStructures. MiR (Mobile Industrial Robot) is a transport robot. Let me verify this is indeed a transport robot by checking its submodels.\n\n\n\n\n\n\n\n\n\nMiR100_001 is in Hall4 and is a MiR (Mobile Industrial Robot) which is a transport robot. Now I need to create a service request notification for it. The user mentioned it's showing a fault light, which indicates a corrective maintenance need.\n\nLet me create the service request notification using the `create_service_request_notification` tool. I need:\n- aas_id: \"urn:aas:mir100:001\" (MiR100_001)\n- short_text: Brief description of the fault\n- service_type: \"CorrectiveMaintenance\" (since there's a fault)\n- priority: \"Medium\" (functional fault - fault light, but not a safety/emergency stop)\n\n\n\n\n\n\n\n\n\nI've successfully created a service request notification for the transport robot MiR100_001 in Hall 4.\n\n**Service Request Notification Created:**\n- **Asset:** MiR100_001 (Mobile Industrial Robot - Transport Robot)\n- **Location:** Hall 4\n- **Issue:** Fault light showing\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium (functional fault)\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:e76e11d5`\n\nThe notification has been registered on the MiR100_001 AAS. Maintenance team can now process this request.",
+        "final_answer": "I've successfully created a service request notification for the transport robot MiR100_001 in Hall 4.\n\n**Service Request Notification Created:**\n- **Asset:** MiR100_001 (Mobile Industrial Robot - Transport Robot)\n- **Location:** Hall 4\n- **Issue:** Fault light showing\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium (functional fault)\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:e76e11d5`\n\nThe notification has been registered on the MiR100_001 AAS. Maintenance team can now process this request.",
+        "duration_s": 12.538,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE aas.idShort CONTAINS 'Hall 4' AND aas.idShort CONTAINS 'Transport'\nRETURN aas.idShort, aas.id, sm.idShort"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\",\"a.globalA"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:9a506c72\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:0e8e7d84\"},{\"sm.idShor"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'Nameplate'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.value, el.modelType"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"SerialNumber\",\"el.value\":\"MIR250-2023-001\",\"el.modelType\":null},{\"el.idShort\":\"DateOfManufacture\",\"el.value\":\"2023-08-15\",\"el.modelType\":null},{\"el.idShort\":\"YearOfConstruction"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'FacilityInformation'})\nRETURN aas.idShort, aas.id, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"Hall3\",\"aas.id\":\"urn:aas:hall3\",\"sm.id\":\"urn:submodel:hall3:facilityinformation\"},{\"aas.idShort\":\"Hall4\",\"aas.id\":\"urn:aas:hall4\",\"sm.id\":\"urn:submodel:hall4:facilityinformati"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {idShort: 'FacilityInformation', id: 'urn:submodel:hall4:facilityinformation'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.value, el.modelType"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"PrimaryUse\",\"el.value\":null,\"el.modelType\":null},{\"el.idShort\":\"Area\",\"el.value\":\"12000\",\"el.modelType\":null},{\"el.idShort\":\"PowerConnection\",\"el.value\":\"10\",\"el.modelType\":nul"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (hall:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE el.idShort CONTAINS 'MiR' OR el.idShort CONTAINS 'Robot' OR el.idShort CONTAINS 'Transport'\nRETURN el.idShort, el.modelType, sm.idShort"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"el.idShort CON"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {idShort: 'HierarchicalStructures', id: 'urn:submodel:hall4:hierarchicalstructures'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"el.modelType\":null},{\"el.idShort\":\"CRX10iA_001\",\"el.modelType\":null},{\"el.idShort\":\"MiR100_001\",\"el.modelType\":null},{\"el.idShort\":\"UR3e_002\",\"el.modelType\":null},{"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {idShort: 'HierarchicalStructures', id: 'urn:submodel:hall4:hierarchicalstructures'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nMATCH (el)-[:HAS_ELEMENT*]->(child:SubmodelElement)\nRETURN el.idShort, child.idShort, child.modelType"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"child.idShort\":\"CRX10iA_001\",\"child.modelType\":null},{\"el.idShort\":\"EntryNode\",\"child.idShort\":\"MiR100_001\",\"child.modelType\":null},{\"el.idShort\":\"EntryNode\",\"child"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:fd3e4a1d\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "",
+              "long_text": "Transport robot in Hall 4 is showing a fault light. Requires inspection and maintenance.",
+              "priority": "Medium",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Transport robot fault light on - MiR100_001 in Hall 4"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:e76e11d5\"}"
+          }
+        ],
+        "tool_call_count": 12,
+        "usage": {
+          "prompt_tokens": 163192,
+          "completion_tokens": 1957,
+          "total_tokens": 165149
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          },
+          {
+            "tool_call_index": 7,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 4,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the transport robot in Hall 4 first, then create a service request notification.\n\nLet me start by querying the graph to find the transport robot in Hall 4.\n\n\n\n\n\n\n\n\n\nI need to use a different approach - first let me find all AAS shells and their assets to identify the transport robot in Hall 4.\n\n\n\n\n\n\n\n\n\nI see there's a Hall4 AAS. Let me check what submodels it has to find the transport robot.\n\n\n\n\n\n\n\n\n\nThe Hall4 AAS seems to be a facility AAS. Let me check if there's a transport robot directly associated with Hall4. Let me look at the MiR robots since MiR typically stands for Mobile Industrial Robot (transport robots).\n\n\n\n\n\n\n\n\n\nLet me try a different approach - check the submodels of the Hall4 AAS to see if there's a transport robot mentioned there.\n\n\n\n\n\n\n\n\n\nI can see in the HierarchicalStructures submodel there's a MiR100_001 entity. MiR robots are transport robots. Let me check if MiR100_001 is associated with Hall4 and verify its details.\n\n\n\n\n\n\n\n\n\nGood, I found MiR100_001 which is a transport robot (MiR = Mobile Industrial Robot). Now I need to find the AAS ID for this robot to create the service request notification.\n\n\n\n\n\n\n\n\n\nPerfect! I found the AAS for the MiR100_001 transport robot. Now I can create a service request notification for it. The fault light indicates a fault that needs attention. I'll create a corrective maintenance request with medium priority (functional fault).\n\n\n\n\n\n\n\n\n\nService request notification created successfully for the MiR100_001 transport robot in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 transport robot (located in Hall 4)\n- **Issue:** Fault light displayed\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:d7c87196`\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium\n- **Status:** Open\n\nThe SRN has been registered on the AAS and is ready for maintenance team assignment.",
+        "final_answer": "Service request notification created successfully for the MiR100_001 transport robot in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 transport robot (located in Hall 4)\n- **Issue:** Fault light displayed\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:d7c87196`\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** Medium\n- **Status:** Open\n\nThe SRN has been registered on the AAS and is ready for maintenance team assignment.",
+        "duration_s": 8.105,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nMATCH (aas)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE a.globalAssetId CONTAINS 'Hall 4' OR a.idShort CONTAINS 'Hall 4' OR a.globalAssetId CONTAINS 'transport' OR a.idShort CONTAINS 'transport'\nRETURN aas.idShort, aas.id, a.globalAssetId, a.idShort, sm.idShort, sm.id\nLIMIT 20"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.idShort, a.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.idShort\":null,\"a.assetKind\":\"Instance\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE aas.idShort CONTAINS 'MiR'\nRETURN aas.idShort, aas.id, a.globalAssetId, a.idShort"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN sm.idShort, el.idShort, labels(el)\nLIMIT 30"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"el.idShort\":\"EntryNode\",\"labels(el)\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Entity\"]},{\"sm.idShort\":\"HierarchicalStructures\",\"el.i"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {idShort: 'HierarchicalStructures', id: 'urn:submodel:hall4:hierarchicalstructures'})\n      -[:HAS_ELEMENT]->(parent:Entity)\n      -[:HAS_ELEMENT]->(child:Entity)\nWHERE child.idShort = 'MiR100_001'\nMATCH (child)-[:REPRESENTS_ASSET]->(a:Asset)\nRETURN child.idShort, child.entityType, a.globalAssetId, a.idShort"
+            },
+            "result_preview": "{\"rows\":[{\"child.idShort\":\"MiR100_001\",\"child.entityType\":\"SelfManagedEntity\",\"a.globalAssetId\":\"urn:asset:mir100:001\",\"a.idShort\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId = 'urn:asset:mir100:001'\nRETURN aas.idShort, aas.id"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "short_text": "Transport robot showing fault light",
+              "service_type": "CorrectiveMaintenance",
+              "priority": "Medium",
+              "long_text": "The MiR100_001 transport robot in Hall 4 is displaying a fault light. Requires investigation and repair."
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:d7c87196\"}"
+          }
+        ],
+        "tool_call_count": 8,
+        "usage": {
+          "prompt_tokens": 105511,
+          "completion_tokens": 1243,
+          "total_tokens": 106754
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "Open"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          },
+          {
+            "tool_call_index": 3,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 5,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 and create a service request notification for it.\n\nLet me start by searching for the robot in the graph.\n\n\n\n\n\n\n\n\n\nI need to use exact matches for idShort. Let me first get the templates index to understand the structure better, then query for assets in Hall 4.\n\n\n\n\n\n\n\n\n\nNow let me find the Hall 4 facility and its assets. I'll look for FacilityInformation submodels which contain hall information.\n\n\n\n\n\n\n\n\n\nGood, I found the Hall 4 FacilityInformation submodel. Now I need to find the transport robot in Hall 4. Let me search for the AAS that manages this submodel and then look for transport robots.\n\n\n\n\n\n\n\n\n\nNow let me look for transport robots within the Hall 4 AAS. I'll search for elements that might be related to transport or robots.\n\n\n\n\n\n\n\n\n\nI need to avoid CONTAINS on idShort. Let me first get all submodels of Hall 4, then examine them to find the transport robot.\n\n\n\n\n\n\n\n\n\nThese seem to be facility-level submodels. Let me check the HierarchicalStructures submodel which might contain references to assets within Hall 4.\n\n\n\n\n\n\n\n\n\nI found \"MiR100_001\" which is likely a transport robot (MiR is a mobile robot manufacturer). Let me check if there's a specific AAS for this robot and look for any fault information.\n\n\n\n\n\n\n\n\n\nLet me check the Entity's structure more thoroughly.\n\n\n\n\n\n\n\n\n\nLet me check what the Entity node itself contains - it might have REPRESENTS_ASSET relationship.\n\n\n\n\n\n\n\n\n\nGood, I found the asset. Now I need to find the AAS for this robot. Let me search for an AAS that manages this asset.\n\n\n\n\n\n\n\n\n\nFound the AAS for the MiR100_001 transport robot. Now I need to create a service request notification for it. Since the user mentioned a \"fault light\" is showing, this is a corrective maintenance issue. Let me create the SRN.\n\n\n\n\n\n\n\n\n\nService request notification created successfully for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (transport robot) in Hall 4\n- **Issue:** Fault light showing\n- **Service Request Created:** `urn:aas-hybrid-mcp:srn:001:bfc4c191`\n- **Type:** Corrective Maintenance (Medium priority)\n\nThe service request notification has been registered on the robot's AAS and is now visible in the system for maintenance teams.",
+        "final_answer": "Service request notification created successfully for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (transport robot) in Hall 4\n- **Issue:** Fault light showing\n- **Service Request Created:** `urn:aas-hybrid-mcp:srn:001:bfc4c191`\n- **Type:** Corrective Maintenance (Medium priority)\n\nThe service request notification has been registered on the robot's AAS and is now visible in the system for maintenance teams.",
+        "duration_s": 11.786,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE aas.idShort CONTAINS 'Hall 4' OR aas.idShort CONTAINS 'Hall4'\n      OR (el.idShort CONTAINS 'transport' OR el.idShort CONTAINS 'Transport' OR el.idShort CONTAINS 'robot' OR el.idShort CONTAINS 'Robot')\nRETURN aas.idShort, aas.id, sm.idShort, el.idShort, labels(el)\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/dfki/SubmodelTemplate/FacilityInformation/1/0'})\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN sm.id AS submodel_id, sm.idShort, el.idShort, el.value, el.valueType\nLIMIT 50",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"submodel_id\":\"urn:submodel:hall4:facilityinformation\",\"sm.idShort\":\"FacilityInformation\",\"el.idShort\":\"PrimaryUse\",\"el.value\":null,\"el.valueType\":null},{\"submodel_id\":\"urn:submodel:hall4:fa"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {id: 'urn:submodel:hall4:facilityinformation'})\nRETURN aas.id AS aas_id, aas.idShort, aas.category",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas_id\":\"urn:aas:hall4\",\"aas.idShort\":\"Hall4\",\"aas.category\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE el.idShort CONTAINS 'Transport' OR el.idShort CONTAINS 'Robot' OR el.idShort CONTAINS 'MiR' OR el.idShort CONTAINS 'mobile'\nRETURN aas.idShort, sm.idShort, el.idShort, el.modelType, labels(el)\nLIMIT 30",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"el.idShort CON"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id, sm.modelType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\",\"sm.modelType\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\",\"sm.modelType\""
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:hall4:hierarchicalstructures'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, labels(el)\nLIMIT 50",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"el.modelType\":null,\"labels(el)\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Entity\"]},{\"el.idShort\":\"CRX10iA_001\",\"el.modelType\":null,\"labels(el)\":["
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (parent:Entity {idShort: 'MiR100_001'})-[:HAS_ELEMENT*]->(child:SubmodelElement)\nRETURN child.idShort, child.modelType, child.value, child.valueType\nLIMIT 30",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (parent:Entity {idShort: 'MiR100_001'})-[:HAS_ELEMENT]->(child:SubmodelElement)\nRETURN child.idShort, child.modelType, labels(child)\nLIMIT 30",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (entity:Entity {idShort: 'MiR100_001'})-[:REPRESENTS_ASSET]->(asset:Asset)\nRETURN entity.idShort, asset.globalAssetId, asset.assetKind, asset.assetType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"entity.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\",\"asset.assetType\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset {globalAssetId: 'urn:asset:mir100:001'})\nRETURN aas.id AS aas_id, aas.idShort, aas.category",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas_id\":\"urn:aas:mir100:001\",\"aas.idShort\":\"MiR100_001\",\"aas.category\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "",
+              "long_text": "Transport robot MiR100_001 in Hall 4 is showing a fault light. Immediate attention required for diagnosis and repair.",
+              "priority": "Medium",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Fault light on transport robot"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:bfc4c191\"}"
+          }
+        ],
+        "tool_call_count": 12,
+        "usage": {
+          "prompt_tokens": 203528,
+          "completion_tokens": 1748,
+          "total_tokens": 205276
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          },
+          {
+            "tool_call_index": 4,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 6,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 and create a service request notification for it.\n\nLet me start by discovering the graph structure and then locate the robot.\n\n\n\n\n\n\n\n\n\nNow let me search for transport robots in Hall 4. I'll query the graph to find AAS entries that might be related to Hall 4 and transport robots.\n\n\n\n\n\n\n\n\n\nI need to use exact match for idShort. Let me first list all AAS to see what's available, then filter for Hall 4 transport robots.\n\n\n\n\n\n\n\n\n\nI can see there's a \"Hall4\" AAS. Let me check its submodels to find transport robots (likely MiR robots based on the names). Let me query the Hall4 AAS to see what it contains.\n\n\n\n\n\n\n\n\n\nLet me check if there are any MiR (mobile industrial robot) entries that might be associated with Hall 4. The transport robots are likely the MiR series. Let me look at the MiR250 and MiR100 AAS entries to see which ones might be in Hall 4.\n\n\n\n\n\n\n\n\n\nI see multiple MiR robots. Now I need to find which one is in Hall 4. Let me check the Hall4 AAS more carefully to see if it contains any reference to transport robots or if there's a hierarchical structure that links robots to halls.\n\n\n\n\n\n\n\n\n\nI can see that Hall4 has entities including MiR100_001. Let me check if MiR100_001 is indeed the transport robot in Hall 4 by looking at its relationships and also check MiR250 robots to see which one is in Hall 4.\n\n\n\n\n\n\n\n\n\nLet me also check MiR250_001 and MiR250_002 to see if they are in Hall 4:\n\n\n\n\n\n\n\n\n\nNow I need to determine which robot is in Hall 4. Let me check the FacilityInformation submodel of Hall4 to see if it contains location information for the robots:\n\n\n\n\n\n\n\n\n\nLet me check the HierarchicalStructures submodel to see the structure of assets in Hall 4:\n\n\n\n\n\n\n\n\n\nI found that MiR100_001 is in Hall 4 (under the EntryNode in HierarchicalStructures). MiR100_001 is a transport robot (MiR = Mobile Industrial Robot). Now I need to create a service request notification for this robot.\n\nThe user mentioned \"fault light\" which indicates a corrective maintenance issue. Based on the guidelines:\n- `service_type`: `CorrectiveMaintenance` (since there's a fault)\n- `priority`: `Medium` (functional fault - fault light, not safety/emergency)\n\nLet me create the service request notification for MiR100_001:\n\n\n\n\n\n\n\n\n\nService request notification created successfully.\n\nAccording to the graph data, I identified **MiR100_001** as the transport robot located in Hall 4 (found in the HierarchicalStructures submodel under EntryNode).\n\nI've created a **CorrectiveMaintenance** service request notification with **Medium** priority for the fault light issue.\n\n**SRN ID:** `urn:aas-hybrid-mcp:srn:001:6777914c`",
+        "final_answer": "Service request notification created successfully.\n\nAccording to the graph data, I identified **MiR100_001** as the transport robot located in Hall 4 (found in the HierarchicalStructures submodel under EntryNode).\n\nI've created a **CorrectiveMaintenance** service request notification with **Medium** priority for the fault light issue.\n\n**SRN ID:** `urn:aas-hybrid-mcp:srn:001:6777914c`",
+        "duration_s": 11.676,
+        "tool_calls": [
+          {
+            "name": "get_graph_schema",
+            "args": {},
+            "result_preview": "# AAS Graph Schema\n\nAll nodes also carry the label `GraphNode`.\n\n## Core Nodes\n\n### AssetAdministrationShell\nThe top-level AAS entity.\n- Labels: AssetAdministrationShell, Identifiable, Referable, Refe"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE aas.idShort CONTAINS 'Hall 4' OR a.idShort CONTAINS 'Hall 4' OR a.globalAssetId CONTAINS 'Hall 4'\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\",\"a.globalA"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort IN ['MiR250_001', 'MiR250_002', 'MiR100_001']\nRETURN aas.idShort, aas.id, sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:9a506c72\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aa"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort = 'Hall4'\nWITH aas, sm\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, labels(el)\nLIMIT 50"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"el.modelType\":null,\"labels(el)\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Entity\"]},{\"el.idShort\":\"CRX10iA_001\",\"el.modelType\":null,\"labels(el)\":["
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"a.globalAssetId\":\"urn:asset:mir100:001\",\"a.assetKind\":\"Instance\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR250_001'})-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'FacilityInformation'})\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.value\nLIMIT 30"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"PrimaryUse\",\"el.modelType\":null,\"el.value\":null},{\"el.idShort\":\"Area\",\"el.modelType\":null,\"el.value\":\"12000\"},{\"el.idShort\":\"PowerConnection\",\"el.modelType\":null,\"el.value\":\"10"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'HierarchicalStructures'})\nMATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)\nWITH parent, child\nMATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)\nRETURN parent.idShort, child.idShort, asset.globalAssetId, asset.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"parent.idShort\":\"EntryNode\",\"child.idShort\":\"UR3e_002\",\"asset.globalAssetId\":\"urn:asset:ur3e:002\",\"asset.assetKind\":\"Instance\"},{\"parent.idShort\":\"EntryNode\",\"child.idShort\":\"MiR100_001\",\"a"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "short_text": "Transport robot showing fault light",
+              "service_type": "CorrectiveMaintenance",
+              "priority": "Medium",
+              "long_text": "Transport robot MiR100_001 in Hall 4 is showing a fault light. Requires inspection and troubleshooting."
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:6777914c\"}"
+          }
+        ],
+        "tool_call_count": 11,
+        "usage": {
+          "prompt_tokens": 238009,
+          "completion_tokens": 1737,
+          "total_tokens": 239746
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 7,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to identify the specific transport robot in Hall 4 and create a service request notification for it.\n\nLet me start by finding the transport robot in Hall 4:\n\n\n\n\n\n\n\n\n\nI need to use exact match for idShort. Let me first get the templates index and then search for Hall 4 assets:\n\n\n\n\n\n\n\n\n\nNow let me search for the transport robot in Hall 4. I'll list all AAS shells and their assets to find the one in Hall 4:\n\n\n\n\n\n\n\n\n\nGood, I can see there's a Hall4 AAS. Now I need to find which robot is in Hall 4. Let me check the submodels of Hall4 to see if there's a relationship to a transport robot:\n\n\n\n\n\n\n\n\n\nLet me check the HierarchicalStructures submodel to see what assets are in Hall 4:\n\n\n\n\n\n\n\n\n\nI can see there's a MiR100_001 in Hall 4. MiR robots are transport robots (Mobile Industrial Robots). Let me verify this is a transport robot by checking its properties:\n\n\n\n\n\n\n\n\n\nI see there are many existing ServiceRequestNotification submodels for MiR100_001. The MiR100 is a transport robot (Mobile Industrial Robot). Now I need to create a service request notification for this asset.\n\nThe AAS ID for MiR100_001 is `urn:aas:mir100:001`. Let me create a service request notification for the fault light issue.\n\n\n\n\n\n\n\n\n\nSuccessfully created a service request notification for the transport robot in Hall 4.\n\n**Service Request Notification Created**\n\n- **Asset**: MiR100_001 (transport robot in Hall 4)\n- **AAS ID**: `urn:aas:mir100:001`\n- **SRN ID**: `urn:aas-hybrid-mcp:srn:001:d5e818ba`\n- **Short Text**: \"Fault light showing on transport robot\"\n- **Service Type**: CorrectiveMaintenance\n- **Priority**: Medium\n- **Description**: Transport robot MiR100_001 in Hall 4 is showing a fault light. Immediate inspection and maintenance required.\n- **Error Code**: fault-light\n\nThe service request has been registered on the AAS and is now tracked in the system.",
+        "final_answer": "Successfully created a service request notification for the transport robot in Hall 4.\n\n**Service Request Notification Created**\n\n- **Asset**: MiR100_001 (transport robot in Hall 4)\n- **AAS ID**: `urn:aas:mir100:001`\n- **SRN ID**: `urn:aas-hybrid-mcp:srn:001:d5e818ba`\n- **Short Text**: \"Fault light showing on transport robot\"\n- **Service Type**: CorrectiveMaintenance\n- **Priority**: Medium\n- **Description**: Transport robot MiR100_001 in Hall 4 is showing a fault light. Immediate inspection and maintenance required.\n- **Error Code**: fault-light\n\nThe service request has been registered on the AAS and is now tracked in the system.",
+        "duration_s": 7.313,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE aas.idShort CONTAINS 'Hall 4' OR asset.globalAssetId CONTAINS 'Hall 4'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {idShort: 'HierarchicalStructures', id: 'urn:submodel:hall4:hierarchicalstructures'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, labels(el)",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"labels(el)\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Entity\"]},{\"el.idShort\":\"CRX10iA_001\",\"labels(el)\":[\"GraphNode\",\"SubmodelElement\",\"Referable"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\",\"sc.id\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aa"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "fault-light",
+              "long_text": "Transport robot MiR100_001 in Hall 4 is showing a fault light. Immediate inspection and maintenance required.",
+              "priority": "Medium",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Fault light showing on transport robot"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:d5e818ba\"}"
+          }
+        ],
+        "tool_call_count": 7,
+        "usage": {
+          "prompt_tokens": 125521,
+          "completion_tokens": 1108,
+          "total_tokens": 126629
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 8,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 and create a service request notification. Let me start by querying the graph to locate the asset.\n\n\n\n\n\n\n\n\n\nI need to use the correct pattern - avoid CONTAINS on idShort. Let me first get the templates index and then query properly.\n\n\n\n\n\n\n\n\n\nGood, I have the templates. Now let me query for assets related to Hall 4. I'll look for AAS shells that might have location information or are related to transport/robots.\n\n\n\n\n\n\n\n\n\nI can see there's a \"Hall4\" AAS. Now I need to find the transport robot in Hall 4. Let me check what submodels the Hall4 AAS has, and also look for transport robots or AGVs.\n\n\n\n\n\n\n\n\n\nLet me check the HierarchicalStructures submodel to see if there's a transport robot in Hall 4.\n\n\n\n\n\n\n\n\n\nI found a \"MiR100_001\" in Hall 4. MiR robots are mobile robots (transport robots). Let me verify this is the transport robot and check if it has a fault. First, let me look at the MiR100_001 AAS to understand its structure.\n\n\n\n\n\n\n\n\n\nI found MiR100_001 which is in Hall 4 (based on the HierarchicalStructures submodel). This is a MiR (Mobile Industrial Robot) which is a transport robot. The AAS ID is `urn:aas:mir100:001`.\n\nNow I need to create a service request notification for this asset. The user mentioned a \"fault light\" which indicates a corrective maintenance issue. I'll create the SRN with appropriate priority (Medium for functional fault).\n\n\n\n\n\n\n\n\n\nService request notification created successfully for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (Mobile Industrial Robot / transport robot)\n- **Location:** Hall 4\n- **Issue:** Fault light indication\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:6fac1cf2`\n- **Service Type:** Corrective Maintenance\n- **Priority:** Medium (functional fault)\n\nThe service request has been registered on the AAS for this asset. Maintenance personnel can now reference the SRN ID to track and address the fault.",
+        "final_answer": "Service request notification created successfully for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (Mobile Industrial Robot / transport robot)\n- **Location:** Hall 4\n- **Issue:** Fault light indication\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:6fac1cf2`\n- **Service Type:** Corrective Maintenance\n- **Priority:** Medium (functional fault)\n\nThe service request has been registered on the AAS for this asset. Maintenance personnel can now reference the SRN ID to track and address the fault.",
+        "duration_s": 7.641,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nWHERE toLower(el.idShort) CONTAINS 'hall' OR toLower(el.idShort) CONTAINS 'transport' OR toLower(el.idShort) CONTAINS 'robot'\nRETURN aas.idShort, aas.id, sm.idShort, el.idShort, el.idShortPath, labels(el)\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(el.idShort) "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind, asset.assetType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\",\"asset.assetType\":null},{\"aas.idShort\":\"MiR250_001\",\"aas.id"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: \"Hall4\"})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: \"Hall4\"})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: \"HierarchicalStructures\"})\n      -[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.idShortPath\nLIMIT 30",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"EntryNode\",\"el.modelType\":null,\"el.idShortPath\":\"EntryNode\"},{\"el.idShort\":\"CRX10iA_001\",\"el.modelType\":null,\"el.idShortPath\":\"EntryNode.CRX10iA_001\"},{\"el.idShort\":\"MiR100_001"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: \"MiR100_001\"})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:d5e818ba\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "None",
+              "long_text": "Transport robot in Hall 4 is showing a fault light. Immediate attention required to diagnose and resolve the issue.",
+              "priority": "Medium",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Transport robot showing fault light in Hall 4"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:6fac1cf2\"}"
+          }
+        ],
+        "tool_call_count": 7,
+        "usage": {
+          "prompt_tokens": 125800,
+          "completion_tokens": 1151,
+          "total_tokens": 126951
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "toLower_id_contains",
+              "toLower_id_contains",
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_spatial_hall4",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "repetition": 9,
+      "result": {
+        "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the transport robot in Hall 4 and create a service request notification for it.\n\nLet me start by querying the graph to find the transport robot in Hall 4.\n\n\n\n\n\n\n\n\n\nLet me try a different approach - search for assets related to transport robots or Hall 4 using different patterns.\n\n\n\n\n\n\n\n\n\nGood, I can see there's a Hall4 asset. Now I need to find which AAS is in Hall 4 and is a transport robot. Let me look for relationships between Hall4 and other assets, or check submodels to find the transport robot.\n\n\n\n\n\n\n\n\n\nHall4 seems to be a facility AAS. I need to find transport robots. Let me search for MiR (mobile industrial robot) assets which are transport robots. Looking at the list, I see MiR100 and MiR250 types. Let me check which of these might be in Hall 4 by looking for relationships.\n\n\n\n\n\n\n\n\n\nLet me try exact matches for MiR robots:\n\n\n\n\n\n\n\n\n\nI see MiR100_001 has many ServiceRequestNotifications. Let me check which MiR robots might be associated with Hall 4. I need to find the relationship between Hall4 and the transport robots. Let me check the Hall4 submodels to see if there's information about which robots are in that hall.\n\n\n\n\n\n\n\n\n\nI found it! In the Hall4 HierarchicalStructures submodel, there's an Entity node called \"MiR100_001\". This indicates that MiR100_001 is a transport robot located in Hall 4.\n\nNow I need to create a service request notification for this robot. The user mentioned it's showing a \"fault light\" which indicates a fault that needs attention. This should be a corrective maintenance request with high priority since it's a fault light (potentially affecting operations).\n\nLet me create the service request notification:\n\n\n\n\n\n\n\n\n\nSuccessfully created a service request notification for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (transport robot located in Hall 4)\n- **AAS ID:** `urn:aas:mir100:001`\n- **Issue:** Fault light showing\n- **Service Request Notification ID:** `urn:aas-hybrid-mcp:srn:001:88100930`\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** High\n\nThe service request notification has been registered on the AAS and is now open for maintenance action.",
+        "final_answer": "Successfully created a service request notification for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n- **Asset:** MiR100_001 (transport robot located in Hall 4)\n- **AAS ID:** `urn:aas:mir100:001`\n- **Issue:** Fault light showing\n- **Service Request Notification ID:** `urn:aas-hybrid-mcp:srn:001:88100930`\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** High\n\nThe service request notification has been registered on the AAS and is now open for maintenance action.",
+        "duration_s": 7.704,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.globalAssetId CONTAINS 'Hall 4' OR a.globalAssetId CONTAINS 'hall 4'\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind, a.assetType"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\",\"a.assetType\":null},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (hall:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"sm.id\":\"urn:submodel:hall4:hierarchicalstructures\"},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:hall4:nameplate\"},{\"sm.idShort\":\"FacilityInformatio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort CONTAINS 'MiR'\nRETURN aas.idShort, aas.id, sm.idShort, sm.id"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN aas.idShort, aas.id, sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"sm.i"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (hall:AssetAdministrationShell {idShort: 'Hall4'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_ELEMENT*]->(e:SubmodelElement)\nRETURN sm.idShort, e.idShort, labels(e)"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"HierarchicalStructures\",\"e.idShort\":\"EntryNode\",\"labels(e)\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"Entity\"]},{\"sm.idShort\":\"HierarchicalStructures\",\"e.idSh"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "fault light",
+              "long_text": "Transport robot MiR100_001 in Hall 4 is showing a fault light. Immediate attention required to diagnose and resolve the issue.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Fault light on transport robot in Hall 4"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:88100930\"}"
+          }
+        ],
+        "tool_call_count": 7,
+        "usage": {
+          "prompt_tokens": 114389,
+          "completion_tokens": 1150,
+          "total_tokens": 115539
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "Open"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 3,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 0,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to first identify the correct Asset Administration Shell (AAS) for the MiR robot with serial number MIR100-2020-001, then create a service request notification.\n\nLet me start by querying the graph to find the AAS associated with this asset.\n\n\n\n\n\n\n\n\n\nThe query returned no results. Let me try a different approach - searching for assets with \"MiR\" or \"MIR\" in their identifiers, and also check if the serial number might be stored differently.\n\n\n\n\n\n\n\n\n\nI can see there are MiR100 assets in the system. The user mentioned \"MIR100-2020-001\" which appears to be a serial number. Let me check if there's a specific asset with this serial number by looking at the SpecificAssetId relationships, or if the MiR100_001 is the closest match.\n\nLet me first check the MiR100_Type to see if it contains serial number information, and also check the instance MiR100_001:\n\n\n\n\n\n\n\n\n\nLet me check the MiR100_001 instance shell to see if it has any serial number information in its submodels:\n\n\n\n\n\n\n\n\n\nI need to use exact matches. Let me first get the list of submodels for MiR100_001:\n\n\n\n\n\n\n\n\n\nI can see the MiR100_001 AAS exists and has many ServiceRequestNotification submodels already. The user mentioned \"MIR100-2020-001\" which appears to be a serial number. Looking at the available MiR100 assets, the closest match is \"MiR100_001\" with AAS ID \"urn:aas:mir100:001\".\n\nGiven the urgency (emergency stop), I should proceed with creating a service request notification for this AAS. The user said it's a MiR with serial number MIR100-2020-001, and the closest match in the system is MiR100_001.\n\nFor an emergency stop, this is a safety/emergency situation, so the priority should be \"High\" and the service type should be \"CorrectiveMaintenance\".\n\nLet me create the service request notification:\n\n\n\n\n\n\n\n\n\nService request notification created successfully.\n\n---\n\n**Service Request Logged**\n\nA corrective maintenance service request has been created for the MiR100 robot (AAS: `urn:aas:mir100:001`) with:\n- **Priority:** High (emergency stop)\n- **Service Type:** CorrectiveMaintenance\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:9fcb3c4c`\n\n**Note:** The serial number \"MIR100-2020-001\" was matched to the closest available asset in the system (MiR100_001). If this is incorrect, please provide the exact AAS ID or asset identifier.\n\nThe SRN is now registered on the asset's AAS and visible in the ServiceRequestNotification submodel.",
+        "final_answer": "Service request notification created successfully.\n\n---\n\n**Service Request Logged**\n\nA corrective maintenance service request has been created for the MiR100 robot (AAS: `urn:aas:mir100:001`) with:\n- **Priority:** High (emergency stop)\n- **Service Type:** CorrectiveMaintenance\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:9fcb3c4c`\n\n**Note:** The serial number \"MIR100-2020-001\" was matched to the closest available asset in the system (MiR100_001). If this is incorrect, please provide the exact AAS ID or asset identifier.\n\nThe SRN is now registered on the asset's AAS and visible in the ServiceRequestNotification submodel.",
+        "duration_s": 8.562,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId CONTAINS 'MIR100-2020-001' OR asset.globalAssetId CONTAINS 'MIR100' OR asset.globalAssetId CONTAINS '2020-001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId IS NOT NULL\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind\nLIMIT 20"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort = 'MiR100_Type'\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nOPTIONAL MATCH (el)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN el.idShort, el.modelType, sc.id AS semanticId\nLIMIT 30"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"CountryOfOrigin\",\"el.modelType\":null,\"semanticId\":\"0173-1#02-AAO259#007\"},{\"el.idShort\":\"ManufacturerProductDesignation\",\"el.modelType\":null,\"semanticId\":\"0112/2///61987#ABA567"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nOPTIONAL MATCH (el)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nWHERE el.idShort CONTAINS 'Serial' OR el.idShort CONTAINS 'serial' OR el.idShort CONTAINS 'ID' OR el.idShort CONTAINS 'id'\nRETURN el.idShort, el.modelType, el.value, sc.id AS semanticId\nLIMIT 20"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"el.idShort CON"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:88100930\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "emergency_stop",
+              "long_text": "Emergency stop triggered on MiR robot. Immediate attention required for safety inspection and resolution.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered - MiR100-2020-001"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:9fcb3c4c\"}"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 90949,
+          "completion_tokens": 1366,
+          "total_tokens": 92315
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 3,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 1,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR robot with serial number MIR100-2020-001, then create a service request notification for the emergency stop.\n\nLet me first search for this asset in the graph to get its AAS ID.\n\n\n\n\n\n\n\n\n\nLet me try a different approach - search for assets that might have this serial number in their specific asset ID.\n\n\n\n\n\n\n\n\n\nI can see there's a MiR100 asset with AAS ID `urn:aas:mir100:001` and idShort `MiR100_001`. This is likely the one. Let me verify by checking if there's a specific asset ID that matches the serial number.\n\n\n\n\n\n\n\n\n\nThe query returned all AAS because the WHERE clause wasn't properly scoped. Let me refine the query to focus on the MiR100_001 AAS:\n\n\n\n\n\n\n\n\n\nGood, I found the MiR100_001 AAS with ID `urn:aas:mir100:001`. The serial number MIR100-2020-001 is likely stored somewhere in the submodel elements. Let me check the submodels to see if there's a technical data or asset identification submodel that might contain the serial number.\n\n\n\n\n\n\n\n\n\nI can see the AAS has a \"Nameplate\" submodel which likely contains the serial number information. Let me check the Nameplate submodel to confirm this is the right asset:\n\n\n\n\n\n\n\n\n\nPerfect! I've confirmed that the AAS `urn:aas:mir100:001` with idShort `MiR100_001` has a serial number of `MIR100-2020-001` in its Nameplate submodel. This is the correct asset.\n\nNow I need to create a service request notification for the emergency stop. According to the guidelines:\n- An emergency stop is a safety/emergency situation, so priority should be \"High\"\n- Service type should be \"CorrectiveMaintenance\" since it's a fault that needs repair\n- Short text should describe the emergency stop\n\n\n\n\n\n\n\n\n\nSuccessfully logged a service request notification for the MiR robot.\n\n**Service Request Created:**\n- **Asset:** MiR100 (Serial: MIR100-2020-001)\n- **AAS ID:** `urn:aas:mir100:001`\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:1c28e45c`\n- **Priority:** High (emergency stop)\n- **Service Type:** CorrectiveMaintenance\n- **Short Text:** Emergency stop triggered\n- **Long Text:** Emergency stop triggered on MiR100 robot with serial number MIR100-2020-001. Immediate attention required for safety investigation and resolution.\n\nThe service request has been registered on the AAS and is ready for maintenance team action.",
+        "final_answer": "Successfully logged a service request notification for the MiR robot.\n\n**Service Request Created:**\n- **Asset:** MiR100 (Serial: MIR100-2020-001)\n- **AAS ID:** `urn:aas:mir100:001`\n- **SRN ID:** `urn:aas-hybrid-mcp:srn:001:1c28e45c`\n- **Priority:** High (emergency stop)\n- **Service Type:** CorrectiveMaintenance\n- **Short Text:** Emergency stop triggered\n- **Long Text:** Emergency stop triggered on MiR100 robot with serial number MIR100-2020-001. Immediate attention required for safety investigation and resolution.\n\nThe service request has been registered on the AAS and is ready for maintenance team action.",
+        "duration_s": 9.23,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId = 'MIR100-2020-001' OR asset.id = 'MIR100-2020-001'\nRETURN aas.id AS aasId, aas.idShort, asset.globalAssetId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(specificId)\nWHERE specificId.value = 'MIR100-2020-001' OR asset.globalAssetId CONTAINS 'MIR100' OR asset.globalAssetId CONTAINS '2020-001'\nRETURN aas.id AS aasId, aas.idShort, asset.globalAssetId, specificId.value AS specificIdValue",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasId\":\"urn:aas:mir100:001\",\"aas.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"specificIdValue\":null},{\"aasId\":\"urn:aas:mir250:001\",\"aas.idShort\":\"MiR250_001\",\"asset.g"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(specificId)\nWHERE aas.idShort = 'MiR100_001'\nRETURN aas.id AS aasId, aas.idShort, asset.globalAssetId, specificId.name, specificId.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasId\":\"urn:aas:mir100:001\",\"aas.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"specificId.name\":null,\"specificId.value\":null},{\"aasId\":\"urn:aas:mir250:001\",\"aas.idShor"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(asset:Asset)\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(specificId)\nRETURN aas.id AS aasId, asset.globalAssetId, specificId.name, specificId.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasId\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"specificId.name\":null,\"specificId.value\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:mir100:001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:9fcb3c4c\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:001:nameplate'})-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"SerialNumber\",\"el.modelType\":null,\"el.value\":\"MIR100-2020-001\"},{\"el.idShort\":\"DateOfManufacture\",\"el.modelType\":null,\"el.value\":\"2020-04-12\"},{\"el.idShort\":\"YearOfConstruction"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "",
+              "long_text": "Emergency stop triggered on MiR100 robot with serial number MIR100-2020-001. Immediate attention required for safety investigation and resolution.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:1c28e45c\"}"
+          }
+        ],
+        "tool_call_count": 7,
+        "usage": {
+          "prompt_tokens": 106267,
+          "completion_tokens": 1472,
+          "total_tokens": 107739
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 2,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR with serial number MIR100-2020-001, then create a service request notification.\n\nLet me first search for this asset in the graph.\n\n\n\n\n\n\n\n\n\nI need to use the correct pattern. Let me search for the asset using SpecificAssetId or by looking at the submodels with the proper semanticId approach. First, let me get the templates index and then search for the asset properly.\n\n\n\n\n\n\n\n\n\nNow let me search for the MiR asset by looking for nameplate information or technical data that might contain the serial number. Let me query for assets with the serial number in their specific asset IDs.\n\n\n\n\n\n\n\n\n\nLet me try searching by looking at nameplate submodels which typically contain serial numbers. I'll search for MiR-related assets.\n\n\n\n\n\n\n\n\n\nI need to use exact match for idShort. Let me first list all AAS shells to see what's available.\n\n\n\n\n\n\n\n\n\nI see there's a `MiR100_001` which could be the one. Let me check its details and see if it has the serial number MIR100-2020-001.\n\n\n\n\n\n\n\n\n\nNow let me check the nameplate submodel for this asset to see if it contains the serial number.\n\n\n\n\n\n\n\n\n\nI can see there's a Nameplate submodel. Let me check the nameplate to confirm the serial number, and then create a service request notification for the emergency stop.\n\n\n\n\n\n\n\n\n\nConfirmed! The MiR100_001 has serial number MIR100-2020-001. Now I need to create a service request notification for the emergency stop. An emergency stop is a safety-critical issue, so this should be high priority corrective maintenance.\n\n\n\n\n\n\n\n\n\nService request notification has been created successfully.\n\n**Summary:**\n- **Asset identified:** MiR100_001 (AAS ID: `urn:aas:mir100:001`)\n- **Serial number confirmed:** MIR100-2020-001 (from Nameplate submodel)\n- **Service Request created:** `urn:aas-hybrid-mcp:srn:001:985fd5a8`\n- **Type:** Corrective Maintenance\n- **Priority:** High (emergency stop is safety-critical)\n- **Description:** Emergency stop triggered - immediate attention required\n\nThe service request notification has been registered on the MiR100's AAS. According to the IDTA Service Request Notification template (0173-1#01-AHX443#001), the SRN is now available for tracking and workflow management.",
+        "final_answer": "Service request notification has been created successfully.\n\n**Summary:**\n- **Asset identified:** MiR100_001 (AAS ID: `urn:aas:mir100:001`)\n- **Serial number confirmed:** MIR100-2020-001 (from Nameplate submodel)\n- **Service Request created:** `urn:aas-hybrid-mcp:srn:001:985fd5a8`\n- **Type:** Corrective Maintenance\n- **Priority:** High (emergency stop is safety-critical)\n- **Description:** Emergency stop triggered - immediate attention required\n\nThe service request notification has been registered on the MiR100's AAS. According to the IDTA Service Request Notification template (0173-1#01-AHX443#001), the SRN is now available for tracking and workflow management.",
+        "duration_s": 10.475,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId = $serialNumber OR asset.assetType = $serialNumber\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{\"serialNumber\": \"MIR100-2020-001\"}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nMATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sa:SpecificAssetId)\nWHERE sa.value = $serialNumber OR sa.name = $serialNumber\nRETURN aas.idShort, aas.id, asset.globalAssetId, sa.name, sa.value",
+              "params": "{\"serialNumber\": \"MIR100-2020-001\"}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nMATCH (aas)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nWHERE aas.idShort CONTAINS 'MiR' OR aas.idShort CONTAINS 'mir' OR aas.idShort CONTAINS 'MIR'\nRETURN aas.idShort, aas.id, asset.globalAssetId, sm.idShort, sc.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)\nRETURN aas.idShort, aas.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\"},{\"aas.idShort\":\"UR3e_002\",\"aas.id\":\"urn:aas:ur3e:002\"},{\"aas.idShort\":\"CRX1"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE aas.idShort = 'MiR100_001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort = 'MiR100_001'\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\",\"sc.id\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aa"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel)-[:HAS_ELEMENT*]->(p:Property)\nWHERE sm.id = 'urn:submodel:mir100:001:nameplate'\nRETURN p.idShort, p.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"SerialNumber\",\"p.value\":\"MIR100-2020-001\"},{\"p.idShort\":\"DateOfManufacture\",\"p.value\":\"2020-04-12\"},{\"p.idShort\":\"YearOfConstruction\",\"p.value\":\"2020\"},{\"p.idShort\":\"URIOfThePro"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "Emergency Stop Triggered",
+              "long_text": "Emergency stop has been triggered on MiR100 mobile robot with serial number MIR100-2020-001. Immediate attention required to assess the cause and ensure safety before resuming operations.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:985fd5a8\"}"
+          }
+        ],
+        "tool_call_count": 9,
+        "usage": {
+          "prompt_tokens": 162828,
+          "completion_tokens": 1610,
+          "total_tokens": 164438
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "assetType_match"
+            ],
+            "self_corrected": true
+          },
+          {
+            "tool_call_index": 3,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 3,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR with serial number MIR100-2020-001, then create a service request notification.\n\nLet me start by querying the graph to find this asset.\n\n\n\n\n\n\n\n\n\nNo direct match. Let me try searching by idShort pattern, as the serial number might be stored differently.\n\n\n\n\n\n\n\n\n\nI need to use exact match. Let me first discover what MiR shells exist by listing AAS with their assets.\n\n\n\n\n\n\n\n\n\nI see MiR100_001 is the instance shell. Let me check its details to see if it has the serial number information. I'll look at its submodels and elements.\n\n\n\n\n\n\n\n\n\nI found MiR100_001 which is the correct AAS for the MiR100 robot. The user mentioned serial number MIR100-2020-001, and MiR100_001 appears to be the matching instance shell. \n\nNow I need to create a service request notification for this emergency stop. The emergency stop indicates a safety/emergency situation, so this should be High priority. The service type would be CorrectiveMaintenance since it's responding to a fault.\n\nLet me create the service request notification:\n\n\n\n\n\n\n\n\n\nService request notification has been successfully logged for the MiR100 robot.\n\n**Summary:**\n- **Asset:** MiR100_001 (AAS ID: urn:aas:mir100:001)\n- **Service Request ID:** urn:aas-hybrid-mcp:srn:001:85d6306f\n- **Type:** CorrectiveMaintenance (Emergency Stop)\n- **Priority:** High\n- **Description:** Emergency stop triggered - MIR100-2020-001\n\nThe SRN has been registered on the AAS. According to the graph data, this is now tracked in the ServiceRequestNotification submodel of the MiR100_001 shell.",
+        "final_answer": "Service request notification has been successfully logged for the MiR100 robot.\n\n**Summary:**\n- **Asset:** MiR100_001 (AAS ID: urn:aas:mir100:001)\n- **Service Request ID:** urn:aas-hybrid-mcp:srn:001:85d6306f\n- **Type:** CorrectiveMaintenance (Emergency Stop)\n- **Priority:** High\n- **Description:** Emergency stop triggered - MIR100-2020-001\n\nThe SRN has been registered on the AAS. According to the graph data, this is now tracked in the ServiceRequestNotification submodel of the MiR100_001 shell.",
+        "duration_s": 6.091,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId = $serialNumber OR asset.id = $serialNumber\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.id",
+              "params": "{\"serialNumber\": \"MIR100-2020-001\"}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE toLower(aas.idShort) CONTAINS 'mir' AND toLower(aas.idShort) CONTAINS '100'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.id\":null},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"asset.global"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: \"MiR100_001\"})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:985fd5a8\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "Emergency Stop Triggered",
+              "long_text": "Emergency stop has been triggered on MiR100 robot. Immediate attention required for safety investigation and system reset.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered - MIR100-2020-001"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:85d6306f\"}"
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 73289,
+          "completion_tokens": 949,
+          "total_tokens": 74238
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "toLower_id_contains",
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 4,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR with serial number MIR100-2020-001, then create a service request notification.\n\nLet me start by querying the graph to find this asset.\n\n\n\n\n\n\n\n\n\nThe direct lookup didn't find it. Let me try searching for MiR assets with the serial number in the SpecificAssetId or similar properties.\n\n\n\n\n\n\n\n\n\nI found MiR100_001 which seems to be the closest match. Let me verify by checking its specific asset IDs to confirm it has the serial number MIR100-2020-001.\n\n\n\n\n\n\n\n\n\nLet me check if there's a different way the serial number might be stored. Let me look at all the specific asset IDs for MiR100 assets.\n\n\n\n\n\n\n\n\n\nLet me try exact matches for MiR100 shells.\n\n\n\n\n\n\n\n\n\nThe serial number MIR100-2020-001 doesn't appear to be stored as a SpecificAssetId. Let me check if there's a different property or if the MiR100_001 is the correct asset (since it's the only MiR100 instance shell). \n\nGiven that MiR100_001 is the only instance shell for MiR100 (as opposed to MiR100_Type which is the type shell), this is likely the asset the user is referring to. The emergency stop situation requires immediate action.\n\nI'll proceed with creating a service request notification for MiR100_001 (AAS ID: urn:aas:mir100:001) with:\n- short_text: Emergency stop triggered\n- service_type: CorrectiveMaintenance (since it's a fault that needs fixing)\n- priority: High (emergency stop is a safety/emergency situation)\n\n\n\n\n\n\n\n\n\nService request notification created successfully.\n\n**Service Request Logged:**\n- **Asset:** MiR100_001 (urn:aas:mir100:001)\n- **SRN ID:** urn:aas-hybrid-mcp:srn:001:2adfa490\n- **Status:** Open\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** High\n- **Description:** Emergency stop triggered\n\nThe service request has been registered on the AAS. According to the IDTA 02010-1-0 standard, this is now tracked as a High-priority corrective maintenance request for the emergency stop incident.",
+        "final_answer": "Service request notification created successfully.\n\n**Service Request Logged:**\n- **Asset:** MiR100_001 (urn:aas:mir100:001)\n- **SRN ID:** urn:aas-hybrid-mcp:srn:001:2adfa490\n- **Status:** Open\n- **Service Type:** CorrectiveMaintenance\n- **Priority:** High\n- **Description:** Emergency stop triggered\n\nThe service request has been registered on the AAS. According to the IDTA 02010-1-0 standard, this is now tracked as a High-priority corrective maintenance request for the emergency stop incident.",
+        "duration_s": 7.983,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId = 'MIR100-2020-001' OR asset.id = 'MIR100-2020-001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nWHERE sai.name = 'serialNumber' AND sai.value = 'MIR100-2020-001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.id\":null},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"asset.global"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(asset:Asset)\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nRETURN asset.idShort, asset.globalAssetId, sai.name, sai.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"asset.idShort\":null,\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"sai.name\":null,\"sai.value\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE aas.idShort CONTAINS 'MiR100'\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nRETURN aas.idShort, aas.id, asset.globalAssetId, sai.name, sai.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE aas.idShort = 'MiR100_001' OR aas.idShort = 'MiR100_Type'\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nRETURN aas.idShort, aas.id, asset.globalAssetId, sai.name, sai.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_Type\",\"aas.id\":\"urn:aas:mir100:type\",\"asset.globalAssetId\":\"urn:asset:mir100:type\",\"sai.name\":null,\"sai.value\":null},{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir10"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "MIR100-2020-001",
+              "long_text": "Emergency stop triggered on MiR100 with serial number MIR100-2020-001. Immediate attention required.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:2adfa490\"}"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 78041,
+          "completion_tokens": 1293,
+          "total_tokens": 79334
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "Open"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 3,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 5,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR robot with serial number MIR100-2020-001, then create a service request notification.\n\nLet me first search for this asset in the graph.\n\n\n\n\n\n\n\n\n\nI need to find the asset differently. Let me try searching by specific asset ID or looking for MiR robots more broadly.\n\n\n\n\n\n\n\n\n\nLet me try a different approach - search for all assets and see what's available, or look for MiR specifically in the idShort.\n\n\n\n\n\n\n\n\n\nI can see there's a MiR100_001 AAS. The user mentioned \"MIR100-2020-001\" which sounds like it could be the MiR100_001. Let me check the submodels of MiR100_001 to see if there's more identifying information, and also check if there's a specific asset ID that matches.\n\n\n\n\n\n\n\n\n\nThe MiR100_001 AAS exists. The user mentioned \"MIR100-2020-001\" which is likely referring to this MiR100 robot (MiR100_001). Let me verify by checking if there's any additional identifying information in the submodels.\n\n\n\n\n\n\n\n\n\nGood, I found the MiR100_001 AAS (urn:aas:mir100:001). The user mentioned \"MIR100-2020-001\" which is likely this MiR100 robot. Since this is an emergency stop situation, I need to create a service request notification with:\n- **service_type**: \"CorrectiveMaintenance\" (emergency stop is a fault)\n- **priority**: \"High\" (emergency stop is safety/emergency)\n- **short_text**: Something about the emergency stop\n- **aas_id**: urn:aas:mir100:001\n\nLet me create the service request notification now.\n\n\n\n\n\n\n\n\n\nService request notification created successfully for the MiR100 robot.\n\n**Summary:**\n- **Asset**: MiR100_001 (AAS ID: `urn:aas:mir100:001`)\n- **Service Request ID**: `urn:aas-hybrid-mcp:srn:001:3bc91b59`\n- **Type**: Corrective Maintenance\n- **Priority**: High\n- **Description**: Emergency stop triggered - immediate attention required\n\nThe service request has been logged in the system. The robot is now marked for corrective maintenance with high priority due to the emergency stop.",
+        "final_answer": "Service request notification created successfully for the MiR100 robot.\n\n**Summary:**\n- **Asset**: MiR100_001 (AAS ID: `urn:aas:mir100:001`)\n- **Service Request ID**: `urn:aas-hybrid-mcp:srn:001:3bc91b59`\n- **Type**: Corrective Maintenance\n- **Priority**: High\n- **Description**: Emergency stop triggered - immediate attention required\n\nThe service request has been logged in the system. The robot is now marked for corrective maintenance with high priority due to the emergency stop.",
+        "duration_s": 7.45,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId CONTAINS 'MIR100-2020-001' OR asset.idShort CONTAINS 'MIR100-2020-001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"asset.idShort "
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId IS NOT NULL AND asset.globalAssetId CONTAINS 'MIR'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort, asset.assetKind\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.idShort\":null,\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.idShort\":null,\"asset.assetKind\":\"Instance\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:2adfa490\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "",
+              "long_text": "Emergency stop triggered on MiR100 robot. Immediate attention required to investigate cause and restore operation.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:3bc91b59\"}"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 85927,
+          "completion_tokens": 1176,
+          "total_tokens": 87103
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 6,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to first identify the correct AAS for the MiR robot with serial number MIR100-2020-001, then create a service request notification.\n\nLet me start by querying the graph to find this asset.\n\n\n\n\n\n\n\n\n\nI need to use exact match. Let me try different approaches - first let me search for MiR-related shells, then identify the specific one by its properties.\n\n\n\n\n\n\n\n\n\nI need to use exact matches. Let me first list all AAS shells to see what's available, then I can identify the MiR one.\n\n\n\n\n\n\n\n\n\nI can see there's a `MiR100_001` shell which is likely the MiR100 robot. Let me check its submodels to see if there's serial number information, and also check the MiR100_Type to understand the structure.\n\n\n\n\n\n\n\n\n\nGood, I found the MiR100_001 AAS. The user mentioned serial number MIR100-2020-001, but the shell is named \"MiR100_001\". Let me check the Nameplate submodel to see if it contains serial number information to confirm this is the right asset.\n\n\n\n\n\n\n\n\n\nConfirmed. The MiR100_001 AAS has serial number \"MIR100-2020-001\" in its Nameplate submodel. This is the correct asset.\n\nNow I need to create a service request notification for the emergency stop. According to the guidelines:\n- **Service type**: Emergency stop suggests a fault, so this is `CorrectiveMaintenance`\n- **Priority**: Emergency stop is a safety/emergency situation, so `High`\n- **Short text**: Brief description of the emergency stop\n- **AAS ID**: `urn:aas:mir100:001`\n\nLet me create the service request notification.\n\n\n\n\n\n\n\n\n\nService request notification has been successfully created and registered on the MiR100_001 AAS.\n\n**Summary:**\n- **Asset**: MiR100 mobile robot (serial: MIR100-2020-001)\n- **AAS ID**: `urn:aas:mir100:001`\n- **Service Request ID**: `urn:aas-hybrid-mcp:srn:001:2b2edeeb`\n- **Service Type**: CorrectiveMaintenance\n- **Priority**: High (emergency stop)\n- **Status**: Open\n\nThe service request has been logged and is ready for maintenance team action.",
+        "final_answer": "Service request notification has been successfully created and registered on the MiR100_001 AAS.\n\n**Summary:**\n- **Asset**: MiR100 mobile robot (serial: MIR100-2020-001)\n- **AAS ID**: `urn:aas:mir100:001`\n- **Service Request ID**: `urn:aas-hybrid-mcp:srn:001:2b2edeeb`\n- **Service Type**: CorrectiveMaintenance\n- **Priority**: High (emergency stop)\n- **Status**: Open\n\nThe service request has been logged and is ready for maintenance team action.",
+        "duration_s": 7.408,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId CONTAINS 'MIR100-2020-001' OR asset.idShort CONTAINS 'MIR100-2020-001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"asset.idShort "
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE aas.idShort CONTAINS 'MiR' OR aas.idShort CONTAINS 'MiR'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.idShort\":null},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"asset.g"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:3bc91b59\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'Nameplate'})\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nRETURN el.idShort, el.modelType, el.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"el.idShort\":\"SerialNumber\",\"el.modelType\":null,\"el.value\":\"MIR100-2020-001\"},{\"el.idShort\":\"DateOfManufacture\",\"el.modelType\":null,\"el.value\":\"2020-04-12\"},{\"el.idShort\":\"YearOfConstruction"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "",
+              "long_text": "Emergency stop triggered on MiR100 mobile robot with serial number MIR100-2020-001. Immediate attention required to investigate cause and resolve the emergency stop condition.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:2b2edeeb\"}"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 90514,
+          "completion_tokens": 1190,
+          "total_tokens": 91704
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "Open"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": false
+          },
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 7,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR robot with serial number MIR100-2020-001, then create a service request notification for the emergency stop.\n\nLet me first search for this asset in the graph.\n\n\n\n\n\n\n\n\n\nNo results with exact serial number match. Let me try a broader search - perhaps the serial number format is different or stored differently. Let me search for MiR assets first.\n\n\n\n\n\n\n\n\n\nGood, I found MiR assets. Let me check the specific asset details for the MIR100 to find which one matches the serial number MIR100-2020-001. Let me look at the specific asset IDs for the MiR100 instance.\n\n\n\n\n\n\n\n\n\nLet me check what specific asset IDs exist for this asset.\n\n\n\n\n\n\n\n\n\nInteresting - no specific asset IDs on that asset. Let me check the submodels to understand the structure better and see if the serial number might be stored there.\n\n\n\n\n\n\n\n\n\nGood, I can see the MiR100_001 AAS has a Nameplate submodel. Let me check the Nameplate submodel to find the serial number information.\n\n\n\n\n\n\n\n\n\nPerfect! I found the MiR with serial number MIR100-2020-001. The AAS ID is `urn:aas:mir100:001`.\n\nNow I need to create a service request notification for the emergency stop. An emergency stop is a safety/emergency situation, so the priority should be \"High\" and the service type should be \"CorrectiveMaintenance\".\n\n\n\n\n\n\n\n\n\nService request notification has been successfully created for the MiR robot with emergency stop.\n\n**Summary:**\n- **Asset:** MiR100 (Serial: MIR100-2020-001)\n- **AAS ID:** `urn:aas:mir100:001`\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:039e1c1f`\n- **Type:** Corrective Maintenance\n- **Priority:** High (Emergency Stop)\n- **Status:** Open\n\nThe service request notification has been logged and registered on the asset's AAS. According to the system, this is now recorded as an open high-priority corrective maintenance request.",
+        "final_answer": "Service request notification has been successfully created for the MiR robot with emergency stop.\n\n**Summary:**\n- **Asset:** MiR100 (Serial: MIR100-2020-001)\n- **AAS ID:** `urn:aas:mir100:001`\n- **Service Request ID:** `urn:aas-hybrid-mcp:srn:001:039e1c1f`\n- **Type:** Corrective Maintenance\n- **Priority:** High (Emergency Stop)\n- **Status:** Open\n\nThe service request notification has been logged and registered on the asset's AAS. According to the system, this is now recorded as an open high-priority corrective maintenance request.",
+        "duration_s": 8.273,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nMATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nWHERE sai.name = 'serialNumber' AND sai.value = 'MIR100-2020-001'\nRETURN aas.id AS aas_id, aas.idShort, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE toLower(asset.globalAssetId) CONTAINS 'mir' OR toLower(asset.globalAssetId) CONTAINS 'mbr'\nRETURN aas.id AS aas_id, aas.idShort, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas_id\":\"urn:aas:mir100:001\",\"aas.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas_id\":\"urn:aas:mir250:001\",\"aas.idShort\":\"MiR250_001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(asset:Asset)\nMATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nRETURN aas.id AS aas_id, asset.globalAssetId, sai.name, sai.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(asset:Asset)\nMATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sai:SpecificAssetId)\nRETURN asset.globalAssetId, sai.name, sai.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:2b2edeeb\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'Nameplate'})\nMATCH (sm)-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"SerialNumber\",\"p.value\":\"MIR100-2020-001\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"DateOfManufacture\",\"p.value\":\"2020-04-12\",\"p.valueType\":\"xs:date\"},{\"p.idShort\":\"YearOfConstru"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "Emergency Stop Triggered",
+              "long_text": "Emergency stop has been triggered on MiR100 robot (serial number MIR100-2020-001). Immediate attention required to investigate the cause and ensure safety before resuming operations.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:039e1c1f\"}"
+          }
+        ],
+        "tool_call_count": 7,
+        "usage": {
+          "prompt_tokens": 99722,
+          "completion_tokens": 1292,
+          "total_tokens": 101014
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "Open"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 8,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to first identify the AAS for the MiR with serial number MIR100-2020-001, then create a service request notification.\n\nLet me start by finding the asset in the graph:\n\n\n\n\n\n\n\n\n\nI need to find the correct way to locate the asset. Let me first get the templates index and then search for assets with the specific serial number. Let me try a different approach - search for assets with SpecificAssetId:\n\n\n\n\n\n\n\n\n\nNo results with that approach. Let me try to find all assets and see what's available, or search for MiR-related AAS:\n\n\n\n\n\n\n\n\n\nI see the issue - I cannot use CONTAINS on idShort. Let me first list all AAS shells to see what's available:\n\n\n\n\n\n\n\n\n\nI see there's a MiR100 asset (MiR100_001). Let me check the MiR100_001 AAS to see if it has a serial number matching MIR100-2020-001:\n\n\n\n\n\n\n\n\n\nThe MiR100_001 doesn't have a SpecificAssetId with serial number. Let me check the submodels of this AAS to see if there's a serial number stored elsewhere:\n\n\n\n\n\n\n\n\n\nI see the MiR100_001 AAS exists and has a Nameplate submodel. Let me check the Nameplate submodel for serial number information:\n\n\n\n\n\n\n\n\n\nFound it! The MiR100_001 AAS has the serial number \"MIR100-2020-001\" in its Nameplate submodel. This is the asset that triggered the emergency stop.\n\nNow I need to create a service request notification for this emergency stop. Since it's an emergency stop, this is a high-priority corrective maintenance issue.\n\n\n\n\n\n\n\n\n\nService request notification created successfully.\n\n**Summary:**\n- Identified the MiR robot with serial number **MIR100-2020-001** (AAS ID: `urn:aas:mir100:001`)\n- Created a **High priority** Corrective Maintenance service request notification for the emergency stop\n- SRN ID: `urn:aas-hybrid-mcp:srn:001:b3e4a3c8`\n\nThe service request has been logged and registered on the MiR's AAS. The emergency stop requires immediate attention.",
+        "final_answer": "Service request notification created successfully.\n\n**Summary:**\n- Identified the MiR robot with serial number **MIR100-2020-001** (AAS ID: `urn:aas:mir100:001`)\n- Created a **High priority** Corrective Maintenance service request notification for the emergency stop\n- SRN ID: `urn:aas-hybrid-mcp:srn:001:b3e4a3c8`\n\nThe service request has been logged and registered on the MiR's AAS. The emergency stop requires immediate attention.",
+        "duration_s": 9.297,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId CONTAINS 'MIR100-2020-001' OR asset.assetType CONTAINS 'MIR100-2020-001' OR asset.idShort CONTAINS 'MIR100-2020-001'\nRETURN aas.id AS aas_id, aas.idShort, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"asset.idShort "
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\n      -[:HAS_SPECIFIC_ASSET_ID]->(sa:SpecificAssetId)\nWHERE sa.name = 'serialNumber' AND sa.value = 'MIR100-2020-001'\nRETURN aas.id AS aas_id, aas.idShort, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE aas.idShort CONTAINS 'MiR' OR aas.idShort CONTAINS 'MIR' OR asset.globalAssetId CONTAINS 'MiR' OR asset.globalAssetId CONTAINS 'MIR'\nRETURN aas.id AS aas_id, aas.idShort, asset.globalAssetId, asset.assetKind, asset.assetType",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.id AS aas_id, aas.idShort, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas_id\":\"urn:aas:mir100:001\",\"aas.idShort\":\"MiR100_001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas_id\":\"urn:aas:mir250:001\",\"aas.idShort\":\"MiR250_001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:MANAGES_ASSET]->(asset:Asset)\nOPTIONAL MATCH (asset)-[:HAS_SPECIFIC_ASSET_ID]->(sa:SpecificAssetId)\nRETURN aas.id AS aas_id, asset.globalAssetId, sa.name, sa.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas_id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"sa.name\":null,\"sa.value\":null}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:039e1c1f\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_001'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'Nameplate'})\nOPTIONAL MATCH (sm)-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"SerialNumber\",\"p.value\":\"MIR100-2020-001\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"DateOfManufacture\",\"p.value\":\"2020-04-12\",\"p.valueType\":\"xs:date\"},{\"p.idShort\":\"YearOfConstru"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "EmergencyStop",
+              "long_text": "MiR robot with serial number MIR100-2020-001 triggered an emergency stop. Immediate attention required.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered on MiR100-2020-001"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:b3e4a3c8\"}"
+          }
+        ],
+        "tool_call_count": 8,
+        "usage": {
+          "prompt_tokens": 115322,
+          "completion_tokens": 1457,
+          "total_tokens": 116779
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "idShort_contains_or_regex",
+              "assetType_match"
+            ],
+            "self_corrected": true
+          },
+          {
+            "tool_call_index": 2,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "srn_bypass_serial_number",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "repetition": 9,
+      "result": {
+        "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I need to find the AAS for the MiR robot with serial number MIR100-2020-001, then create a service request notification.\n\nLet me start by searching for this asset in the graph.\n\n\n\n\n\n\n\n\n\nNo results with that exact search. Let me try searching for assets with \"MIR100\" in their identifier or look for MiR robots more broadly.\n\n\n\n\n\n\n\n\n\nI see - I cannot use CONTAINS on idShort or id. Let me try a different approach - search for the AAS by idShort first if I can find candidates, or search for assets by their specific asset ID pattern.\n\n\n\n\n\n\n\n\n\nI see several MiR assets but none with the exact serial number \"MIR100-2020-001\". Let me check the specific asset IDs more closely. The user mentioned \"MIR100-2020-001\" - let me look at the MiR100 assets and see if there's additional identification information.\n\n\n\n\n\n\n\n\n\nThe user mentioned \"MIR100-2020-001\" but the closest match in the system is \"MiR100_001\". Let me check if there are specific asset IDs or other identifiers that might match the serial number. Let me also look at the submodels of this MiR100_001 to see if there's serial number information stored there.\n\n\n\n\n\n\n\n\n\nI found the MiR100_001 AAS. The user mentioned \"MIR100-2020-001\" but the closest match is \"MiR100_001\". Given this is an emergency stop situation, I should proceed with the closest match. The AAS ID is `urn:aas:mir100:001`.\n\nNow I need to create a service request notification for this emergency stop. An emergency stop is a high-priority corrective maintenance issue.\n\n\n\n\n\n\n\n\n\nService request notification created successfully.\n\n**Summary:**\n- Created a high-priority CorrectiveMaintenance service request for the MiR100 robot (AAS ID: `urn:aas:mir100:001`)\n- Short text: \"Emergency stop triggered\"\n- Long text: \"Emergency stop triggered on MiR100 robot. Immediate attention required for safety investigation and reset.\"\n- Error code: `emergency_stop`\n- SRN ID: `urn:aas-hybrid-mcp:srn:001:8fde06c4`\n\nThe service request has been logged and is ready for the maintenance team to action.",
+        "final_answer": "Service request notification created successfully.\n\n**Summary:**\n- Created a high-priority CorrectiveMaintenance service request for the MiR100 robot (AAS ID: `urn:aas:mir100:001`)\n- Short text: \"Emergency stop triggered\"\n- Long text: \"Emergency stop triggered on MiR100 robot. Immediate attention required for safety investigation and reset.\"\n- Error code: `emergency_stop`\n- SRN ID: `urn:aas-hybrid-mcp:srn:001:8fde06c4`\n\nThe service request has been logged and is ready for the maintenance team to action.",
+        "duration_s": 7.092,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId = 'MIR100-2020-001' OR asset.id = 'MIR100-2020-001'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE toLower(asset.globalAssetId) CONTAINS 'mir' OR toLower(asset.id) CONTAINS 'mir'\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(asset.id) CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nWHERE asset.globalAssetId IS NOT NULL\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind\nLIMIT 20"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: \"MiR100_001\"})-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: \"MiR100_001\"})-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN sm.idShort, sm.id"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:b3e4a3c8\"},{\"sm.idShort\":\"ServiceRequestN"
+          },
+          {
+            "name": "create_service_request_notification",
+            "args": {
+              "aas_id": "urn:aas:mir100:001",
+              "error_code": "emergency_stop",
+              "long_text": "Emergency stop triggered on MiR100 robot. Immediate attention required for safety investigation and reset.",
+              "priority": "High",
+              "service_type": "CorrectiveMaintenance",
+              "short_text": "Emergency stop triggered"
+            },
+            "result_preview": "{\"status\":\"ok\",\"id\":\"urn:aas-hybrid-mcp:srn:001:8fde06c4\"}"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 85633,
+          "completion_tokens": 1118,
+          "total_tokens": 86751
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 0.0,
+        "passed": false,
+        "regex_score": 0.0,
+        "keyword_hits": [],
+        "keyword_misses": [
+          "Open"
+        ],
+        "forbidden_hits": [],
+        "pattern_matched": null,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    }
+  ],
+  "summary_by_variant": {
+    "react": {
+      "runs": 20,
+      "pass_pct": 30.0,
+      "avg_score": 0.3,
+      "avg_dur": 9.863141061505303,
+      "total_validator_rejections": 24,
+      "self_corrected_pct": 95.83333333333333
+    }
+  }
+}

@@ -1,0 +1,1622 @@
+{
+  "records": [
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 0,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the maximum speed of the MiR100 from the graph data and its documentation.\n\n\n\n\n\n\n\n\n\nI can see MiR100 submodels. Let me now look at the TechnicalDataAGV submodel (which contains speed data) and also check for the MiR100 AAS and any PDF documentation.\n\n\n\n\n\n\n\n\n\nLet me use the correct pattern — find the MiR100 AAS first, then its submodels.\n\n\n\n\n\n\n\n\n\nLet me find the MiR100 AAS by idShort first.\n\n\n\n\n\n\n\n\n\nNo exact match on idShort. Let me search more broadly for MiR100-related assets.\n\n\n\n\n\n\n\n\n\nFound it. Now let me get the speed property from the TechnicalDataAGV submodel.\n\n\n\n\n\n\n\n\n\nRight — let me use exact idShort match and also check the template structure first to know the correct element names.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow I know the exact property names. The speed properties are under `TechnicalParameters`. Let me query them:\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the MiR100's maximum speed is:\n\n- **1.5 m/s empty** (no load)\n- **1.0 m/s** with maximum load\n\nThese values are stored in the *Technical Data for Automated Guided Vehicles* submodel of the MiR100 Type AAS.",
+        "final_answer": "According to the graph data, the MiR100's maximum speed is:\n\n- **1.5 m/s empty** (no load)\n- **1.0 m/s** with maximum load\n\nThese values are stored in the *Technical Data for Automated Guided Vehicles* submodel of the MiR100 Type AAS.",
+        "duration_s": 9.174,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId\nORDER BY sm.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"CapabilityDescription\",\"sm.id\":\"urn:submodel:ur3e:type:capabilitydescription\",\"templateSemanticId\":\"https://admin-shell.io/idta/SubmodelTemplate/CapabilityDescription/1/0\"},{\"s"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: \"TechnicalDataAGV\"})\nWHERE sm.id CONTAINS 'mir100'\nRETURN aas.id AS aasId, aas.idShort AS aasIdShort, sm.id AS submodelId",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort = 'mir100' AND sm.idShort = 'TechnicalDataAGV'\nRETURN aas.id AS aasId, aas.idShort AS aasIdShort, sm.id AS submodelId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)\nWHERE aas.idShort = 'mir100' OR aas.idShort = 'MiR100'\nRETURN aas.id AS aasId, aas.idShort AS aasIdShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE sm.id = 'urn:submodel:mir100:type:technicaldataagv'\nRETURN aas.id AS aasId, aas.idShort AS aasIdShort, sm.id AS submodelId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasId\":\"urn:aas:mir100:type\",\"aasIdShort\":\"MiR100_Type\",\"submodelId\":\"urn:submodel:mir100:type:technicaldataagv\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nWHERE p.idShort = 'maxSpeed' OR toLower(p.idShort) CONTAINS 'speed'\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(p.idShort) C"
+          },
+          {
+            "name": "get_template",
+            "args": {
+              "name": "Technical Data AGV"
+            },
+            "result_preview": "{\"error\": \"Template 'Technical Data AGV' not found.\", \"available\": [\"Artificial Intelligence Dataset\", \"Artificial Intelligence Deployment\", \"Artificial Intelligence Model Nameplate\", \"Asset Interface"
+          },
+          {
+            "name": "get_template",
+            "args": {
+              "name": "Technical Data for Automated Guided Vehicles"
+            },
+            "result_preview": "{\n  \"name\": \"Technical Data for Automated Guided Vehicles\",\n  \"version\": \"1.0.1\",\n  \"idShort\": \"TechnicalDataAGV\",\n  \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0\",\n"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nWHERE p.idShort IN ['SpeedMaxEmptyAsSpecified', 'SpeedMaxEmptyAsOperated', 'SpeedMaxWithMaxLoadAsSpecified', 'SpeedMaxWithMaxLoadAsOperated', 'SpeedMin']\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"SpeedMaxWithMaxLoadAsSpecified\",\"p.value\":\"1.0\",\"p.valueType\":\"xs:double\"},{\"p.idShort\":\"SpeedMaxEmptyAsSpecified\",\"p.value\":\"1.5\",\"p.valueType\":\"xs:double\"}],\"total\":2,\"truncat"
+          }
+        ],
+        "tool_call_count": 9,
+        "usage": {
+          "prompt_tokens": 243725,
+          "completion_tokens": 1299,
+          "total_tokens": 245024
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "self_corrected": true
+          },
+          {
+            "tool_call_index": 5,
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 1,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll help you find the maximum speed of the MiR100. Let me first look up the relevant template information and then search for the asset.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI see the \"Technical Data for Automated Guided Vehicles\" template — that's the right one for the MiR100. Now let me find the MiR100 asset in the graph.\n\n\n\n\n\n\n\n\n\nFound both the MiR100 and MiR250 type shells. Let me query the MiR100's TechnicalDataAGV submodel for speed properties.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **MiR100** has the following maximum speeds:\n\n- **Max speed with max load**: **1.0 m/s**\n- **Max speed (empty)**: **1.5 m/s**\n\nThese values are stored in the `TechnicalDataAGV` submodel of the MiR100 Type AAS.",
+        "final_answer": "According to the graph data, the **MiR100** has the following maximum speeds:\n\n- **Max speed with max load**: **1.0 m/s**\n- **Max speed (empty)**: **1.5 m/s**\n\nThese values are stored in the `TechnicalDataAGV` submodel of the MiR100 Type AAS.",
+        "duration_s": 3.399,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nRETURN aas.idShort, aas.id, sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_Type\",\"aas.id\":\"urn:aas:mir250:type\",\"sm.idShort\":\"TechnicalDataAGV\",\"sm.id\":\"urn:submodel:mir250:type:technicaldataagv\"},{\"aas.idShort\":\"MiR100_Type\",\"aas.id\":\"urn:aas"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          }
+        ],
+        "tool_call_count": 4,
+        "usage": {
+          "prompt_tokens": 68449,
+          "completion_tokens": 468,
+          "total_tokens": 68917
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 2,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll help you find the maximum speed of the MiR100. Let me first look up the relevant template information and then query the graph for the MiR100 asset.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow let me find the MiR100 asset and get the templates index to understand which template contains technical data:\n\n\n\n\n\n\n\n\n\nI see the \"Technical Data for Automated Guided Vehicles\" template. Now let me find the MiR100 asset:\n\n\n\n\n\n\n\n\n\nFound both the type and instance shells. Let me check the submodels on the instance shell to find the Technical Data AGV submodel:\n\n\n\n\n\n\n\n\n\nThe instance shell doesn't have a Technical Data AGV submodel — only a Nameplate and many ServiceRequestNotifications. The technical data is likely on the **type** shell. Let me check that:\n\n\n\n\n\n\n\n\n\nFound the TechnicalDataAGV submodel on the type shell. Now let me get the speed property from it:\n\n\n\n\n\n\n\n\n\nLet me also check the semanticIds on these properties to confirm what they represent:\n\n\n\n\n\n\n\n\n\nI have all the information I need. Here's the answer:\n\n**MiR100 Maximum Speed** (from the Technical Data AGV submodel on the type AAS):\n\n| Condition | Max Speed |\n|---|---|\n| **With max load (100 kg)** | **1.0 m/s** |\n| **Empty (no load)** | **1.5 m/s** |\n\nAccording to the graph data, the MiR100 has a maximum speed of **1.0 m/s** when carrying its maximum load of 100 kg, and up to **1.5 m/s** when running empty.",
+        "final_answer": "I have all the information I need. Here's the answer:\n\n**MiR100 Maximum Speed** (from the Technical Data AGV submodel on the type AAS):\n\n| Condition | Max Speed |\n|---|---|\n| **With max load (100 kg)** | **1.0 m/s** |\n| **Empty (no load)** | **1.5 m/s** |\n\nAccording to the graph data, the MiR100 has a maximum speed of **1.0 m/s** when carrying its maximum load of 100 kg, and up to **1.5 m/s** when running empty.",
+        "duration_s": 7.251,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_graph_schema",
+            "args": {},
+            "result_preview": "# AAS Graph Schema\n\nAll nodes also carry the label `GraphNode`.\n\n## Core Nodes\n\n### AssetAdministrationShell\nThe top-level AAS entity.\n- Labels: AssetAdministrationShell, Identifiable, Referable, Refe"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE aas.idShort = 'mir100' OR a.globalAssetId CONTAINS 'mir100' OR a.globalAssetId CONTAINS 'MiR100'\nRETURN aas.id AS aasId, aas.idShort, a.globalAssetId, a.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasId\":\"urn:aas:mir100:type\",\"aas.idShort\":\"MiR100_Type\",\"a.globalAssetId\":\"urn:asset:mir100:type\",\"a.assetKind\":\"Type\"},{\"aasId\":\"urn:aas:mir100:001\",\"aas.idShort\":\"MiR100_001\",\"a.globalAs"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:mir100:001'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:001:nameplate\",\"templateSemanticId\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplate\"},{\"sm.idShort\":\"ServiceRequestNotification\",\"s"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:mir100:type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:type:nameplate\",\"templateSemanticId\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplate\"},{\"sm.idShort\":\"HandoverDocumentation\",\"sm.id"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nOPTIONAL MATCH (p)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nWHERE p.idShort IN ['SpeedMaxWithMaxLoadAsSpecified', 'SpeedMaxEmptyAsSpecified']\nRETURN p.idShort, p.value, sc.id AS semanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"semanticId\":null},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"semanticId\":null},{\"p.idShort\":\"AgvClass\",\"p.v"
+          }
+        ],
+        "tool_call_count": 8,
+        "usage": {
+          "prompt_tokens": 178573,
+          "completion_tokens": 999,
+          "total_tokens": 179572
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 3,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll help you find the maximum speed of the MiR100. Let me first look up the relevant template information and then search the AAS data.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI can see there's a \"Technical Data for Automated Guided Vehicles\" template (`TechnicalDataAGV`) which is present in the graph. Let me find the MiR100 asset and look at its technical data.\n\n\n\n\n\n\n\n\n\nFound both MiR100 and MiR250 type shells. Let me query the MiR100's TechnicalDataAGV submodel for speed-related properties.\n\n\n\n\n\n\n\n\n\nI found the data. According to the graph data from the MiR100 Type AAS's TechnicalDataAGV submodel:\n\n**MiR100 Maximum Speed:**\n\n- **With maximum load (100 kg): 1.0 m/s**\n- **Empty (no load): 1.5 m/s**\n\nThe MiR100 is a Class CARRIER AGV with laser SLAM navigation, suitable for indoor use only (not outdoors).",
+        "final_answer": "I found the data. According to the graph data from the MiR100 Type AAS's TechnicalDataAGV submodel:\n\n**MiR100 Maximum Speed:**\n\n- **With maximum load (100 kg): 1.0 m/s**\n- **Empty (no load): 1.5 m/s**\n\nThe MiR100 is a Class CARRIER AGV with laser SLAM navigation, suitable for indoor use only (not outdoors).",
+        "duration_s": 3.994,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_graph_schema",
+            "args": {},
+            "result_preview": "# AAS Graph Schema\n\nAll nodes also carry the label `GraphNode`.\n\n## Core Nodes\n\n### AssetAdministrationShell\nThe top-level AAS entity.\n- Labels: AssetAdministrationShell, Identifiable, Referable, Refe"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nRETURN aas.idShort, aas.id, sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_Type\",\"aas.id\":\"urn:aas:mir250:type\",\"sm.idShort\":\"TechnicalDataAGV\",\"sm.id\":\"urn:submodel:mir250:type:technicaldataagv\"},{\"aas.idShort\":\"MiR100_Type\",\"aas.id\":\"urn:aas"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_Type'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'TechnicalDataAGV'})\n      -[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 93883,
+          "completion_tokens": 525,
+          "total_tokens": 94408
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 4,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll help you find the maximum speed of the MiR100. Let me first look up the relevant template and then search the graph for the MiR100 asset.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI see the \"Technical Data for Automated Guided Vehicles\" template — that's the one for MiR robots. Now let me find the MiR100 asset in the graph.\n\n\n\n\n\n\n\n\n\nFound both MiR250 and MiR100 type shells. Let me query the MiR100 type shell's TechnicalDataAGV submodel for the maximum speed property.\n\n\n\n\n\n\n\n\n\nNo properties found. Let me check what elements are actually in that submodel.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **MiR100** has the following maximum speeds:\n\n| Condition | Max Speed |\n|---|---|\n| With max load (100 kg) | **1.0 m/s** |\n| Empty (no load) | **1.5 m/s** |\n\nThese values are stored in the `TechnicalDataAGV` submodel of the MiR100 type AAS (`SpeedMaxWithMaxLoadAsSpecified` and `SpeedMaxEmptyAsSpecified`).",
+        "final_answer": "According to the graph data, the **MiR100** has the following maximum speeds:\n\n| Condition | Max Speed |\n|---|---|\n| With max load (100 kg) | **1.0 m/s** |\n| Empty (no load) | **1.5 m/s** |\n\nThese values are stored in the `TechnicalDataAGV` submodel of the MiR100 type AAS (`SpeedMaxWithMaxLoadAsSpecified` and `SpeedMaxEmptyAsSpecified`).",
+        "duration_s": 6.203,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nMATCH (aas)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_Type\",\"aas.id\":\"urn:aas:mir250:type\",\"asset.globalAssetId\":\"urn:asset:mir250:type\",\"asset.assetKind\":\"Type\"},{\"aas.idShort\":\"MiR100_Type\",\"aas.id\":\"urn:aas:mir100:type\""
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:mir100:type'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\n      -[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:mir100:type'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nRETURN sm.id, sm.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.id\":\"urn:submodel:mir100:type:technicaldataagv\",\"sm.idShort\":\"TechnicalDataAGV\"}],\"total\":1,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT]->(child)\nRETURN child.idShort, labels(child)",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"child.idShort\":\"SpecificDescriptions\",\"labels(child)\":[\"GraphNode\",\"SubmodelElement\",\"Referable\",\"Referenceable\",\"SubmodelElementList\"]},{\"child.idShort\":\"GeneralInformation\",\"labels(child)"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          }
+        ],
+        "tool_call_count": 7,
+        "usage": {
+          "prompt_tokens": 117654,
+          "completion_tokens": 881,
+          "total_tokens": 118535
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 5,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll help you find the maximum speed of the MiR100. Let me first look up the relevant template and then search for this information.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI can see the \"Technical Data for Automated Guided Vehicles\" template — that's the right one for MiR robots. Let me find the MiR100 asset and its technical data.\n\n\n\n\n\n\n\n\n\nFound the MiR100 Type shell. Now let me query its technical data submodel for the maximum speed property.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **MiR100** has the following maximum speeds:\n\n- **With max load (100 kg): 1.0 m/s**\n- **Empty (no load): 1.5 m/s**\n\nThese values are stored in the `TechnicalDataAGV` submodel of the MiR100 Type AAS under the properties `SpeedMaxWithMaxLoadAsSpecified` and `SpeedMaxEmptyAsSpecified`.",
+        "final_answer": "According to the graph data, the **MiR100** has the following maximum speeds:\n\n- **With max load (100 kg): 1.0 m/s**\n- **Empty (no load): 1.5 m/s**\n\nThese values are stored in the `TechnicalDataAGV` submodel of the MiR100 Type AAS under the properties `SpeedMaxWithMaxLoadAsSpecified` and `SpeedMaxEmptyAsSpecified`.",
+        "duration_s": 3.477,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nMATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nRETURN aas.idShort, aas.id, sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_Type\",\"aas.id\":\"urn:aas:mir250:type\",\"sm.idShort\":\"TechnicalDataAGV\",\"sm.id\":\"urn:submodel:mir250:type:technicaldataagv\"},{\"aas.idShort\":\"MiR100_Type\",\"aas.id\":\"urn:aas"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:mir100:type:technicaldataagv'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          }
+        ],
+        "tool_call_count": 4,
+        "usage": {
+          "prompt_tokens": 68437,
+          "completion_tokens": 480,
+          "total_tokens": 68917
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 6,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the maximum speed of the MiR100 from its documentation.\n\n\n\n\n\n\n\n\n\nLet me find the MiR100 asset first, then locate its documentation.\n\n\n\n\n\n\n\n\n\nI see a MiR250 shell but no MiR100 yet. Let me search more broadly.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI found the MiR100 Type AAS (`MiR100_Type`, `urn:aas:mir100:type`) with a `TechnicalDataAGV` submodel. Let me query the speed property from it.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the MiR100 has the following maximum speeds in its TechnicalDataAGV submodel:\n\n- **Max speed with max load**: **1.0 m/s**\n- **Max speed (empty)**: **1.5 m/s**\n\nThe MiR100 is a 100 kg payload AGV with laser SLAM navigation, dimensions of 890 × 580 × 352 mm (L×W×H), and a max runtime of 10 hours.",
+        "final_answer": "According to the graph data, the MiR100 has the following maximum speeds in its TechnicalDataAGV submodel:\n\n- **Max speed with max load**: **1.0 m/s**\n- **Max speed (empty)**: **1.5 m/s**\n\nThe MiR100 is a 100 kg payload AGV with laser SLAM navigation, dimensions of 890 × 580 × 352 mm (L×W×H), and a max runtime of 10 hours.",
+        "duration_s": 6.179,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_ELEMENT*]->(f:File)\nWHERE f.idShort = 'MiR100' AND f.contentType = 'application/pdf'\nRETURN sm.id AS submodelId, f.value AS pdfUrl\nLIMIT 5",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nRETURN aas.idShort, aas.id, sm.idShort, sm.id\nLIMIT 20",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:8fe59590\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aa"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)\nWHERE toLower(aas.idShort) CONTAINS 'mir' OR toLower(aas.id) CONTAINS 'mir'\nRETURN aas.idShort, aas.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN aas.idShort, aas.id, sm.idShort, sm.id, sc.id AS templateId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:8fe59590\",\"templateId\":null},{\"aas.idShort\":\"MiR250_001"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_Type'})-[:HAS_SUBMODEL]->(sm:Submodel {idShort: 'TechnicalDataAGV'})\n      -[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 115725,
+          "completion_tokens": 859,
+          "total_tokens": 116584
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 2,
+            "rules": [
+              "toLower_id_contains",
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 7,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the maximum speed specification for the MiR100. Let me start by finding the asset and its technical data.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI found MiR100 assets — both an instance (`MiR100_001`) and a type shell (`MiR100_Type`). Let me check the type shell's submodels for technical data, which is where specs like maximum speed are typically stored.\n\n\n\n\n\n\n\n\n\nThe `TechnicalDataAGV` submodel is the one that should contain speed specs. Let me query its properties.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the MiR100 has the following maximum speeds stored in the **TechnicalDataAGV** submodel of the type shell:\n\n| Condition | Max Speed | Unit |\n|---|---|---|\n| **With max load (100 kg)** | **1.0** | m/s |\n| **Empty (no load)** | **1.5** | m/s |\n\nSo the MiR100's top speed is **1.5 m/s** (≈ 5.4 km/h) when running empty, and it slows to **1.0 m/s** (≈ 3.6 km/h) when carrying its full 100 kg load.",
+        "final_answer": "According to the graph data, the MiR100 has the following maximum speeds stored in the **TechnicalDataAGV** submodel of the type shell:\n\n| Condition | Max Speed | Unit |\n|---|---|---|\n| **With max load (100 kg)** | **1.0** | m/s |\n| **Empty (no load)** | **1.5** | m/s |\n\nSo the MiR100's top speed is **1.5 m/s** (≈ 5.4 km/h) when running empty, and it slows to **1.0 m/s** (≈ 3.6 km/h) when carrying its full 100 kg load.",
+        "duration_s": 5.148,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE aas.idShort = $idShort\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId",
+              "params": "{\"idShort\": \"mir100\"}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE a.idShort = $idShort OR a.globalAssetId CONTAINS $idShort OR toLower(aas.idShort) CONTAINS $idShort\nRETURN aas.id AS aas_id, aas.idShort, a.globalAssetId, a.idShort AS asset_idShort",
+              "params": "{\"idShort\": \"mir100\"}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.idShort\":null},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\",\"a.globalAssetId\":"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: $idShort})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{\"idShort\": \"MiR100_Type\"}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:mir100:type:nameplate\",\"templateSemanticId\":\"https://admin-shell.io/idta/nameplate/3/0/Nameplate\"},{\"sm.idShort\":\"HandoverDocumentation\",\"sm.id"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: $smId})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{\"smId\": \"urn:submodel:mir100:type:technicaldataagv\"}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"ProductArticleNumberOfManufacturer\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"ManufacturerOrderCode\",\"p.value\":\"MiR100\",\"p.valueType\":\"xs:string\"},{\"p.idShort\""
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 65140,
+          "completion_tokens": 794,
+          "total_tokens": 65934
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 8,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the maximum speed of the MiR100 from the graph data and its documentation.\n\n\n\n\n\n\n\n\n\nLet me first discover what shells and submodels exist for the MiR100.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nI found the relevant template: **\"Technical Data for Automated Guided Vehicles\"** (`https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0`). Let me find the MiR100 shell and its submodels.\n\n\n\n\n\n\n\n\n\nFound both the MiR100 and MiR250 type shells. Let me get the technical data from the MiR100 type shell, and also check for any instance shells.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **MiR100** has two maximum speed values stored in the Technical Data for Automated Guided Vehicles submodel:\n\n- **With maximum load (100 kg):** 1.0 m/s\n- **Empty (no load):** 1.5 m/s",
+        "final_answer": "According to the graph data, the **MiR100** has two maximum speed values stored in the Technical Data for Automated Guided Vehicles submodel:\n\n- **With maximum load (100 kg):** 1.0 m/s\n- **Empty (no load):** 1.5 m/s",
+        "duration_s": 6.898,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: $semanticId})\nMATCH (sm)-[:HAS_ELEMENT*]->(p:Property)\nWHERE p.idShort IN ['maxSpeed', 'speed', 'TopSpeed', 'max_velocity', 'maximumSpeed']\nRETURN p.idShort AS prop, p.value AS value, p.valueType AS type, sm.idShort AS submodel",
+              "params": "{\"semanticId\": \"https://admin-shell.io/MobileRobots/Submodel/1/1\"}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nWHERE aas.idShort CONTAINS 'mir' OR aas.idShort CONTAINS 'Mir' OR toLower(aas.idShort) CONTAINS 'mir'\nRETURN aas.idShort AS aasIdShort, aas.id AS aasId, sm.idShort AS smIdShort, sm.id AS smId, sc.id AS semanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nMATCH (aas)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort AS aasIdShort, aas.id AS aasId, asset.globalAssetId AS globalAssetId, asset.assetKind AS assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasIdShort\":\"MiR250_Type\",\"aasId\":\"urn:aas:mir250:type\",\"globalAssetId\":\"urn:asset:mir250:type\",\"assetKind\":\"Type\"},{\"aasIdShort\":\"MiR100_Type\",\"aasId\":\"urn:aas:mir100:type\",\"globalAssetId\""
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'MiR100_Type'})-[:HAS_SUBMODEL]->(sm:Submodel)\n      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0'})\nOPTIONAL MATCH (sm)-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort AS prop, p.value AS value, p.valueType AS type, sm.idShort AS submodel",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"prop\":\"ProductArticleNumberOfManufacturer\",\"value\":\"MiR100\",\"type\":\"xs:string\",\"submodel\":\"TechnicalDataAGV\"},{\"prop\":\"ManufacturerOrderCode\",\"value\":\"MiR100\",\"type\":\"xs:string\",\"submodel\":"
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 91560,
+          "completion_tokens": 1067,
+          "total_tokens": 92627
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "toLower_id_contains",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "mir100_max_speed",
+      "query": "What is the maximum speed of the mir 100?",
+      "repetition": 9,
+      "result": {
+        "query": "What is the maximum speed of the mir 100?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll help you find the maximum speed of the MiR100. Let me first look up the relevant template information and then search the graph for the MiR100 asset.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow let me get the templates index and search for the MiR100 asset:\n\n\n\n\n\n\n\n\n\nI can see the \"Technical Data for Automated Guided Vehicles\" template (semanticId: `https://admin-shell.io/idta/SubmodelTemplate/technicaldataagv/1/0`) is available. Now let me find the MiR100 asset and its technical data:\n\n\n\n\n\n\n\n\n\nI found the MiR100. The instance shell is `MiR100_001` and the type shell is `MiR100_Type`. The type shell has a `TechnicalDataAGV` submodel with the AGV technical data template. Let me query the properties of that submodel to find the maximum speed:\n\n\n\n\n\n\n\n\n\nI found the technical data for the MiR100. Here's the answer:\n\n**According to the graph data**, the MiR100 has the following maximum speeds:\n\n- **Max speed (empty): 1.5 m/s** — when carrying no load\n- **Max speed (with max load): 1.0 m/s** — when carrying its maximum load of 100 kg\n\nThe MiR100 is a carrier-class AGV with differential kinematics, laser SLAM localization, and free navigation capability. It is not suitable for outdoor use (IP21 protection class).",
+        "final_answer": "I found the technical data for the MiR100. Here's the answer:\n\n**According to the graph data**, the MiR100 has the following maximum speeds:\n\n- **Max speed (empty): 1.5 m/s** — when carrying no load\n- **Max speed (with max load): 1.0 m/s** — when carrying its maximum load of 100 kg\n\nThe MiR100 is a carrier-class AGV with differential kinematics, laser SLAM localization, and free navigation capability. It is not suitable for outdoor use (IP21 protection class).",
+        "duration_s": 5.141,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_graph_schema",
+            "args": {},
+            "result_preview": "# AAS Graph Schema\n\nAll nodes also carry the label `GraphNode`.\n\n## Core Nodes\n\n### AssetAdministrationShell\nThe top-level AAS entity.\n- Labels: AssetAdministrationShell, Identifiable, Referable, Refe"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN aas.idShort, aas.id, sm.idShort, sm.id, sc.id AS templateSemanticId\nORDER BY aas.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"CRX10iA_001\",\"aas.id\":\"urn:aas:crx10ia:001\",\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:crx10ia:001:nameplate\",\"templateSemanticId\":\"https://admin-shell.io/idta/nameplate/3"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: \"urn:submodel:mir100:type:technicaldataagv\"})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType\nORDER BY p.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"AgvClass\",\"p.value\":\"CARRIER\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"AgvKinematic\",\"p.value\":\"DIFF\",\"p.valueType\":\"xs:string\"},{\"p.idShort\":\"LocalizationType\",\"p.value\":\"Laser"
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 142807,
+          "completion_tokens": 615,
+          "total_tokens": 143422
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "1.5"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 0,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the specifications for the UR3e robot to find its maximum payload.\n\n\n\n\n\n\n\n\n\nLet me first get the templates index and find UR3e assets properly.\n\n\n\n\n\n\n\n\n\nNow let me find UR3e assets:\n\n\n\n\n\n\n\n\n\nI see there's a UR3e type shell. Let me query the type shell for its technical data submodel:\n\n\n\n\n\n\n\n\n\nLet me look at the TechnicalData submodel for payload info:\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis is stored in the `TechnicalData` submodel of the UR3e type shell under the `Payload` property (value: `3`, type: `xs:double`, i.e. 3 kg).",
+        "final_answer": "According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis is stored in the `TechnicalData` submodel of the UR3e type shell under the `Payload` property (value: `3`, type: `xs:double`, i.e. 3 kg).",
+        "duration_s": 3.978,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE toLower(sm.idShort) CONTAINS 'ur3e' OR toLower(sm.idShort) CONTAINS 'technical'\nRETURN sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(sm.idShort) "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\",\"a.globalA"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'UR3e_Type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalData\",\"sm.id\":\"urn:submodel:ur3e:type:technicaldata\",\"templateSemanticId\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"templateSemanticI"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:ur3e:type:technicaldata'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 83408,
+          "completion_tokens": 558,
+          "total_tokens": 83966
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 0,
+            "rules": [
+              "toLower_id_contains",
+              "toLower_id_contains"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 1,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll search the graph schema and templates first, then look for the UR3e asset and its technical data.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow let me find the UR3e asset and its technical data submodel:\n\n\n\n\n\n\n\n\n\nRight — let me first list all AAS to find the UR3e:\n\n\n\n\n\n\n\n\n\nI found UR3e assets. Let me get the type shell's submodels to find the technical data:\n\n\n\n\n\n\n\n\n\nLet me query the TechnicalData submodel for payload-related properties:\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **UR3e's maximum payload is 3 kg**.\n\nThis comes from the `TechnicalData` submodel on the UR3e Type shell, where the `Payload` property has a value of **3** (type `xs:double`, i.e. kilograms for a robot arm).",
+        "final_answer": "According to the graph data, the **UR3e's maximum payload is 3 kg**.\n\nThis comes from the `TechnicalData` submodel on the UR3e Type shell, where the `Payload` property has a value of **3** (type `xs:double`, i.e. kilograms for a robot arm).",
+        "duration_s": 5.357,
+        "tool_calls": [
+          {
+            "name": "get_graph_schema",
+            "args": {},
+            "result_preview": "# AAS Graph Schema\n\nAll nodes also carry the label `GraphNode`.\n\n## Core Nodes\n\n### AssetAdministrationShell\nThe top-level AAS entity.\n- Labels: AssetAdministrationShell, Identifiable, Referable, Refe"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nWHERE aas.idShort CONTAINS 'UR3e' OR aas.idShort CONTAINS 'ur3e' OR a.id.globalAssetId CONTAINS 'UR3e' OR a.id.globalAssetId CONTAINS 'ur3e'\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\",\"a.globalA"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'UR3e_Type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalData\",\"sm.id\":\"urn:submodel:ur3e:type:technicaldata\",\"templateSemanticId\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"templateSemanticI"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:ur3e:type:technicaldata'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 119920,
+          "completion_tokens": 755,
+          "total_tokens": 120675
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 2,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 2,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the specifications for the UR3e robot. Let me first find the relevant AAS and documentation.\n\n\n\n\n\n\n\n\n\nI can see there are UR3e submodels. Let me check the TechnicalData and CapabilityDescription submodels for the UR3e type shell, as well as the nameplate. Let me also check if there's documentation (PDFs) linked.\n\n\n\n\n\n\n\n\n\nThe UR3e type AAS may not have `idShort = 'ur3e'`. Let me find the AAS that manages the UR3e.\n\n\n\n\n\n\n\n\n\nLet me find the UR3e AAS by looking at what manages assets, or by searching more carefully.\n\n\n\n\n\n\n\n\n\nFound it. The UR3e Type AAS is at `urn:aas:ur3e:type`. Let me query its submodels and look for technical data.\n\n\n\n\n\n\n\n\n\nGood. Let me check the TechnicalData submodel and also search for PDFs in the HandoverDocumentation.\n\n\n\n\n\n\n\n\n\nI found the payload information in the TechnicalData submodel.\n\nAccording to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis comes from the TechnicalData submodel of the UR3e type shell, where the `Payload` property is set to `3` (unit is implicitly kg, consistent with Universal Robots specifications).\n\nFor reference, here are the full key specs from the same submodel:\n- **Payload:** 3 kg\n- **Reach:** 500 mm\n- **Repeatability:** 0.03 mm\n- **Number of axes:** 6\n- **Weight:** 11.1 kg\n- **Max TCP speed:** 1.0 m/s\n- **IP rating:** IP54",
+        "final_answer": "I found the payload information in the TechnicalData submodel.\n\nAccording to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis comes from the TechnicalData submodel of the UR3e type shell, where the `Payload` property is set to `3` (unit is implicitly kg, consistent with Universal Robots specifications).\n\nFor reference, here are the full key specs from the same submodel:\n- **Payload:** 3 kg\n- **Reach:** 500 mm\n- **Repeatability:** 0.03 mm\n- **Number of axes:** 6\n- **Weight:** 11.1 kg\n- **Max TCP speed:** 1.0 m/s\n- **IP rating:** IP54",
+        "duration_s": 8.455,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId\nORDER BY sm.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"CapabilityDescription\",\"sm.id\":\"urn:submodel:ur3e:type:capabilitydescription\",\"templateSemanticId\":\"https://admin-shell.io/idta/SubmodelTemplate/CapabilityDescription/1/0\"},{\"s"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE aas.idShort = 'ur3e' AND sm.idShort IN ['TechnicalData', 'CapabilityDescription', 'Nameplate']\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE sm.id CONTAINS 'ur3e'\nRETURN aas.idShort, aas.id, sm.idShort, sm.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {id: 'urn:aas:ur3e:type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalData\",\"sm.id\":\"urn:submodel:ur3e:type:technicaldata\",\"templateSemanticId\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"templateSemanticI"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:ur3e:type:technicaldata'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 158084,
+          "completion_tokens": 1337,
+          "total_tokens": 159421
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 2,
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 3,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll search for the UR3e robot's specifications in the AAS environment.\n\n\n\n\n\n\n\n\n\nLet me take a different approach and first list all AAS shells to find the UR3e.\n\n\n\n\n\n\n\n\n\nFound the UR3e. Let me check the Type shell for technical data submodels.\n\n\n\n\n\n\n\n\n\nLet me look at the TechnicalData submodel for payload information.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis comes from the `TechnicalData` submodel on the UR3e Type AAS, where the `Payload` property is set to `3` (value type: double — the standard unit for UR robots is kilograms).",
+        "final_answer": "According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis comes from the `TechnicalData` submodel on the UR3e Type AAS, where the `Payload` property is set to `3` (value type: double — the standard unit for UR robots is kilograms).",
+        "duration_s": 4.32,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE (aas)-[:HAS_SUBMODEL]->(sm)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/zvei/robot/1/0/TechnicalData'})\n   OR (aas)-[:HAS_SUBMODEL]->(sm)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/usds/robotics-submodel/1/1'})\nRETURN sm.idShort, sm.id\nLIMIT 5",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[],\"total\":0,\"truncated\":false}"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(a:Asset)\nRETURN aas.idShort, aas.id, a.globalAssetId, a.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\",\"a.globalAssetId\":\"urn:asset:mir250:001\",\"a.assetKind\":\"Instance\"},{\"aas.idShort\":\"UR3e_Type\",\"aas.id\":\"urn:aas:ur3e:type\",\"a.globalA"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'UR3e_Type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalData\",\"sm.id\":\"urn:submodel:ur3e:type:technicaldata\",\"templateSemanticId\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"templateSemanticI"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:ur3e:type:technicaldata'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 4,
+        "usage": {
+          "prompt_tokens": 54099,
+          "completion_tokens": 660,
+          "total_tokens": 54759
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 4,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll search for the UR3e robot's maximum payload information in the graph.\n\n\n\n\n\n\n\n\n\nI see there's a `TechnicalData` submodel on the UR3e type shell. Let me query its properties for payload information.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis comes from the `TechnicalData` submodel on the UR3e type shell, where the `Payload` property has a value of **3** (double, presumably kilograms as per UR specifications).",
+        "final_answer": "According to the graph data, the **maximum payload of the UR3e is 3 kg**.\n\nThis comes from the `TechnicalData` submodel on the UR3e type shell, where the `Payload` property has a value of **3** (double, presumably kilograms as per UR specifications).",
+        "duration_s": 2.014,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId\nLIMIT 20"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:8fe59590\",\"templateSemanticId\":null},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: \"urn:submodel:ur3e:type:technicaldata\"})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 2,
+        "usage": {
+          "prompt_tokens": 32142,
+          "completion_tokens": 288,
+          "total_tokens": 32430
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 5,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the specifications for the UR3e robot. Let me first find the relevant AAS and its documentation.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLet me find the UR3e asset first, then look for its technical data.\n\n\n\n\n\n\n\n\n\nFound the UR3e assets. Let me look at the Type shell for the technical data submodel.\n\n\n\n\n\n\n\n\n\nNow let me query the TechnicalData submodel for payload information.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis is confirmed in the TechnicalData submodel of the UR3e Type AAS (`urn:submodel:ur3e:type:technicaldata`), where the `Payload` property has a value of **3** (type `xs:double`, implying kilograms).\n\nAdditional key specs from the same submodel:\n- Reach: 500 mm\n- Repeatability: 0.03 mm\n- Number of axes: 6\n- Weight: 11.1 kg\n- Max TCP speed: 1.0 m/s\n- IP rating: IP54",
+        "final_answer": "According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis is confirmed in the TechnicalData submodel of the UR3e Type AAS (`urn:submodel:ur3e:type:technicaldata`), where the `Payload` property has a value of **3** (type `xs:double`, implying kilograms).\n\nAdditional key specs from the same submodel:\n- Reach: 500 mm\n- Repeatability: 0.03 mm\n- Number of axes: 6\n- Weight: 11.1 kg\n- Max TCP speed: 1.0 m/s\n- IP rating: IP54",
+        "duration_s": 7.019,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nWHERE (sm)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/Submodel/TechnicalData'})\n   OR (sm)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/URCapsSubmodel/1/0'})\n   OR (sm)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://admin-shell.io/TechnicalData/0'})\nRETURN sm.idShort, sm.id, sc.id AS semanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"{neo4j_code: Neo.ClientError.Statement.SyntaxError} {message: Variable `sc` not defined (line 5, column 27 (offset: 395))\\n\\\"RETURN sm.idShort, sm.id, sc.id AS semanticId\\\"\\n                "
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nWHERE aas.idShort CONTAINS 'UR' OR aas.idShort CONTAINS 'ur' OR aas.idShort CONTAINS 'Universal'\nRETURN aas.idShort, aas.id, sm.idShort, sm.id, sc.id AS semanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:MANAGES_ASSET]->(asset:Asset)\nRETURN aas.idShort, aas.id, asset.globalAssetId, asset.assetKind",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"MiR100_001\",\"aas.id\":\"urn:aas:mir100:001\",\"asset.globalAssetId\":\"urn:asset:mir100:001\",\"asset.assetKind\":\"Instance\"},{\"aas.idShort\":\"MiR250_001\",\"aas.id\":\"urn:aas:mir250:001\","
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'UR3e_Type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS semanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalData\",\"sm.id\":\"urn:submodel:ur3e:type:technicaldata\",\"semanticId\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"semanticId\":\"https://admi"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:ur3e:type:technicaldata'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 95526,
+          "completion_tokens": 923,
+          "total_tokens": 96449
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 1,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 6,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the technical data for the UR3e robot to find its maximum payload.\n\n\n\n\n\n\n\n\n\nI see the UR3e has a `TechnicalData` submodel (no standard template semanticId) and a `Nameplate` submodel. Let me query the properties in the TechnicalData submodel to find the payload.\n\n\n\n\n\n\n\n\n\nThe query returned data from all TechnicalData submodels (UR3e, UR20, CRX10iA). I can see three Payload values: 3, 20, and 10 kg. I need to identify which belongs to the UR3e specifically. Let me disambiguate by querying the AAS context for each TechnicalData submodel.\n\n\n\n\n\n\n\n\n\nAccording to the graph data, the **UR3e** has a **maximum payload of 3 kg**.",
+        "final_answer": "According to the graph data, the **UR3e** has a **maximum payload of 3 kg**.",
+        "duration_s": 3.662,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId\nORDER BY sm.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"CapabilityDescription\",\"sm.id\":\"urn:submodel:ur3e:type:capabilitydescription\",\"templateSemanticId\":\"https://admin-shell.io/idta/SubmodelTemplate/CapabilityDescription/1/0\"},{\"s"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: \"TechnicalData\"})\nMATCH (sm)-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType\nORDER BY p.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"AmbientTemperatureMax\",\"p.value\":\"50\",\"p.valueType\":\"xs:double\"},{\"p.idShort\":\"AmbientTemperatureMax\",\"p.value\":\"50\",\"p.valueType\":\"xs:double\"},{\"p.idShort\":\"AmbientTemperatureM"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: \"TechnicalData\"})\nMATCH (sm)-[:HAS_ELEMENT*]->(p:Property {idShort: \"Payload\"})\nRETURN aas.idShort AS aasIdShort, sm.id AS submodelId, p.idShort, p.value, p.valueType\nORDER BY aasIdShort, p.value",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aasIdShort\":\"CRX10iA_Type\",\"submodelId\":\"urn:submodel:crx10ia:type:technicaldata\",\"p.idShort\":\"Payload\",\"p.value\":\"10\",\"p.valueType\":\"xs:double\"},{\"aasIdShort\":\"UR20_Type\",\"submodelId\":\"urn"
+          }
+        ],
+        "tool_call_count": 3,
+        "usage": {
+          "prompt_tokens": 83932,
+          "completion_tokens": 495,
+          "total_tokens": 84427
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 7,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll search for information about the UR3e robot's maximum payload. Let me first find the relevant AAS shells for this robot.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow let me find the UR3e robot in the graph. I'll look for it by searching for AAS shells that might be related to UR robots.\n\n\n\n\n\n\n\n\n\nRight, I can't use CONTAINS on idShort. Let me list all AAS shells to find the UR3e.\n\n\n\n\n\n\n\n\n\nFound it. Let me look at the UR3e_Type shell for technical data, since specifications are typically on the type shell.\n\n\n\n\n\n\n\n\n\nLet me check the TechnicalData submodel for payload information.\n\n\n\n\n\n\n\n\n\nFound it. According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis information comes from the `TechnicalData` submodel on the UR3e type shell (`UR3e_Type`), where the `Payload` property is stored with a value of `3` (unit is kg, consistent with UR specification conventions).",
+        "final_answer": "Found it. According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis information comes from the `TechnicalData` submodel on the UR3e type shell (`UR3e_Type`), where the `Payload` property is stored with a value of `3` (unit is kg, consistent with UR specification conventions).",
+        "duration_s": 4.698,
+        "tool_calls": [
+          {
+            "name": "get_manual_page",
+            "args": {
+              "page": "cypher"
+            },
+            "result_preview": "# Cypher patterns and anti-patterns\n\n**Pre-condition.** Call `get_graph_schema()` (relationship labels) and\n`get_templates_index()` (verbatim semanticIds) before composing any\nCypher. Invented labels "
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell) WHERE aas.idShort CONTAINS 'UR3' OR aas.idShort CONTAINS 'ur3' OR aas.idShort CONTAINS 'UR3e' OR aas.idShort CONTAINS 'ur3e' RETURN aas.idShort, aas.id",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell) RETURN aas.idShort, aas.id ORDER BY aas.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"aas.idShort\":\"CRX10iA_001\",\"aas.id\":\"urn:aas:crx10ia:001\"},{\"aas.idShort\":\"CRX10iA_Type\",\"aas.id\":\"urn:aas:crx10ia:type\"},{\"aas.idShort\":\"Hall3\",\"aas.id\":\"urn:aas:hall3\"},{\"aas.idShort\":\"Ha"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell {idShort: 'UR3e_Type'})-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"TechnicalData\",\"sm.id\":\"urn:submodel:ur3e:type:technicaldata\",\"templateSemanticId\":null},{\"sm.idShort\":\"Nameplate\",\"sm.id\":\"urn:submodel:ur3e:type:nameplate\",\"templateSemanticI"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: 'urn:submodel:ur3e:type:technicaldata'})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 6,
+        "usage": {
+          "prompt_tokens": 102372,
+          "completion_tokens": 634,
+          "total_tokens": 103006
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [
+          {
+            "tool_call_index": 2,
+            "rules": [
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex",
+              "idShort_contains_or_regex"
+            ],
+            "self_corrected": true
+          }
+        ],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 8,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll search for the UR3e robot's maximum payload information in the graph.\n\n\n\n\n\n\n\n\n\nI see a `TechnicalData` submodel for the UR3e type shell. Let me query its properties.\n\n\n\n\n\n\n\n\n\nThe data is clear:\n\n**According to the TechnicalData submodel in the UR3e type shell, the maximum payload is 3 kg.**\n\nFor reference, here are the key specs from the same submodel:\n- **Payload:** 3 kg\n- **Reach:** 500 mm\n- **Repeatability:** 0.03 mm\n- **Weight:** 11.1 kg\n- **Max TCP Speed:** 1.0 m/s\n- **Axes:** 6\n- **IP Rating:** IP54",
+        "final_answer": "The data is clear:\n\n**According to the TechnicalData submodel in the UR3e type shell, the maximum payload is 3 kg.**\n\nFor reference, here are the key specs from the same submodel:\n- **Payload:** 3 kg\n- **Reach:** 500 mm\n- **Repeatability:** 0.03 mm\n- **Weight:** 11.1 kg\n- **Max TCP Speed:** 1.0 m/s\n- **Axes:** 6\n- **IP Rating:** IP54",
+        "duration_s": 2.799,
+        "tool_calls": [
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS semanticId\nLIMIT 50"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:8fe59590\",\"semanticId\":null},{\"sm.idShort\":\"ServiceRequestNotification\",\"sm.id\":\"urn:aas-hybrid-mcp:srn:001:5673"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (sm:Submodel {id: \"urn:submodel:ur3e:type:technicaldata\"})-[:HAS_ELEMENT*]->(p:Property)\nRETURN p.idShort, p.value, p.valueType"
+            },
+            "result_preview": "{\"rows\":[{\"p.idShort\":\"CollaborativeOperation\",\"p.value\":\"true\",\"p.valueType\":\"xs:boolean\"},{\"p.idShort\":\"SafetyStandard\",\"p.value\":\"EN ISO 13849-1 PLd Cat 3; EN ISO 10218-1\",\"p.valueType\":\"xs:string\""
+          }
+        ],
+        "tool_call_count": 2,
+        "usage": {
+          "prompt_tokens": 34369,
+          "completion_tokens": 433,
+          "total_tokens": 34802
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    },
+    {
+      "case": "ur3e_payload",
+      "query": "What is the maximum payload of the UR3e?",
+      "repetition": 9,
+      "result": {
+        "query": "What is the maximum payload of the UR3e?",
+        "variant": "react",
+        "model_id": "aas-agent:react",
+        "response": "I'll look up the technical specifications for the UR3e robot to find its maximum payload.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNow let me find the UR3e robot in the graph and look for its technical data.\n\n\n\n\n\n\n\n\n\nI can see UR3e has a `TechnicalData` submodel and a `Nameplate` submodel. Let me query the UR3e's technical data and nameplate for payload information.\n\n\n\n\n\n\n\n\n\nLet me fix the Cypher syntax — the WHERE needs to be before the OPTIONAL MATCH or restructured.\n\n\n\n\n\n\n\n\n\nFound it. According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis is stored in the UR3e type shell's `TechnicalData` submodel, in the `Payload` property (value: `3`, type: `xs:double`).\n\nFor comparison, the other robots in the environment have:\n- **UR20**: 20 kg payload\n- **CRX10iA**: 10 kg payload",
+        "final_answer": "Found it. According to the graph data, the **UR3e has a maximum payload of 3 kg**.\n\nThis is stored in the UR3e type shell's `TechnicalData` submodel, in the `Payload` property (value: `3`, type: `xs:double`).\n\nFor comparison, the other robots in the environment have:\n- **UR20**: 20 kg payload\n- **CRX10iA**: 10 kg payload",
+        "duration_s": 5.116,
+        "tool_calls": [
+          {
+            "name": "get_manual_index",
+            "args": {},
+            "result_preview": "# AAS Hybrid MCP — Operator Manual\n\nYou are talking to a hybrid graph + vector MCP server for AAS data.\nThis page indexes the rest of the manual.\n\n## Sub-pages — call get_manual_page(page=...) on dema"
+          },
+          {
+            "name": "get_templates_index",
+            "args": {},
+            "result_preview": "[\n  {\n    \"name\": \"Artificial Intelligence Dataset\",\n    \"version\": \"1.0.1\",\n    \"idShort\": \"AIDataset\",\n    \"semanticId\": \"https://admin-shell.io/idta/SubmodelTemplate/AIDataset/1/0\",\n    \"descriptio"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)\nOPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.idShort, sm.id, sc.id AS templateSemanticId\nORDER BY sm.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"sm.idShort\":\"CapabilityDescription\",\"sm.id\":\"urn:submodel:ur3e:type:capabilitydescription\",\"templateSemanticId\":\"https://admin-shell.io/idta/SubmodelTemplate/CapabilityDescription/1/0\"},{\"s"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: \"TechnicalData\"})\nMATCH (sm)-[:HAS_ELEMENT*]->(el:SubmodelElement)\nOPTIONAL MATCH (el)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.id AS submodelId, el.idShort, el.category, el.modelType, sc.id AS semanticId, el.value AS propValue\nWHERE el:Property OR el:SubmodelElementCollection OR el:SubmodelElementList\nORDER BY el.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"error\":\"{neo4j_code: Neo.ClientError.Statement.SyntaxError} {message: Invalid input 'WHERE': expected 'FOREACH', ',', 'ORDER BY', 'CALL', 'CREATE', 'LOAD CSV', 'DELETE', 'DETACH', 'FINISH', 'INSERT'"
+          },
+          {
+            "name": "query_aas_graph",
+            "args": {
+              "cypher": "MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel {idShort: \"TechnicalData\"})\nMATCH (sm)-[:HAS_ELEMENT*0..]->(el:SubmodelElement)\nWHERE el:Property\nOPTIONAL MATCH (el)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\nRETURN sm.id AS submodelId, el.idShort, el.value AS value, el.valueType AS valueType, sc.id AS semanticId\nORDER BY el.idShort",
+              "params": "{}"
+            },
+            "result_preview": "{\"rows\":[{\"submodelId\":\"urn:submodel:ur3e:type:technicaldata\",\"el.idShort\":\"AmbientTemperatureMax\",\"value\":\"50\",\"valueType\":\"xs:double\",\"semanticId\":\"https://admin-shell.io/dfki/aas-hybrid-mcp/Technic"
+          }
+        ],
+        "tool_call_count": 5,
+        "usage": {
+          "prompt_tokens": 127022,
+          "completion_tokens": 671,
+          "total_tokens": 127693
+        },
+        "error": null
+      },
+      "evaluation": {
+        "score": 1.0,
+        "passed": true,
+        "regex_score": 1.0,
+        "keyword_hits": [
+          "3"
+        ],
+        "keyword_misses": [],
+        "forbidden_hits": [],
+        "pattern_matched": true,
+        "cypher_violations": [],
+        "tool_violations": [],
+        "validator_rejections": [],
+        "write_path": null,
+        "notes": []
+      }
+    }
+  ],
+  "summary_by_variant": {
+    "react": {
+      "runs": 20,
+      "pass_pct": 100.0,
+      "avg_score": 1.0,
+      "avg_dur": 5.214130962139461,
+      "total_validator_rejections": 10,
+      "self_corrected_pct": 100.0
+    }
+  }
+}
