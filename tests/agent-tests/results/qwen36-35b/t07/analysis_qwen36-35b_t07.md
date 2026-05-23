@@ -1,19 +1,19 @@
 # Results analysis: qwen36-35b
 
-Generated: 2026-05-21 · 7 test suites · 230 runs
+Generated: 2026-05-23 · 7 test suites · 230 runs
 
 ## Per test suite
 
 | Test suite | N | Correct | Incorrect | Manuals first | Antipattern hit | All good |
 |---|--:|--:|--:|--:|--:|--:|
-| anti_pattern_N10 | 20 | 20 (100%) | 0 (0%) | 6 (30%) | 13 (65%) | 2 (10%) |
-| asset_specs_N10 | 20 | 19 (95%) | 1 (5%) | 8 (40%) | 11 (55%) | 3 (15%) |
-| bench_b_N10 | 60 | 46 (77%) | 14 (23%) | 53 (88%) | 29 (48%) | 28 (47%) |
-| containment_hall4_N10 | 50 | 44 (88%) | 6 (12%) | 29 (58%) | 29 (58%) | 13 (26%) |
-| srn_ablation_variant_a_N10 | 30 | 25 (83%) | 5 (17%) | 8 (27%) | 14 (47%) | 6 (20%) |
-| srn_autonomous_N10 | 30 | 25 (83%) | 5 (17%) | 4 (13%) | 14 (47%) | 3 (10%) |
-| srn_bypass_N10 | 20 | 14 (70%) | 6 (30%) | 3 (15%) | 14 (70%) | 2 (10%) |
-| **Total** | **230** | **193 (84%)** | **37 (16%)** | **111 (48%)** | **124 (54%)** | **57 (25%)** |
+| anti_pattern_N10_T07 | 20 | 20 (100%) | 0 (0%) | 9 (45%) | 13 (65%) | 4 (20%) |
+| asset_specs_N10_T07 | 20 | 20 (100%) | 0 (0%) | 9 (45%) | 9 (45%) | 7 (35%) |
+| bench_b_N10_T07 | 60 | 52 (87%) | 8 (13%) | 39 (65%) | 17 (28%) | 30 (50%) |
+| containment_hall4_N10_T07 | 50 | 48 (96%) | 2 (4%) | 27 (54%) | 20 (40%) | 21 (42%) |
+| srn_ablation_variant_a_N10_T07 | 30 | 28 (93%) | 2 (7%) | 4 (13%) | 9 (30%) | 4 (13%) |
+| srn_autonomous_N10_T07 | 30 | 11 (37%) | 19 (63%) | 4 (13%) | 8 (27%) | 2 (7%) |
+| srn_bypass_N10_T07 | 20 | 15 (75%) | 5 (25%) | 3 (15%) | 10 (50%) | 1 (5%) |
+| **Total** | **230** | **194 (84%)** | **36 (16%)** | **95 (41%)** | **86 (37%)** | **69 (30%)** |
 
 ## Correct × Manuals first
 
@@ -21,8 +21,8 @@ Did reading the agent manuals before the first graph query correlate with a corr
 
 | | **read_manuals_first=True** | **read_manuals_first=False** | Total |
 |---|--:|--:|--:|
-| **correct=True** | 95 (49%) | 98 (51%) | 193 |
-| **correct=False** | 16 (43%) | 21 (57%) | 37 |
+| **correct=True** | 88 (45%) | 106 (55%) | 194 |
+| **correct=False** | 7 (19%) | 29 (81%) | 36 |
 
 ## Correct × Antipattern hit
 
@@ -30,8 +30,8 @@ Did triggering a validator rejection (e.g. `idShort_contains` / `toLower_id_cont
 
 | | **had_antipattern=True** | **had_antipattern=False** | Total |
 |---|--:|--:|--:|
-| **correct=True** | 96 (50%) | 97 (50%) | 193 |
-| **correct=False** | 28 (76%) | 9 (24%) | 37 |
+| **correct=True** | 70 (36%) | 124 (64%) | 194 |
+| **correct=False** | 16 (44%) | 20 (56%) | 36 |
 
 ## Duration (median seconds per suite)
 
@@ -39,10 +39,10 @@ Fairest cross-model comparison: **Median (all)** — same suite = same questions
 
 | Suite | N | Median (all) | Median (correct) | Median (wrong) |
 |---|--:|--:|--:|--:|
-| anti_pattern_N10 | 20 | 4.7s | 4.7s | – |
-| asset_specs_N10 | 20 | 4.4s | 4.5s | 3.8s |
-| bench_b_N10 | 60 | 18.3s | 12.7s | 53.1s |
-| containment_hall4_N10 | 50 | 14.9s | 16.0s | 11.6s |
-| srn_ablation_variant_a_N10 | 30 | 8.7s | 8.4s | 26.8s |
-| srn_autonomous_N10 | 30 | 9.4s | 10.8s | 7.3s |
-| srn_bypass_N10 | 20 | 7.0s | 7.7s | 6.7s |
+| anti_pattern_N10_T07 | 20 | 5.1s | 5.1s | – |
+| asset_specs_N10_T07 | 20 | 5.1s | 5.1s | – |
+| bench_b_N10_T07 | 60 | 14.3s | 14.3s | 13.5s |
+| containment_hall4_N10_T07 | 50 | 14.8s | 14.8s | 15.1s |
+| srn_ablation_variant_a_N10_T07 | 30 | 8.3s | 8.3s | 12.8s |
+| srn_autonomous_N10_T07 | 30 | 9.7s | 8.6s | 12.3s |
+| srn_bypass_N10_T07 | 20 | 7.0s | 7.6s | 6.5s |

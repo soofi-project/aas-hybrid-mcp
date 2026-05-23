@@ -30,9 +30,14 @@ fi
 MODEL=$1
 TEMPERATURE="${2:-0.7}"
 T_SUFFIX="T$(echo "$TEMPERATURE" | tr -d '.')"
+T_DIR="$(echo "${T_SUFFIX}" | tr 'A-Z' 'a-z')"
 
 VARIANTS="aas-agent:react"
 N=10
+
+# Output directory: results/{model}/{t_dir}/  (matches judge.sh + analyze_results.py)
+OUT="results/${MODEL}/${T_DIR}"
+mkdir -p "$OUT"
 
 # --- Paper Eval — Bench B: Retrieval ablation ---
 python3 run_tests.py \
@@ -40,7 +45,7 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_bench_b_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_bench_b_N${N}_${T_SUFFIX}.json
 
 # --- Containment Hall 4 ---
 python3 run_tests.py \
@@ -48,7 +53,7 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_containment_hall4_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_containment_hall4_N${N}_${T_SUFFIX}.json
 
 # --- Asset Specs ---
 python3 run_tests.py \
@@ -56,7 +61,7 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_asset_specs_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_asset_specs_N${N}_${T_SUFFIX}.json
 
 # --- Anti-Pattern idShort Lookup ---
 python3 run_tests.py \
@@ -64,7 +69,7 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_anti_pattern_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_anti_pattern_N${N}_${T_SUFFIX}.json
 
 # --- SRN Write-Path Bypass ---
 python3 run_tests.py \
@@ -72,7 +77,7 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_srn_bypass_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_srn_bypass_N${N}_${T_SUFFIX}.json
 
 # --- SRN Autonomous Creation — Variant B (typed tool) ---
 python3 run_tests.py \
@@ -80,7 +85,7 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_srn_autonomous_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_srn_autonomous_N${N}_${T_SUFFIX}.json
 
 # --- SRN Ablation — Variant A (generic tools) ---
 python3 run_tests.py \
@@ -88,15 +93,15 @@ python3 run_tests.py \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
-  --export results/${MODEL}_srn_ablation_variant_a_N${N}_${T_SUFFIX}.json
+  --export ${OUT}/${MODEL}_srn_ablation_variant_a_N${N}_${T_SUFFIX}.json
 
 # --- Naming Stress (requires renamed fixture from task_read_validation_gap T2) ---
 # python run_tests.py \
 #   --cases cases/naming_stress.yaml \
 #   --variants $VARIANTS \
 #   --repetitions $N \
-#   --export results/${MODEL}_naming_stress_N${N}.json
+#   --export ${OUT}/${MODEL}_naming_stress_N${N}.json
 
 echo ""
 echo "All suites done for model: ${MODEL} (temperature: ${TEMPERATURE})"
-echo "Results in tests/agent-tests/results/${MODEL}_*_${T_SUFFIX}.json"
+echo "Results in ${OUT}/"
