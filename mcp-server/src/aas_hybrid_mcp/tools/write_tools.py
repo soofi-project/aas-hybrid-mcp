@@ -1,11 +1,8 @@
 """MCP write tools — create, replace, and delete AAS objects via BaSyx REST API."""
 
-import datetime
 import io
 import json
 import logging
-import os
-import uuid
 
 from fastmcp import FastMCP
 
@@ -17,12 +14,6 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Validation helpers
 # ---------------------------------------------------------------------------
-
-_VALID_PRIORITIES = {"High", "Medium", "Low"}
-_VALID_SERVICE_TYPES = {"CorrectiveMaintenance", "PreventiveMaintenance", "Inspection", "Return"}
-
-# Tri-state: "both" (default) | "generic" (Variant A — no typed tools) | "typed" (Variant B — no generic tools)
-_WRITE_TOOLS_MODE = os.environ.get("WRITE_TOOLS_MODE", "both")
 
 _VALID_MODEL_TYPES = {
     "AssetAdministrationShell", "Submodel",
@@ -152,113 +143,6 @@ def _validate_element(element_dict: dict) -> str | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# SRN builder
-# ---------------------------------------------------------------------------
-
-def _build_srn_submodel(
-    aas_id: str,
-    short_text: str,
-    service_type: str,
-    priority: str,
-    long_text: str | None,
-    error_code: str | None,
-) -> dict:
-    """Build an IDTA 02010-1-0 Service Request Notification submodel dict."""
-    aas_id_tag = aas_id.split(":")[-1][:40]
-    sm_id = f"urn:aas-hybrid-mcp:srn:{aas_id_tag}:{uuid.uuid4().hex[:8]}"
-
-    reported_by: dict = {
-        "modelType": "SubmodelElementCollection",
-        "idShort": "ReportedBy",
-        "value": [
-            {
-                "modelType": "Entity",
-                "idShort": "SenderSystem",
-                "entityType": "CoManagedEntity",
-            },
-            {
-                "modelType": "SubmodelElementCollection",
-                "idShort": "ContactInformation",
-                "value": [
-                    {
-                        "modelType": "Property",
-                        "idShort": "RoleOfContactPerson",
-                        "valueType": "xs:string",
-                        "value": "TechnicalContact",
-                    }
-                ],
-            },
-        ],
-    }
-
-    related_asset: dict = {
-        "modelType": "Entity",
-        "idShort": "RelatedAsset",
-        "entityType": "CoManagedEntity",
-        "statements": [
-            {
-                "modelType": "ReferenceElement",
-                "idShort": "AssetRef",
-                "value": {
-                    "type": "ModelReference",
-                    "keys": [{"type": "AssetAdministrationShell", "value": aas_id}],
-                },
-            }
-        ],
-    }
-
-    srn_value: list[dict] = [
-        reported_by,
-        {"modelType": "Property", "idShort": "Status", "valueType": "xs:string", "value": "Open"},
-        {"modelType": "Property", "idShort": "Priority", "valueType": "xs:string", "value": priority},
-        related_asset,
-        {
-            "modelType": "MultiLanguageProperty",
-            "idShort": "ShortText",
-            "value": [{"language": "en", "text": short_text}],
-        },
-        {"modelType": "Property", "idShort": "ServiceType", "valueType": "xs:string", "value": service_type},
-    ]
-
-    if long_text or error_code:
-        detail_value: list[dict] = []
-        if long_text:
-            detail_value.append({
-                "modelType": "MultiLanguageProperty",
-                "idShort": "LongText",
-                "value": [{"language": "en", "text": long_text}],
-            })
-        if error_code:
-            detail_value.append({
-                "modelType": "Property",
-                "idShort": "ErrorCode",
-                "valueType": "xs:string",
-                "value": error_code,
-            })
-        srn_value.append({
-            "modelType": "SubmodelElementCollection",
-            "idShort": "DetailedInformation",
-            "value": detail_value,
-        })
-
-    return {
-        "modelType": "Submodel",
-        "id": sm_id,
-        "idShort": "ServiceRequestNotification",
-        "semanticId": {
-            "type": "ModelReference",
-            "keys": [{"type": "Submodel", "value": "0173-1#01-AHX443#001"}],
-        },
-        "submodelElements": [
-            {
-                "modelType": "SubmodelElementCollection",
-                "idShort": "ServiceRequestNotification",
-                "value": srn_value,
-            }
-        ],
-    }
-
 
 # ---------------------------------------------------------------------------
 # Tool registration
@@ -267,124 +151,94 @@ def _build_srn_submodel(
 def register(mcp: FastMCP) -> None:
     """Register AAS write tools on the MCP server."""
 
-    if _WRITE_TOOLS_MODE in ("generic", "both"):
-        @mcp.tool(description=load_description("put_aas"))
-        async def put_aas(aas_json: str) -> dict:
-            err = _check_nonempty(aas_json=aas_json)
-            if err:
-                raise ValueError(err)
+    @mcp.tool(description=load_description("put_aas"))
+    async def put_aas(aas_json: str) -> dict:
+        err = _check_nonempty(aas_json=aas_json)
+        if err:
+            raise ValueError(err)
 
-            try:
-                aas_dict = json.loads(aas_json)
-            except json.JSONDecodeError as exc:
-                raise ValueError(f"Invalid JSON: {exc}") from exc
+        try:
+            aas_dict = json.loads(aas_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON: {exc}") from exc
 
-            err = _validate_aas(aas_dict)
-            if err:
-                raise ValueError(f"AAS validation failed: {err}")
+        err = _validate_aas(aas_dict)
+        if err:
+            raise ValueError(f"AAS validation failed: {err}")
 
-            return await basyx_client.put_aas(aas_dict)
+        return await basyx_client.put_aas(aas_dict)
 
-        @mcp.tool(description=load_description("delete_aas"))
-        async def delete_aas(aas_id: str) -> dict:
-            err = _check_nonempty(aas_id=aas_id)
-            if err:
-                raise ValueError(err)
-            return await basyx_client.delete_aas(aas_id)
+    @mcp.tool(description=load_description("delete_aas"))
+    async def delete_aas(aas_id: str) -> dict:
+        err = _check_nonempty(aas_id=aas_id)
+        if err:
+            raise ValueError(err)
+        return await basyx_client.delete_aas(aas_id)
 
-        @mcp.tool(description=load_description("put_submodel"))
-        async def put_submodel(aas_id: str, submodel_json: str) -> dict:
-            err = _check_nonempty(aas_id=aas_id, submodel_json=submodel_json)
-            if err:
-                raise ValueError(err)
+    @mcp.tool(description=load_description("put_submodel"))
+    async def put_submodel(aas_id: str, submodel_json: str) -> dict:
+        err = _check_nonempty(aas_id=aas_id, submodel_json=submodel_json)
+        if err:
+            raise ValueError(err)
 
-            try:
-                submodel_dict = json.loads(submodel_json)
-            except json.JSONDecodeError as exc:
-                raise ValueError(f"Invalid JSON: {exc}") from exc
+        try:
+            submodel_dict = json.loads(submodel_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON: {exc}") from exc
 
-            # Stage 1: metamodel structure (SDK strict deserialisation).
-            sdk_err, submodel_obj = _validate_submodel(submodel_dict)
-            if sdk_err:
-                raise ValueError(f"Submodel validation failed: {sdk_err}")
+        # Stage 1: metamodel structure (SDK strict deserialisation).
+        sdk_err, submodel_obj = _validate_submodel(submodel_dict)
+        if sdk_err:
+            raise ValueError(f"Submodel validation failed: {sdk_err}")
 
-            # Stage 2: IDTA template conformance (generated class instantiation).
-            if submodel_obj is not None:
-                tpl_err = template_validator.validate_conformance(submodel_obj)
-                if tpl_err:
-                    raise ValueError(tpl_err)
+        # Stage 2: IDTA template conformance (generated class instantiation).
+        if submodel_obj is not None:
+            tpl_err = template_validator.validate_conformance(submodel_obj)
+            if tpl_err:
+                raise ValueError(tpl_err)
 
-            return await basyx_client.put_submodel(aas_id, submodel_dict)
+        return await basyx_client.put_submodel(aas_id, submodel_dict)
 
-        @mcp.tool(description=load_description("delete_submodel"))
-        async def delete_submodel(aas_id: str, submodel_id: str) -> dict:
-            err = _check_nonempty(aas_id=aas_id, submodel_id=submodel_id)
-            if err:
-                raise ValueError(err)
-            return await basyx_client.delete_submodel(aas_id, submodel_id)
+    @mcp.tool(description=load_description("delete_submodel"))
+    async def delete_submodel(aas_id: str, submodel_id: str) -> dict:
+        err = _check_nonempty(aas_id=aas_id, submodel_id=submodel_id)
+        if err:
+            raise ValueError(err)
+        return await basyx_client.delete_submodel(aas_id, submodel_id)
 
-        @mcp.tool(description=load_description("put_submodel_element"))
-        async def put_submodel_element(
-            submodel_id: str, id_short_path: str, element_json: str
-        ) -> dict:
-            err = _check_nonempty(
-                submodel_id=submodel_id, id_short_path=id_short_path, element_json=element_json
-            )
-            if err:
-                raise ValueError(err)
+    @mcp.tool(description=load_description("put_submodel_element"))
+    async def put_submodel_element(
+        submodel_id: str, id_short_path: str, element_json: str
+    ) -> dict:
+        err = _check_nonempty(
+            submodel_id=submodel_id, id_short_path=id_short_path, element_json=element_json
+        )
+        if err:
+            raise ValueError(err)
 
-            existing = await basyx_client.get_submodel(submodel_id)
-            if existing is None:
-                raise ValueError(
-                    f"Submodel '{submodel_id}' does not exist. "
-                    "Use put_submodel to create a new submodel first."
-                )
-
-            try:
-                element_dict = json.loads(element_json)
-            except json.JSONDecodeError as exc:
-                raise ValueError(f"Invalid JSON: {exc}") from exc
-
-            err = _validate_element(element_dict)
-            if err:
-                raise ValueError(f"SubmodelElement validation failed: {err}")
-
-            return await basyx_client.put_submodel_element(
-                submodel_id, id_short_path, element_dict
+        existing = await basyx_client.get_submodel(submodel_id)
+        if existing is None:
+            raise ValueError(
+                f"Submodel '{submodel_id}' does not exist. "
+                "Use put_submodel to create a new submodel first."
             )
 
-        @mcp.tool(description=load_description("delete_submodel_element"))
-        async def delete_submodel_element(submodel_id: str, id_short_path: str) -> dict:
-            err = _check_nonempty(submodel_id=submodel_id, id_short_path=id_short_path)
-            if err:
-                raise ValueError(err)
-            return await basyx_client.delete_submodel_element(submodel_id, id_short_path)
+        try:
+            element_dict = json.loads(element_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON: {exc}") from exc
 
-    if _WRITE_TOOLS_MODE in ("typed", "both"):
-        @mcp.tool(description=load_description("create_service_request_notification"))
-        async def create_service_request_notification(
-            aas_id: str,
-            short_text: str,
-            service_type: str,
-            priority: str,
-            long_text: str | None = None,
-            error_code: str | None = None,
-        ) -> dict:
-            err = _check_nonempty(aas_id=aas_id, short_text=short_text, service_type=service_type, priority=priority)
-            if err:
-                raise ValueError(err)
+        err = _validate_element(element_dict)
+        if err:
+            raise ValueError(f"SubmodelElement validation failed: {err}")
 
-            if priority not in _VALID_PRIORITIES:
-                raise ValueError(f"priority must be one of {sorted(_VALID_PRIORITIES)}, got {priority!r}")
-            if service_type not in _VALID_SERVICE_TYPES:
-                raise ValueError(
-                    f"service_type must be one of {sorted(_VALID_SERVICE_TYPES)}, got {service_type!r}"
-                )
+        return await basyx_client.put_submodel_element(
+            submodel_id, id_short_path, element_dict
+        )
 
-            srn_dict = _build_srn_submodel(aas_id, short_text, service_type, priority, long_text, error_code)
-
-            sdk_err, _ = _validate_submodel(srn_dict)
-            if sdk_err:
-                raise RuntimeError(f"SRN construction error (bug): {sdk_err}")
-
-            return await basyx_client.put_submodel(aas_id, srn_dict)
+    @mcp.tool(description=load_description("delete_submodel_element"))
+    async def delete_submodel_element(submodel_id: str, id_short_path: str) -> dict:
+        err = _check_nonempty(submodel_id=submodel_id, id_short_path=id_short_path)
+        if err:
+            raise ValueError(err)
+        return await basyx_client.delete_submodel_element(submodel_id, id_short_path)

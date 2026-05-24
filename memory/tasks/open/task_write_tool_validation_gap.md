@@ -57,7 +57,7 @@ Zwei strukturelle Garantien implementiert (2026-05-18):
 
 ### T4 – Eval-Query-Design für Paper-Methodologie ✅
 
-Die Testfälle in `tests/agent-tests/cases/srn_bypass.yaml` sind bewusst so konstruiert:
+Die Testfälle sind jetzt in `tests/agent-tests/cases/srn_autonomous.yaml` (konsolidiert, ehemals `srn_bypass.yaml`). Sie sind bewusst so konstruiert:
 
 **Kein direkter AAS-ID im Query** — Werker kennen IDs nicht, sie sagen „der Transportroboter in Halle 4" oder geben die Seriennummer (`MIR100-2020-001`) an. Der Agent muss erst per Spatial-Disambiguation oder Seriennummern-Lookup den Asset auflösen (zusätzliche Tool-Calls → mehr Kontext-Druck → Bypass wahrscheinlicher).
 

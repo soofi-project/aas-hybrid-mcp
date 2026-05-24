@@ -52,7 +52,15 @@ _client: httpx.Client | None = None
 def _get_client() -> httpx.Client:
     global _client
     if _client is None:
-        _client = httpx.Client(base_url=QUERY_REWRITE_URL, timeout=QUERY_REWRITE_TIMEOUT)
+        headers = {}
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        _client = httpx.Client(
+            base_url=QUERY_REWRITE_URL,
+            timeout=QUERY_REWRITE_TIMEOUT,
+            headers=headers,
+        )
     return _client
 
 

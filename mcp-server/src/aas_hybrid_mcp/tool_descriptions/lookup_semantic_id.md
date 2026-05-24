@@ -1,6 +1,6 @@
 **Before calling: obtain the semanticId from a `query_aas_graph` result** — look for the `SemanticConcept.id` value on `HAS_SEMANTIC_ID` / `HAS_SUPPLEMENTAL_SEMANTIC_ID` relationships. Don't paste raw IRDIs from memory.
 
-Resolve a semanticId (IRDI like `0173-1#02-ABL884#002`, or IRI like
+Resolve a semanticId (IRDI like `0173-1#XX-ABC123#001`, or IRI like
 `https://admin-shell.io/...`) to its IEC 61360 ConceptDescription content:
 preferredName, shortName, definition, dataType, and unit — multilingual
 where available.

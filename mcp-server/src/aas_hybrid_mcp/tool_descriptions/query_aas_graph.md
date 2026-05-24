@@ -8,7 +8,7 @@ Do not skip these calls. Guessing Cypher patterns from memory produces anti-patt
 **Anti-pattern — never use CONTAINS or =~ on idShort or id for asset lookup:**
 ```
 -- WRONG (breaks on any non-trivial naming):
-WHERE toLower(aas.idShort) CONTAINS 'mir100'
+WHERE toLower(aas.idShort) CONTAINS 'my_robot'
 -- CORRECT: exact match as entry point, then traverse by semanticId
 WHERE aas.idShort = $idShort
 ```

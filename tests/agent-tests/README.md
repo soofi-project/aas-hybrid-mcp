@@ -25,7 +25,7 @@ Two phases — agent runs and judge are separate scripts.
 # 1 — Switch model (repo root)
 ./eval-model.sh qwen35-27b
 
-# 2 — Run all 7 suites for a model (from tests/agent-tests/)
+# 2 — Run all 5 suites for a model (from tests/agent-tests/)
 
 # Blocking (foreground):
 cd tests/agent-tests
@@ -45,7 +45,7 @@ tail -f logs/run_all_qwen35-27b_T07.out
 # Abort:
 kill <PID>
 
-# 3 — Grade all 7 suites (skips already-judged files)
+# 3 — Grade all 5 suites (skips already-judged files)
 ./judge.sh qwen35-27b T07
 
 # 4 — Analyse results
@@ -95,9 +95,7 @@ results/
 | `containment_hall4` | Containment checks Hall 4 |
 | `asset_specs` | Asset specification queries |
 | `anti_pattern` | Anti-pattern detection (validator gates) |
-| `srn_autonomous` | SRN autonomous write-path |
-| `srn_bypass` | SRN bypass attempts |
-| `srn_ablation_variant_a` | SRN ablation variant A |
+| `srn_autonomous` | SRN write-path: atomic put_submodel, bypass detection, empty-submodel bypass |
 
 ## What the judge measures
 
@@ -140,8 +138,8 @@ config.yaml         # defaults (agent URL, variants)
 run_tests.py        # Phase 1: run agents, save raw results
 judge.py            # Phase 2: strict bool judge against ground_truth
 analyze_results.py  # Phase 3: Markdown analysis per model
-run_all.sh          # Run all 7 suites for one model in one go
-judge.sh            # Grade all 7 suites for one model (skips already-judged files)
+run_all.sh          # Run all 5 suites for one model in one go
+judge.sh            # Grade all 5 suites for one model (skips already-judged files)
 ```
 
 ## Adding cases

@@ -71,29 +71,13 @@ python3 run_tests.py \
   --temperature $TEMPERATURE \
   --export ${OUT}/${MODEL}_anti_pattern_N${N}_${T_SUFFIX}.json
 
-# --- SRN Write-Path Bypass ---
-python3 run_tests.py \
-  --cases cases/srn_bypass.yaml \
-  --variants $VARIANTS \
-  --repetitions $N \
-  --temperature $TEMPERATURE \
-  --export ${OUT}/${MODEL}_srn_bypass_N${N}_${T_SUFFIX}.json
-
-# --- SRN Autonomous Creation — Variant B (typed tool) ---
+# --- SRN Autonomous Creation (generic put_submodel path) ---
 python3 run_tests.py \
   --cases cases/srn_autonomous.yaml \
   --variants $VARIANTS \
   --repetitions $N \
   --temperature $TEMPERATURE \
   --export ${OUT}/${MODEL}_srn_autonomous_N${N}_${T_SUFFIX}.json
-
-# --- SRN Ablation — Variant A (generic tools) ---
-python3 run_tests.py \
-  --cases cases/srn_ablation_variant_a.yaml \
-  --variants $VARIANTS \
-  --repetitions $N \
-  --temperature $TEMPERATURE \
-  --export ${OUT}/${MODEL}_srn_ablation_variant_a_N${N}_${T_SUFFIX}.json
 
 # --- Naming Stress (requires renamed fixture from task_read_validation_gap T2) ---
 # python run_tests.py \

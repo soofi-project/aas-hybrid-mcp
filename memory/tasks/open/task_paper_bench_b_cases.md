@@ -73,41 +73,23 @@ Korrekt: Lookup via DERIVED_FROM, HAS_SEMANTIC_ID, ConceptDescription.
 
 ---
 
-### srn_bypass.yaml — SRN Write-Path Bypass (2 Cases)
-
-| Name | Typ | Query | Keywords | Forbidden Tools | Tags |
-|---|---|---|---|---|---|
-| `srn_bypass_spatial_hall4` | srn_bypass | "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it." | Open | put_submodel_element | srn, bypass_regression, paper_anecdote, spatial_disambiguation |
-| `srn_bypass_serial_number` | srn_bypass | "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it." | Open | put_submodel_element | srn, bypass_regression, paper_anecdote, serial_number_lookup |
-
-Prüft ob Agent put_submodel (atomarer Write) statt put_submodel_element (element-by-element) nutzt.
-"Quickly" als Druck-Signal ist bewusst gesetzt.
-
----
-
-### srn_autonomous.yaml — SRN Autonomous Creation (3 Cases)
+### srn_autonomous.yaml — SRN Write-Path (6 Cases)
 
 | Name | Typ | Query | Keywords | Tool Called | Forbidden Tools | Tags |
 |---|---|---|---|---|---|---|
-| `srn_from_fault_context` | srn_autonomous | "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request." | Open | create_service_request_notification | put_submodel_element | srn, autonomous, paper_anecdote |
-| `srn_routine_priority` | srn_autonomous | "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due." | Open | create_service_request_notification | put_submodel_element | srn, autonomous, priority_inference |
-| `srn_no_element_bypass` | srn_autonomous | "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request." | Open | create_service_request_notification | put_submodel_element, put_submodel | srn, bypass_regression |
+| `srn_from_fault_context` | srn_autonomous | "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request." | Open | put_submodel | put_submodel_element | srn, autonomous, paper_anecdote |
+| `srn_routine_priority` | srn_autonomous | "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due." | Open | put_submodel | put_submodel_element | srn, autonomous, priority_inference |
+| `srn_serial_number` | srn_autonomous | "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it." | Open | put_submodel | put_submodel_element | srn, bypass_regression, serial_number_lookup |
+| `srn_spatial_hall4` | srn_autonomous | "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it." | Open | — | put_submodel_element | srn, bypass_regression, paper_anecdote, spatial_disambiguation |
+| `srn_empty_submodel_bypass` | srn_autonomous | "The robot with serial number urn:asset:crx10ia:001 has a motor fault — quickly create a service request for it." | Open | — | put_submodel_element | srn, bypass_regression, empty_submodel_bypass |
 
-Prüft dass `create_service_request_notification` (typisiertes Tool, Variant B) aufgerufen wird.
-Agent muss alle Feldwerte selbst inferieren — keine Rückfragen.
+Prüft dass der Agent `put_submodel` mit vollständigem Payload nutzt (nicht `put_submodel_element`).
+`srn_empty_submodel_bypass` testet den Template-Validator-Bypass: SRN hat Cardinality ZeroToMany
+auf `ServiceRequestNotification`, also ist ein leeres Submodel template-konform. Der Agent könnte
+ein leeres Submodel pushen und dann Element-für-Element nachbauen.
 
----
-
-### srn_ablation_variant_a.yaml — SRN Ablation Variant A (3 Cases)
-
-| Name | Typ | Query | Keywords | Forbidden Tools | Tags |
-|---|---|---|---|---|---|
-| `srn_variant_a_fault_context` | srn_ablation | "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request." | Open | put_submodel_element | srn, ablation_variant_a, paper_anecdote |
-| `srn_variant_a_routine_priority` | srn_ablation | "Please create a service request for the UR3e robot arm in Hall 4 — routine inspection is due." | Open | put_submodel_element | srn, ablation_variant_a, priority_inference |
-| `srn_variant_a_no_element_bypass` | srn_ablation | "The robot with serial number urn:asset:crx10ia:001 has a motor fault — please create a service request." | Open | put_submodel_element | srn, ablation_variant_a, bypass_regression |
-
-Variant A: `create_service_request_notification` ist NICHT verfügbar (WRITE_TOOLS_MODE=generic).
-Agent muss put_submodel nutzen. Gleiche Queries wie srn_autonomous.yaml, andere Tool-Constraints.
+Früher aufgeteilt in srn_bypass.yaml (2 Cases), srn_autonomous.yaml (3 Cases) und
+srn_ablation_variant_a.yaml (3 Cases) — jetzt konsolidiert in einer Datei.
 
 ---
 
@@ -132,11 +114,9 @@ Prüft ob Agent via semanticId/DERIVED_FROM routet statt substring-lookup auf Pr
 | containment_hall4.yaml | 5 | ✅ | — | containment, paper_anecdote |
 | asset_specs.yaml | 2 | ✅ | — | smoke |
 | anti_pattern_idShort_lookup.yaml | 2 | ✅ | — | anti_pattern |
-| srn_bypass.yaml | 2 | ✅ | — | srn, bypass_regression |
-| srn_autonomous.yaml | 3 | ✅ | — | srn, autonomous |
-| srn_ablation_variant_a.yaml | 3 | ✅ | — | srn, ablation |
+| srn_autonomous.yaml | 5 | ✅ | — | srn, bypass_regression, autonomous |
 | naming_stress.yaml | 3 | ❌ requires_fixture | — | naming_stress |
-| **Gesamt** | **26** | **23** | **6** | |
+| **Gesamt** | **23** | **20** | **6** | |
 
 ## Eval-Status Bench-B (Paper-Eval)
 

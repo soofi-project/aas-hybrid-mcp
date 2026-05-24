@@ -48,7 +48,7 @@ in an already-existing submodel, not for piecemeal submodel construction.
 
 ### T2 — Test-Case: Bypass-Regression messen
 
-Neue Datei: `tests/agent-tests/cases/srn_bypass.yaml`
+In `tests/agent-tests/cases/srn_autonomous.yaml` (konsolidiert, ehemals eigene `srn_bypass.yaml`):
 
 ```yaml
 cases:

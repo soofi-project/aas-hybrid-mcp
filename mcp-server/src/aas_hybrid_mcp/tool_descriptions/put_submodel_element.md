@@ -1,4 +1,4 @@
-**Before calling: obtain element structure from `get_template(name)`.** Know the correct `modelType`, `idShort`, and nesting before creating the JSON. Pass `element_json` as a JSON string. `id_short_path` is dot-separated from the submodel root (e.g. `MarkingsObject.0.MarkingFile`). SDK validates before HTTP.
+**Before the first write in a session, call `get_manual_page("writing")`** — it covers JSON-format gotchas and the template-read-first workflow. **Before calling: obtain element structure from `get_template(name)`.** Know the correct `modelType`, `idShort`, and nesting before creating the JSON. Pass `element_json` as a JSON string. `id_short_path` is dot-separated from the submodel root (e.g. `Items.0.Label`). SDK validates before HTTP.
 
 Create or replace a SubmodelElement (all subtypes: Property, File, SMC, SML, Entity, Operation, etc.) under an **existing** Submodel. Idempotent.
 

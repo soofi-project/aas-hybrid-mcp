@@ -2,8 +2,9 @@ Fuzzy semantic search over IDTA submodel template specifications.
 Returns chunks ranked by relevance with template name and source page.
 
 **Use when the template name is unknown** — search by intent
-("is there a standardised submodel for service requests?").
-For the complete catalogue, prefer `get_templates_index()`.
+("is there a standardised submodel for this domain?").
+When you already know the template name, prefer `get_templates_index()` —
+it returns the full catalogue with exact names and semanticIds, no guessing needed.
 
 COMPLEMENTS the deterministic tools:
 - `get_templates_index()` — all templates with name/version/semanticId

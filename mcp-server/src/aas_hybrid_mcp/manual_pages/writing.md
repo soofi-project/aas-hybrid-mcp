@@ -23,13 +23,13 @@ All `*_json` parameters are JSON STRINGS, not dicts. Pass the
 serialised JSON of the AAS / Submodel / SubmodelElement object:
 ```
 put_submodel(
-  aas_id="https://example.com/aas/MyAsset",
-  submodel_json='{"modelType":"Submodel","id":"https://...","idShort":"Nameplate", ...}'
+  aas_id="<your-aas-id>",
+  submodel_json='{"modelType":"Submodel","id":"https://...","idShort":"MySubmodel", ...}'
 )
 ```
 
 `id_short_path` is a dot-separated path from the submodel root, e.g.
-`MarkingsObject.0.MarkingFile` for the first MarkingFile in a
+`Items.0.Label` for the first Label in a
 SubmodelElementList.
 
 ## Read template structure first

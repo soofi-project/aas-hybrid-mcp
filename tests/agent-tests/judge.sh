@@ -37,9 +37,7 @@ judge_if_needed "$BASE/${MODEL}_anti_pattern_N10_${TEMPERATURE}.json"           
 judge_if_needed "$BASE/${MODEL}_asset_specs_N10_${TEMPERATURE}.json"            cases/asset_specs.yaml
 judge_if_needed "$BASE/${MODEL}_bench_b_N10_${TEMPERATURE}.json"                cases/bench_b.yaml
 judge_if_needed "$BASE/${MODEL}_containment_hall4_N10_${TEMPERATURE}.json"      cases/containment_hall4.yaml
-judge_if_needed "$BASE/${MODEL}_srn_ablation_variant_a_N10_${TEMPERATURE}.json" cases/srn_ablation_variant_a.yaml
 judge_if_needed "$BASE/${MODEL}_srn_autonomous_N10_${TEMPERATURE}.json"         cases/srn_autonomous.yaml
-judge_if_needed "$BASE/${MODEL}_srn_bypass_N10_${TEMPERATURE}.json"             cases/srn_bypass.yaml
 
 python analyze_results.py ${MODEL} ${TEMPERATURE_LOWER}
 

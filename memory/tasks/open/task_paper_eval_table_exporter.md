@@ -1,6 +1,6 @@
 ---
 name: Task – Paper Eval Table Exporter
-description: Script das Eval-Result-JSONs nach Tag-Gruppen aggregiert und eine paper-fertige Bypass-Tabelle ausgibt; läuft nach den SRN-Bypass-Eval-Runs.
+description: Script das Eval-Result-JSONs nach Tag-Gruppen aggregiert und eine paper-fertige Tabelle ausgibt; läuft nach den SRN-Eval-Runs.
 type: task
 status: open
 priority: medium
@@ -18,8 +18,8 @@ Das neue `write_path`-Feld im Evaluator (`bypass_type`: correct / surfaced / cas
 Tabelle die direkt in §10-Evaluation übertragen werden kann.
 
 **Warum Query-Gruppen statt Einzelfragen im Paper:**
-Einzelne Case-Namen (`srn_bypass_spatial_hall4`) sind zu spezifisch. Im Paper steht
-eher eine Gruppenzeile wie „SRN Creation (N=6)" mit aggregierten Bypass-Quoten.
+Einzelne Case-Namen (`srn_spatial_hall4`) sind zu spezifisch. Im Paper steht
+eher eine Gruppenzeile wie "SRN Write-Path (N=6)" mit aggregierten Bypass-Quoten.
 Die Gruppe ergibt sich aus dem `paper_anecdote`-Tag oder einem dedizierten
 `paper_group`-Feld in den Cases.
 
@@ -29,7 +29,7 @@ Die Gruppe ergibt sich aus dem `paper_anecdote`-Tag oder einem dedizierten
 
 `framework/cases.py`: optionales Feld `paper_group: str | None = None`.
 
-Cases in `srn_bypass.yaml` und `srn_ablation_variant_a.yaml`:
+Cases in `srn_autonomous.yaml`:
 ```yaml
 paper_group: "SRN Write-Path"
 ```
@@ -49,7 +49,7 @@ Hilfs-Cases die nicht ins Paper gehören).
 Neues Script: `tests/agent-tests/aggregate_paper_table.py`
 
 ```
-python aggregate_paper_table.py results/srn_bypass_react_N3.json [results/...] \
+python aggregate_paper_table.py results/srn_autonomous_N10_T07.json [results/...] \
     [--format markdown|latex] [--out paper_table.md]
 ```
 
@@ -71,30 +71,29 @@ Bei `--format latex`: LaTeX-Tabelle mit `booktabs`-Style direkt in
 
 ### T3 — `paper_group` in bestehende Cases eintragen
 
-Nach T1: alle Cases in `srn_bypass.yaml`, `srn_ablation_variant_a.yaml`,
+Nach T1: alle Cases in `srn_autonomous.yaml`,
 `containment_hall4.yaml` (Bench-B-Subset) mit `paper_group` versehen.
 
 Mapping (vorläufig):
-- `srn_bypass.yaml` → `"SRN Write-Path"`
-- `srn_ablation_variant_a.yaml` → `"SRN Write-Path (Prompt-Hint)"`
+- `srn_autonomous.yaml` → `"SRN Write-Path"`
 - containment + read-validation Cases → `"Read / Graph Query"`
 
 **Status:** ⬜ Open
 
 ### T4 — Eval-Run fahren + Tabelle generieren
 
-Erst wenn T2+T3 fertig und SRN-Bypass-Eval-Runs (N=3) gelaufen sind:
+Erst wenn T2+T3 fertig und SRN-Eval-Runs (N=10) gelaufen sind:
 ```
-python aggregate_paper_table.py results/srn_bypass_react_N3.json --format latex
+python aggregate_paper_table.py results/srn_autonomous_N10_T07.json --format latex
 ```
-Output in Paper-Task `task_paper_write_validation_defense.md` T4 einfließen lassen.
+Output in Paper-Task `task_paper_ablation_sections.md` T2 einfließen lassen.
 
 **Status:** ⬜ Open (blockiert durch Eval-Runs)
 
 ## Acceptance Criteria
 
 - [ ] `paper_group`-Feld in `cases.py` vorhanden, optional
-- [ ] `srn_bypass.yaml` und `srn_ablation_variant_a.yaml` haben `paper_group` gesetzt
+- [ ] `srn_autonomous.yaml` hat `paper_group` gesetzt
 - [ ] `aggregate_paper_table.py` läuft gegen Result-JSONs und produziert korrekte Tabelle
 - [ ] Bypass-Typ-Counts stimmen mit manuell nachgezählten `write_path.bypass_type`-Werten überein
 - [ ] LaTeX-Output direkt in Paper-Sektion verwendbar (booktabs, keine manuellen Korrekturen nötig)
@@ -104,6 +103,6 @@ Output in Paper-Task `task_paper_write_validation_defense.md` T4 einfließen las
 - Evaluator: `tests/agent-tests/framework/evaluator.py` (`WritePathAnalysis`)
 - Reporter: `tests/agent-tests/framework/reporter.py`
 - Case-Schema: `tests/agent-tests/framework/cases.py`
-- Test-Cases: `tests/agent-tests/cases/srn_bypass.yaml`, `srn_ablation_variant_a.yaml`
+- Test-Cases: `tests/agent-tests/cases/srn_autonomous.yaml`
 - Paper-Section: `paper/etfa2026/content/10-evaluation.tex`
-- Verwandte Tasks: [[task-write-tool-validation-gap]], [[task-paper-write-validation-defense]], [[task-srn-slotfilling-tool-and-eval]]
+- Verwandte Tasks: [[task-srn-eval-rerun-after-typed-tool-removal]], [[task-paper-ablation-sections]]

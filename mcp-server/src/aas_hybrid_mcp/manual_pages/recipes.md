@@ -52,7 +52,7 @@ payload, operating range, …). Identify the relevant template from
 `get_templates_index()` **before** querying — then navigate directly to
 the value. Never dump all shells first.
 
-**Case 1 — Asset named explicitly** (e.g. "Wie schnell kann der MiR100 fahren?")
+**Case 1 — Asset named explicitly** (e.g. "Wie schnell kann der Roboter fahren?")
 
 The user supplies a name, but idShorts are internal graph values — the user's
 term is rarely the exact idShort. Always discover the exact idShort first:
