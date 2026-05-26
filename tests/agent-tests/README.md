@@ -63,7 +63,7 @@ python analyze_results.py qwen35-27b t07
 ### Model run order (H200 reload overhead minimized)
 
 ```
-qwen35-08b → qwen35-2b → qwen35-4b → qwen35-9b → qwen35-27b → qwen35-122b
+qwen35-2b → qwen35-4b → qwen35-9b → qwen35-27b → qwen35-122b
 → qwen36-27b → qwen36-35b → qwen35-397b (Cortecs, last)
 ```
 

@@ -1,217 +1,159 @@
-# Agent Evaluation: qwen35-27b · ReAct · T=0.7
+# Evaluation Analysis: Qwen3.5-27B — T07
 
-**Date:** 2026-05-23 · 7 test suites · 230 runs · Judge: GPT-5.4 (Cortecs)
-
----
-
-## Overall Results
-
-| Suite | N | Correct (judged) | Correct (adjusted) | Manuals first | Antipattern hit | All good |
-|---|--:|--:|--:|--:|--:|--:|
-| anti_pattern | 20 | 100% | 100% | 0% | 100% | 0% |
-| asset_specs | 20 | 95% | 95% | 0% | 100% | 0% |
-| bench_b | 60 | 70% | 70% | 78% | 60% | 32% |
-| containment_hall4 | 50 | 96% | 96% | 80% | 40% | 54% |
-| srn_ablation_variant_a | 30 | 97% | 97% | 10% | 63% | 0% |
-| srn_autonomous | 30 | 67% | **~77%** | 20% | 63% | 0% |
-| srn_bypass | 20 | 95% | 95% | 15% | 75% | 5% |
-| **Total** | **230** | **86%** | **~87%** | **43%** | **65%** | **20%** |
-
-**Adjusted column:** corrects for confirmed judge false negatives in `srn_from_fault_context` (see section below).
+Model: `qwen35-27b` · Trial: T07 · Suites: 5 · Total runs: 200
 
 ---
 
-## What Worked Well
+## 1. Paper-Evaluation Table per Suite
 
-**Anti-pattern recovery is reliable.** Every single run in the `anti_pattern` and `asset_specs` suites
-(100%) triggers a validator rejection — the agent starts with a Cypher query containing
-`idShort CONTAINS` or `toLower(sm.idShort) CONTAINS` and gets rejected. However, it recovers
-after rejection and produces the correct answer every time. The antipattern hit rate (65%) is
-notably higher than for qwen36-27b (40%), but this does not translate into lower correctness
-because recovery quality is high.
+| Suite | N | Correct | Manuals first | idShort violation | Bypass (pse) | Median correct (s) | Median wrong (s) |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| anti_pattern | 20 | 20 (100%) | 0 (0%) | 20 (100%) | — | 13.4 | — |
+| asset_specs | 20 | 20 (100%) | 0 (0%) | 20 (100%) | — | 11.4 | — |
+| bench_b | 60 | 47 (78%) | 49 (82%) | 29 (48%) | — | 28.8 | 24.7 |
+| containment_hall4 | 50 | 50 (100%) | 40 (80%) | 24 (48%) | — | 26.9 | — |
+| srn_autonomous | 50 | 16 (32%) | 20 (40%) | 33 (66%) | 56% | 94.9 | 83.2 |
+| **Total** | **200** | **153 (77%)** | **109 (55%)** | **126 (63%)** | — | — | — |
 
-**Containment and spec queries are robust.** B1 (Hall 3 devices), B3 (payload filter), B6
-(cross-asset comparison): all 10/10. The agent navigates HierarchicalStructures submodels and reads
-TechnicalDataAGV fields reliably. `all_good` for containment_hall4 is 54% — runs that are correct
-AND tool-error-free.
-
-**Serial number bypass is perfect.** `srn_bypass_serial_number`: 10/10. The agent resolves
-"MIR100-2020-001" to MiR100_001, creates the SRN, and explicitly confirms the resolution in every
-run. This is a key differentiator versus qwen36-27b, which succeeds only 40% of the time on the
-same case.
-
-**SRN ablation robustness.** `srn_ablation_variant_a`: 29/30 (97%). Only 1 failure, caused by the
-agent not identifying MiR100_001 as the transport robot in Hall 4.
+Three suites achieve perfect accuracy (anti_pattern, asset_specs, containment_hall4). The two remaining suites diverge sharply: bench_b lands at 78%, while srn_autonomous collapses to 32% — a 46-point gap that is entirely attributable to write-path failures (see §3).
 
 ---
 
-## What Failed
+## 2. idShort Violation Self-Correction Rate
 
-### srn_from_fault_context — 10% judged / ~40% adjusted
-
-The weakest individual scenario. Raw judged score is 1/10, but 3 of the 9 failures are judge
-false negatives (explained below). Actual corrected rate is approximately 4/10.
-
-**Judge false negatives — "ServiceType" text representation:**
-All 10 runs called `create_service_request_notification` with the correct enum value
-`service_type: "CorrectiveMaintenance"` (no space) in the actual tool call. The judge penalized
-runs where the *final answer text* said "Corrective Maintenance" (human-readable, with space)
-instead of the exact enum string. The AAS write was correct in every case.
-
-Breakdown of 9 failures:
-- **3 runs** (reps 2, 4, 6): only "ServiceType is CorrectiveMaintenance" listed as missing →
-  confirmed false negatives; the tool call was correct
-- **4 runs** (reps 0, 5, 9 — missing only "Status is Open"; rep 7 — missing MiR100_001 +
-  "Status is Open"): legitimate failures — the SRN was created but the final answer did not
-  confirm the new request has Status Open
-- **1 run** (rep 1): missing MiR100_001 identification + "Status is Open" → two text precision
-  failures; SRN call was correct
-- **1 run** (rep 3): missing MiR100_001 + "ServiceType is CorrectiveMaintenance" → ServiceType
-  part is a false negative; the asset identity part is a real text failure
-
-**Remaining real failure pattern — "Status is Open" not stated:**
-When the SRN is created and the judge requires `keywords: ["Open"]` in the answer text, some runs
-return troubleshooting guidance without explicitly stating the new SRN has Status Open. The tool
-call was correct, but the confirmatory summary omits this field. Frequency: 4 runs.
-
-**Manuals-first: 60% for this case** (6/10 reads before first Cypher). Every run starts with a
-spatial disambiguation query using substring matching (`idShort CONTAINS 'hall4'`) and gets a
-validator rejection before recovering. This is consistent across both qwen35-27b and qwen36-27b.
-
-### bench_b B4 — MiR250 emergency stop: 10% (1/10)
-
-This is the test case that requires reading the MiR250 operator manual (pp. 83–85) to cite specific
-E-stop content: stop category 0 / STO contactors / SS1 brake, or the release sequence (release
-E-stop → Resume button flashes blue → press Resume).
-
-**Manuals-first rate: 0%** — the agent never reads a manual before querying the graph for this
-case. Every run issues a `query_aas_graph` first. The single correct run (rep 5) presumably found
-the content through graph metadata; 9 failures provide generic emergency stop guidance without any
-MiR250-specific details.
-
-This is a **trigger failure**, not just a content extraction problem: the agent does not recognize
-that a manufacturer-specific emergency stop procedure requires consulting the operator manual. By
-contrast, qwen36-27b reads the manual in 50% of runs — but even then, content extraction fails
-because the agent retrieves general sections rather than pp. 83–85.
-
-### bench_b B2 — autonomous transport fleet: 50% (5/10)
-
-The agent must identify all three AGVs (MiR100_001, MiR250_001, MiR250_002) and state their
-locations. 5 failures:
-- **3 runs** (reps 0, 1, 8): the agent identifies all three AGVs but claims location data is "not
-  available," failing to query the HierarchicalStructures submodels of Hall 3 and Hall 4
-- **2 runs** (reps 2, 4): different failure pattern (likely CRX10iA misclassification as AGV, or
-  incomplete fleet enumeration — missing_facts field was empty in judged output)
-
-All 10 runs do read manuals first (`manuals_first = 100%`), so this is a graph navigation gap,
-not a retrieval trigger problem. qwen36-27b achieves 90% on this case.
-
-### bench_b B5 — Hall 4 red status light: 60% (6/10)
-
-4 failures. Common pattern: the agent identifies a robot in Hall 4 but does not name it as
-MiR100_001 explicitly (3 of 4 failures). Two failures also lack MiR100 manual content (emergency
-stop procedure, protective stop, or diagnostic steps). The agent provides general troubleshooting
-guidance but misses asset identification and manual citation together.
-
----
-
-## Did the Agent Read Manuals Before Cypher Queries?
-
-Overall manuals-first rate: **43%** — lower than qwen36-27b (70%). The flag counts any
-`get_templates_index`, `get_template`, or `get_manual_page` call before the first `query_aas_graph`.
-In most cases this is `get_templates_index` — a schema lookup to understand submodel structure,
-not actual device documentation.
-
-| Suite | Manuals first |
-|---|--:|
-| bench_b B1–B3, B6 | 100% |
-| bench_b B5 (red status light) | 70% |
-| **bench_b B4 (MiR250 manual required)** | **0%** |
-| srn_from_fault_context | 60% |
-| srn_routine_priority | 0% |
-| srn_no_element_bypass | 0% |
-| anti_pattern, asset_specs | 0% |
-
-Key observation: for anti_pattern and asset_specs (100% antipattern hit rate), the agent jumps
-directly to Cypher queries. qwen36-27b runs `get_templates_index` first in 55% of these cases.
-For B4, qwen35-27b reads nothing — the agent shows no awareness that this is a manual-dependent
-question. This is the primary driver of the 0% B4 manual read rate.
-
----
-
-## Antipattern Behavior
-
-65% of qwen35-27b runs trigger a validator rejection (`idShort CONTAINS` or `toLower(...)`) —
-the highest antipattern rate across all tested models. The pattern:
-
-| | antipattern=True | antipattern=False |
-|---|--:|--:|
-| correct=True | 63% | 37% |
-| correct=False | 76% | 24% |
-
-Unlike qwen36-27b, where antipattern and correctness are essentially uncorrelated, here there is
-a modest negative signal: failures are somewhat more likely to have had an antipattern (76% vs 63%).
-This likely reflects that harder queries — where the agent struggles to formulate the right Cypher
-— also tend to start with substring lookups. Recovery quality determines the outcome, not the
-antipattern itself.
-
----
-
-## Duration Patterns
-
-Failed runs consume significantly more time in the write-path and complex reasoning suites,
-indicating exhaustion of the recursion limit rather than early termination.
-
-| Suite | Median (correct) | Median (wrong) |
-|---|--:|--:|
-| srn_autonomous | 9.4s | 30.9s |
-| srn_ablation_variant_a | 16.8s | 31.0s |
-| containment_hall4 | 24.3s | 36.0s |
-| srn_bypass | 15.1s | 31.9s† |
-| bench_b | 24.8s | 25.4s‡ |
-
-†`srn_bypass` has only 1 failure — the long duration is consistent with a full-effort attempt that
-still missed the explicit asset identification in the answer.
-
-‡`bench_b` correct/wrong durations are nearly equal because both B4 failures (short: quick generic
-answer) and B2 failures (long: multiple graph queries before giving up) average out.
-
----
-
-## Comparison with qwen36-27b (same temperature, same suites)
-
-| Suite | qwen35-27b | qwen36-27b | Delta |
+| Suite | Violations | Self-corrected | Rate |
 |---|--:|--:|--:|
-| anti_pattern | 100% | 100% | = |
-| asset_specs | 95% | 100% | -5% |
-| bench_b | 70% | 80% | **-10%** |
-| containment_hall4 | 96% | 96% | = |
-| srn_ablation_variant_a | 97% | 90% | **+7%** |
-| srn_autonomous | 67% | 63% | +4% |
-| srn_bypass | 95% | 70% | **+25%** |
-| **Total** | **86%** | **85%** | +1% |
+| anti_pattern | 20 | 19 | 95.0% |
+| asset_specs | 20 | 20 | 100% |
+| bench_b | 29 | 29 | 100% |
+| containment_hall4 | 24 | 24 | 100% |
+| srn_autonomous | 33 | 31 | 93.9% |
+| **Total** | **126** | **123** | **97.6%** |
 
-qwen35-27b is stronger on srn_bypass (serial number resolution is perfect vs 40%) and
-srn_ablation, but weaker on bench_b (B2 transport fleet: 50% vs 90%). The overall score is
-essentially identical. The most striking contrast is the antipattern rate (65% vs 40%) combined
-with an identical anti_pattern suite correctness (100%): qwen35-27b hits the validator more often
-but recovers just as reliably.
+The agent violates the idShort anti-pattern in 63% of all runs (126/200) but self-corrects in 97.6% of those cases. Violation rules merged across all suites:
+
+| Rule | Occurrences | Interpretation |
+|---|--:|---|
+| `idShort_contains_or_regex` | 149 | Agent uses idShort in query/Cypher patterns |
+| `toLower_id_contains` | 119 | Agent references elements by idShort value |
+| `id_contains_or_regex` | 11 | Agent uses full identifier in regex |
+| `assetType_match` | 1 | Agent matches by assetType (negligible) |
+
+The dominant pattern is clear: the agent reaches for idShort as a shortcut in both queries and references. The near-perfect self-correction rate means this rarely affects the final answer, but it wastes turns and budget — particularly in the srn_autonomous suite where the agent already operates under time pressure.
 
 ---
 
-## Summary
+## 3. Write-Path Bypass (SRN Suite Only)
 
-The agent handles graph navigation, containment queries, anti-pattern recovery, and serial number
-resolution reliably. The three persistent failure modes are:
+The srn_autonomous suite is the only suite involving write operations. A "bypass" occurs when the agent fails to follow the correct write path — it either doesn't write at all, writes to the wrong location, or finds an existing structure and stops without creating the required element.
 
-1. **Manual trigger absence for device-specific questions** — B4 (MiR250 E-stop): the agent never
-   reaches for the operator manual, provides generic guidance, and fails 90% of the time. No
-   awareness that manufacturer-specific procedure content lives in documentation, not the graph.
+**Overall bypass rate: 56%** (28/50 runs with non-correct bypass)
 
-2. **Write-path answer precision** — SRNs are written correctly (tool args verified), but the
-   final answer text omits required confirmatory fields (Status Open, explicit asset ID).
-   Not a validator gap; a natural language output gap.
+| Bypass type | Count | Meaning |
+|---|--:|---|
+| correct | 17 | Wrote the right element via the right path |
+| surfaced | 20 | Found existing submodel, stopped without writing |
+| direct | 5 | Called `put_submodel_element` without traversing structure |
+| cascade | 3 | Multi-step bypass (wrong intermediate step) |
+| none | 4 | No write attempted at all |
+| null | 1 | Indeterminate |
 
-3. **Transport fleet location queries (B2)** — the agent identifies the AGVs but fails to traverse
-   the HierarchicalStructures submodels of both halls to retrieve location data, claiming it is
-   "not available." This navigation pattern is fully solved in qwen36-27b (90%).
+Per-case breakdown:
+
+| Case | correct | surfaced | direct | cascade | none | null |
+|---|--:|--:|--:|--:|--:|--:|
+| srn_from_fault_context | 8 | 1 | — | — | 1 | — |
+| srn_serial_number | 4 | 5 | — | 1 | — | — |
+| srn_spatial_hall4 | 4 | 5 | — | 1 | — | — |
+| srn_empty_submodel_bypass | 0 | 8 | 1 | 1 | — | — |
+| srn_routine_priority | 1 | 1 | 4 | — | 3 | 1 |
+
+The "surfaced" category is the dominant failure mode: 40% of all runs. The agent discovers an existing ServiceRequestNotification submodel on the target AAS, then treats its existence as task completion — a read-path/write-path confusion. This is most extreme in `srn_empty_submodel_bypass` (0% correct, 80% surfaced), where the submodel exists but is empty and needs a new element added.
+
+Write-tool execution: `put_submodel_element` was called in only 12 of 45 write attempts (26.7%). In the remaining 73.3%, the agent either called `put_submodel` (creating a whole new submodel instead of an element within the existing one) or never reached a write-tool call at all.
+
+---
+
+## 4. Template Validation
+
+All five suites report **zero write-tool rejections and zero validation errors**. The agent never sends malformed payloads — when it does call a write tool, the data passes schema validation. The problem is not validation quality but tool-selection accuracy: the agent picks the wrong tool or stops before issuing any write call.
+
+---
+
+## 5. Judge Failure Modes per SRN Case
+
+| Case | n_incorrect | Top missing facts | Top wrong claims |
+|---|--:|---|---|
+| srn_from_fault_context | 10 | ServiceType=CorrectiveMaintenance (10/10), Status=Open (3/10) | Service Type: MAINTENANCE (2), Emergency Maintenance (1), TROUBLESHOOTING (1), Emergency Stop Reset (1) |
+| srn_routine_priority | 10 | Priority=Low (10/10), ServiceType=Inspection (6/10) | Priority is NORMAL (4), Priority is Normal (2) |
+| srn_empty_submodel_bypass | 10 | Payload contains SRN entry (9/10), Write was attempted (8/10) | — |
+| srn_serial_number | 4 | Serial resolution errors (2), Write attempted (1) | Service Type: EMERGENCY_STOP instead of CorrectiveMaintenance (2) |
+
+Two distinct root causes emerge:
+
+1. **Vocabulary gap** — In `srn_from_fault_context` and `srn_routine_priority`, the agent cannot map the natural-language task description to the correct SRN enum values. It invents service types (MAINTENANCE, ROUTINE_INSPECTION, Emergency Maintenance) and defaults priority to "Normal" instead of "Low". The agent has no internal lookup table for the SRN submodel's controlled vocabulary.
+
+2. **Write-path paralysis** — In `srn_empty_submodel_bypass`, the agent finds the empty container but never creates an element inside it. Missing facts are entirely structural: the payload should contain an SRN entry (9/10) and a write should have been attempted (8/10). The agent doesn't understand that discovering a container ≠ completing the task.
+
+---
+
+## 6. Duration: Median per Suite
+
+| Suite | Median correct (s) | Median wrong (s) |
+|---|--:|--:|
+| asset_specs | 11.4 | — |
+| anti_pattern | 13.4 | — |
+| containment_hall4 | 26.9 | — |
+| bench_b | 28.8 | 24.7 |
+| srn_autonomous | 94.9 | 83.2 |
+
+SRN per-case durations:
+
+| Case | n | Median all (s) | Median correct (s) | Median wrong (s) |
+|---|--:|--:|--:|--:|
+| srn_spatial_hall4 | 10 | 96.7 | 96.7 | — |
+| srn_from_fault_context | 10 | 95.1 | — | 95.1 |
+| srn_empty_submodel_bypass | 10 | 82.7 | — | 82.7 |
+| srn_serial_number | 10 | 80.4 | 85.7 | 79.2 |
+| srn_routine_priority | 10 | 77.4 | — | 77.4 |
+
+Three SRN cases have `median_correct = null` because they produced 0 or 1 correct runs — insufficient for a reliable median. Correct SRN runs are ~12s slower than wrong runs, consistent with the extra tool-call round-trips needed for a successful write. All SRN cases exceed 77s, reflecting the multi-step nature of submodel traversal → element creation.
+
+In bench_b, correct answers are slower (28.8s vs 24.7s), suggesting the agent invests more exploration effort in successful runs.
+
+---
+
+## 7. Manuals-First Correlation
+
+| | Manuals first | No manuals | Total |
+|---|--:|--:|--:|
+| **Correct** | 89 | 64 | 153 |
+| **Wrong** | 20 | 27 | 47 |
+
+- Manuals-first correct rate: 89/109 = **81.7%**
+- No-manuals correct rate: 64/91 = **70.3%**
+- Difference: +11.4 percentage points
+
+Consulting manuals before the first graph query correlates with a higher success rate. The effect is moderate but consistent: agents that read the manual first are ~11 pp more likely to produce a correct answer. However, causation is not established — the 40% manuals-first rate in the srn_autonomous suite (where most failures are write-path, not knowledge-gap) depresses the overall correlation.
+
+---
+
+## 8. Key Takeaways / Action Items
+
+### T1 — Fix the SRN vocabulary gap
+The agent invents enum values (MAINTENANCE, ROUTINE_INSPECTION, Emergency Maintenance) instead of using the correct ones (CorrectiveMaintenance, Inspection). **Action:** Inject the SRN submodel template's controlled vocabulary into the system prompt or add a dedicated `get_srn_enum_values` tool that returns valid ServiceType and Priority values before the agent attempts a write.
+
+### T2 — Address write-path paralysis
+40% of SRN runs "surface" — the agent finds the submodel and stops without creating the required element. The `srn_empty_submodel_bypass` case scores 0% correct. **Action:** Add an explicit instruction to the system prompt: "If a submodel exists but contains no elements matching the task, you must create a new SubmodelElement inside it." Alternatively, detect empty submodels in the write-tool logic and auto-suggest element creation.
+
+### T3 — Improve tool-selection clarity
+Only 26.7% of write attempts reach `put_submodel_element`; the rest either call `put_submodel` (wrong scope) or never issue a write call. **Action:** Rename or re-describe the write tools to make the distinction between "create a submodel" and "add an element inside an existing submodel" more prominent. Consider a unified upsert tool that handles both cases based on context.
+
+### T4 — Reduce idShort violation waste
+The agent violates the idShort anti-pattern in 63% of runs, then self-corrects in 97.6% of cases — wasting 1–2 turns per violation. In the SRN suite, these wasted turns consume budget before the write attempt. **Action:** Strengthen the idShort warning in the system prompt with a few-shot example, or add a pre-flight validation step that rejects idShort-based queries before they execute.
+
+### T5 — Investigate manuals-first as a causal factor
+The +11 pp correlation between manuals-first and correctness is promising but not proven causal. The srn_autonomous suite's low manuals-first rate (40%) may reflect the agent's tendency to jump directly to tool calls for write tasks. **Action:** Run an ablation where the system prompt mandates manual consultation before any write operation, and measure whether SRN correctness improves.
+
+### T6 — The 32% SRN floor is the binding constraint
+All read-only suites score 78–100%. The overall 77% accuracy is dragged down entirely by the SRN write path. Until the agent can reliably create SubmodelElements inside existing submodels, improving read-path accuracy yields diminishing returns. **Priority: T2 and T3 are the highest-impact fixes.**

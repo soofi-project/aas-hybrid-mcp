@@ -86,6 +86,37 @@ work should close this gap".
 
 **Status:** ⬜ Open — wartet auf T2
 
+### T3a — §11 Discussion: Scaffolding Asymmetrie (neu)
+
+Neuer Absatz nach dem bestehenden Bypass-Absatz in §11.2
+("Agentic Reads vs. Workflow Writes"):
+
+> The read and write paths differ not only in task structure but in the
+> prompt-side scaffolding available to the agent. The read-path manual
+> pages include concrete Cypher traversal recipes, anti-pattern
+> comparisons, and worked question-to-query walkthroughs. The write-path
+> provides no analogous scaffolding — no payload examples, no field-value
+> enumerations, no end-to-end write sequence. This difference was held
+> constant across all evaluated model sizes, allowing us to isolate the
+> effect of parametric knowledge from prompt-side scaffolding. The
+> result is a measurable scaling threshold: on the scaffolded read path,
+> a 4B model achieves 80% on focused tasks; on the unscaffolded write
+> path, the same model collapses to 4%, and only the 27B model reaches
+> 32%. We hypothesise that template-grounded exemplars — derived from
+> IDTA template artefacts rather than deployment-specific fixtures —
+> would shift this threshold downward, just as read-path exemplars do
+> for retrieval tasks. Verifying this is left as future work.
+
+**Template-grounded = transferabel:** Die zukünftigen Exemplars müssen
+aus IDTA-Template-Artefakten (semanticIds, ExampleValue-Qualifier)
+abgeleitet sein, nicht aus Test-Fixtures (MiR100, Halle 4). Das
+stellt sicher dass die Beobachtung auf andere Deployments übertragbar
+ist, die dieselben IDTA-Templates nutzen.
+
+**Datei:** `paper/etfa2026/content/11-discussion.tex`
+
+**Status:** ⬜ Open
+
 ## Entscheidung: Wie Eval-Ergebnisse ins Paper kommen
 
 **Keine vollständige Query-Liste im Paper.** Stattdessen dreistufiger Ansatz:

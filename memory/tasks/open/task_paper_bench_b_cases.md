@@ -122,7 +122,6 @@ Prüft ob Agent via semanticId/DERIVED_FROM routet statt substring-lookup auf Pr
 
 | Modell | Phase 1 (Agent, N=10) | Phase 2 (Judge gpt-4o-2024-11-20) |
 |---|---|---|
-| qwen35-08b | ⬜ | ⬜ |
 | qwen35-2b | ⬜ | ⬜ |
 | qwen35-4b | ⬜ | ⬜ |
 | qwen35-9b | ⬜ | ⬜ |

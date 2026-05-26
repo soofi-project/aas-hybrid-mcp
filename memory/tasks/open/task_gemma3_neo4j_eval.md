@@ -1,17 +1,23 @@
 ---
 name: Task – Gemma-3 Neo4j Text-to-Cypher Eval
-description: Neo4j-fine-tuned Gemma-3 (4B/9B/27B) in Eval-Suite aufnehmen und Failure-Mode vs. Qwen3.5-08b vergleichen
+description: Neo4j-fine-tuned Gemma-3 (4B/9B/27B) in Eval-Suite aufnehmen und Failure-Mode vs. Qwen3.5-2b vergleichen
 type: task
 status: open
-priority: medium
+priority: low
 ---
+
+## Status
+
+**Deferred** — low priority. Only tackle if time permits after the main scaling study is done.
+If skipped entirely, the Cypher-finetuning angle can go into §Future Work alongside the
+existing "Cross-Family Validation" bullet in `paper/etfa2026/content/13-future-work.tex`.
 
 ## Background
 
 Die kleinen Qwen3.5-Modelle (≤9B) versagen nicht am Tool-Calling selbst, sondern
 an der Query-Qualität: SQL statt Cypher, erfundene Template-Namen, Validator-Rejections,
 und Halluzinations-Fallback wenn Queries scheitern (belegt in bench_b judged-Daten,
-`results/qwen35-08b/t07/qwen35-08b_bench_b_N10_T07_judged.json`).
+`results/qwen35-2b/t07/qwen35-2b_bench_b_N10_T07_judged.json`).
 
 Neo4j hat Gemma-3-Instruct (4B/9B/27B) auf `text2cypher-2024v1` nachtrainiert
 (HuggingFace: `neo4j/text-to-cypher-Gemma-3-4B-Instruct-2025.04.0` u.a.).
@@ -19,7 +25,7 @@ Da Basis Gemma-3-Instruct ist, erben diese Modelle Tool-Calling.
 
 Forschungsfrage: Löst das Cypher-Finetuning die SQL-vs-Cypher-Fehler,
 oder versagen die Modelle an Template-Namen-Halluzination und Validator-Rejections
-genauso wie Qwen-08b?
+genauso wie Qwen-2b?
 
 ## Subtasks
 
@@ -50,7 +56,7 @@ python run_tests.py --cases cases/bench_b.yaml --repetitions 3 \
   --export results/gemma3-neo4j-4b_bench_b_N3_T07_pilot.json
 ```
 Failure-Mode klassifizieren anhand `tool_call_count` und `process.tool_errors`:
-- SQL-Fehler → kein Vorteil ggü. Qwen-08b
+- SQL-Fehler → kein Vorteil ggü. Qwen-2b
 - Korrekte Cypher, falsche Templates → Finetuning hilft partiell
 - tc=0 → Tool-Calling durch Finetuning beschädigt (dann T=0.0 testen)
 
@@ -62,7 +68,7 @@ Failure-Mode klassifizieren anhand `tool_call_count` und `process.tool_errors`:
 ```
 
 ### T6 — Ergebnis in Paper einarbeiten
-- §Eval: Gemma-Zeile in Eval-Tabelle, Failure-Mode-Vergleich mit Qwen-08b
+- §Eval: Gemma-Zeile in Eval-Tabelle, Failure-Mode-Vergleich mit Qwen-2b
 - §Future Work: "Combining Cypher fine-tuning [neo4j/text2cypher-2024v1] with
   template-name grounding (RAG or in-context examples)" als konkreten Pfad
 
@@ -75,6 +81,6 @@ Failure-Mode klassifizieren anhand `tool_call_count` und `process.tool_errors`:
 
 ## References
 
-- Pilot-Daten Qwen-08b: `tests/agent-tests/results/qwen35-08b/t07/qwen35-08b_bench_b_N10_T07_judged.json`
+- Pilot-Daten Qwen-2b: `tests/agent-tests/results/qwen35-2b/t07/qwen35-2b_bench_b_N10_T07_judged.json`
 - Eval-Setup: `eval-model.sh`, `tests/agent-tests/run_all.sh`
 - Verwandte Tasks: `[[task-paper-pattern-modelsize-eval]]`

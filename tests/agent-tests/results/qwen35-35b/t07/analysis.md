@@ -1,192 +1,235 @@
-# Agent Evaluation: qwen35-35b · ReAct · T=0.7
+# Results Analysis: qwen3.5-35b — Trial 07
 
-**Date:** 2026-05-23 · 7 test suites · 230 runs · Judge: GPT-5.4 (Cortecs)
-**Model:** Qwen 3.5 35B MoE — ~3B active parameters (sparse MoE routing)
-
----
-
-## Overall Results
-
-| Suite | N | Correct | Manuals first | Antipattern hit | All good |
-|---|--:|--:|--:|--:|--:|
-| anti_pattern | 20 | 100% | 15% | 75% | 0% |
-| asset_specs | 20 | 100% | 30% | 85% | 10% |
-| bench_b | 60 | 72% | 62% | 63% | 25% |
-| containment_hall4 | 50 | 82% | 70% | 66% | 4% |
-| srn_ablation_variant_a | 30 | 93% | 13% | 63% | 0% |
-| srn_autonomous | 30 | 33% | 17% | 67% | 0% |
-| srn_bypass | 20 | 75% | 5% | 90% | 0% |
-| **Total** | **230** | **77%** | **40%** | **70%** | **8%** |
+**Model:** qwen3.5-35b (dense) via Cortecs
+**Agent variant:** react
+**Judge:** gpt-5.4 via Cortecs
+**Date:** 2026-05-24
+**5 test suites · 200 runs (50 SRN + 150 read-only)**
 
 ---
 
-## The Dominant Pattern: Validator as Active Recovery Mechanism
+## 1. Paper Evaluation Table
 
-qwen35-35b has a 70% overall antipattern hit rate — nearly double the 37% for qwen36-35b and 40%
-for qwen36-27b. The `all_good` rate (zero errors, correct answer) is only 8% across all runs. In
-effect, almost every correct answer goes through at least one validator rejection.
+| Suite | N | Correct | Manuals first | idShort violation | Bypass (pse) | Med. correct | Med. wrong |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| anti_pattern | 20 | 20 (100%) | 9 (45%) | 16 (80%) | — | 8.8s | — |
+| asset_specs | 20 | 20 (100%) | 5 (25%) | 17 (85%) | — | 10.2s | — |
+| bench_b | 60 | 44 (73%) | 42 (70%) | 37 (62%) | — | 18.2s | 24.3s |
+| containment_hall4 | 50 | 44 (88%) | 40 (80%) | 23 (46%) | — | 19.4s | 22.0s |
+| srn_autonomous | 50 | 17 (34%) | 27 (54%) | 31 (62%) | 28 (56%) | 34.8s | 45.0s |
+| **Total** | **200** | **145 (72%)** | **123 (62%)** | **124 (62%)** | **28/50** | **15.3s** | **32.5s** |
 
-This is the clearest demonstration of the "layered determinism" thesis in the eval dataset: the
-model's top-1 Cypher output is an anti-pattern (`idShort CONTAINS`, `toLower(...) CONTAINS`) in the
-majority of attempts, the validator hard-rejects it, and the model recovers on retry. The architecture
-compensates for training-data quality at the expense of efficiency — more tool calls, more latency,
-but still reaching correct answers 77% of the time.
+**Bypass (pse)** = `put_submodel_element` called instead of atomic `put_submodel`. Only applicable to srn_autonomous (the only write suite).
 
-Notable: `srn_bypass` antipattern hit rate is 90% — 18/20 runs trigger the validator at least once.
-Yet the overall correct rate for the suite is 75%. The validator is the only thing preventing this
-model from getting stuck in invalid Cypher indefinitely.
+### Key rates
 
----
-
-## What Worked Well
-
-**Simple enumeration queries are 100%.** Anti-pattern and asset-spec queries both hit 100% correct.
-These require a single correct Cypher for containment or attribute lookup; the model gets there after
-one or two validator rejections. The validator loop works reliably when the correct Cypher is
-syntactically close to the failed anti-pattern.
-
-**B1, B3 (hall contents and heavy transport) are 10/10.** Straightforward graph traversal with
-exact known idShort values — even with multiple validator rejections, the model converges correctly.
-
-**B6 (heaviest payload comparison) is 9/10.** 90% with a 90% manuals-first rate; the model learns
-to look up the template structure before querying. The single failure is an outlier.
-
-**srn_ablation_variant_a at 93%** — the same write-path task with generic tools achieves 93%, showing
-the model can complete write operations when the schema is sufficiently constrained by the tool design.
+| Metric | Value |
+|---|---|
+| Overall correctness | 72% (145/200) |
+| Read-only correctness | 100% (40/40 for anti_pattern + asset_specs); 88% for containment_hall4; 73% for bench_b |
+| Write-path correctness | 34% (17/50) |
+| Manuals read before first query | 62% (123/200) |
+| Correct without reading manuals first | 71% (55/77) |
+| Correct with manuals read first | 73% (90/123; marginal +2pp) |
+| idShort violation (self-corrected) | 62% of runs (124/200) |
+| Write-path bypass via `put_submodel_element` | 56% (28/50 SRN runs) |
 
 ---
 
-## What Failed
+## 2. idShort / Cypher Validation
 
-### containment_hall4 — cobots: 30% (3/10)
+The Cypher anti-pattern validator rejected queries in 62% of all runs (124/200). Of those 124 runs, 121 (98%) self-corrected all violations — the agent read the hint and rewrote the query correctly. Three runs in bench_b and containment_hall4 retained uncorrected violations.
 
-The sharpest case-level collapse in the eval. The model achieves 100% on `containment_devices_hall4`,
-`containment_ambiguous_assets_hall4`, and `identity_hall4_regression`, but collapses to 30% on
-`containment_cobots_hall4`. The likely cause: the model conflates the concept of "cobot" with
-all robots, or issues a Cypher query that returns both AGVs and cobots, then incorrectly selects
-the set. At ~3B active parameters, type-classification reasoning (cobot vs. AGV vs. industrial robot)
-appears less reliable. The 90% manuals-first rate for this case is high — the model reads the template
-but still fails to translate the cobot-classification signal into the correct filter condition.
+| Violation rule | Frequency |
+|---|---|
+| `idShort_contains_or_regex` | 194 (most common — agent writes `WHERE x.idShort CONTAINS '...'`) |
+| `toLower_id_contains` | 97 (agent writes `WHERE toLower(x.idShort) CONTAINS '...'`) |
+| `id_contains_or_regex` | 19 |
+| `assetType_match` | 3 |
 
-### bench_b B2 — Autonomous transport fleet: 60% (6/10)
+**98% self-correction rate across all suites.** The validator blocks the anti-pattern, the agent reads the hint, and rewrites correctly. However, the validator only guards `query_aas_graph` — it provides no protection on the write path.
 
-Four failures share the same pattern: the agent searches for location data in the robot's own AAS
-(Nameplate, ServiceRequestNotification) and concludes "location not recorded in AAS" rather than
-querying the Hall HierarchicalStructures submodels from the hall's side. The model does not discover
-that location is encoded as a reverse relationship — the hall AAS points to the robot as a child
-entity, not the other way around. This is a graph traversal direction problem, not a Cypher
-anti-pattern — the validator cannot catch it.
-
-qwen36-35b with 22B active parameters solves B2 10/10. The capacity gap is visible here: resolving
-indirect graph traversal direction requires reasoning about schema semantics, not just pattern matching.
-
-### bench_b B4 — MiR250 emergency stop: 30% (3/10)
-
-Only 10% manuals-first. The model almost never reads the MiR250 manual and falls back to generic
-safety guidance. Even for the 3 correct runs, the answers likely reflect general E-stop knowledge
-rather than the specific MiR250 procedure (stop category 0 / STO contactors / release sequence).
-Zero all_good runs.
-
-### bench_b B5 — Hall 4 red status light: 50% (5/10)
-
-20% manuals-first. Five failures: the model either identifies the wrong device (MiR100 vs. the
-Hall 4 device with the red status light) or provides generic troubleshooting guidance without
-accessing the relevant manual section. Similar to B4, the failure is a content-extraction problem
-compounded by infrequent manual access.
-
-### srn_autonomous — 33% overall (from_fault_context 40%, no_element_bypass 20%, routine_priority 40%)
-
-Write-from-scratch SRN creation is systematically hard at this capacity level. Notably,
-`srn_from_fault_context` at 40% is higher here than for qwen36-35b (10%), which is a surprising
-reversal. Whether this reflects a genuine capacity difference or variance at N=10 is unclear.
-`srn_no_element_bypass` at 20% is the weakest individual case: the model fails to verify that the
-target element path exists before writing. Zero all_good runs across all three SRN cases.
+Per-suite self-correction:
+- anti_pattern: 16/16 (100%)
+- asset_specs: 17/17 (100%)
+- bench_b: 35/37 (95%)
+- containment_hall4: 22/23 (96%)
+- srn_autonomous: 31/31 (100%)
 
 ---
 
-## Bench B Per-Case Summary
+## 3. Write-Path Bypass Analysis
 
-| Case | Correct | Manuals first | All good |
-|---|--:|--:|--:|
-| B1 — Hall 3 contents | 10/10 | 100% | 40% |
-| B2 — Autonomous transport fleet | 6/10 | 60% | 10% |
-| B3 — Heavy transport robot | 10/10 | 90% | 80% |
-| B4 — MiR250 emergency stop | 3/10 | 10% | 0% |
-| B5 — Hall 4 red status light | 5/10 | 20% | 0% |
-| B6 — Heaviest payload comparison | 9/10 | 90% | 20% |
+### 3.1 Bypass classification
 
----
+| Bypass type | Count | Description |
+|---|--:|---|
+| `correct` | 13 (26%) | Used `put_submodel` only — no `put_submodel_element` |
+| `direct` | 18 (36%) | Skipped `put_submodel` entirely, went straight to `put_submodel_element` |
+| `surfaced` | 7 (14%) | Called `put_submodel` but then also called `put_submodel_element` |
+| `cascade` | 3 (6%) | Mixed pattern — multiple write attempts with escalating bypass |
+| `None` (no write) | 7 (14%) | No write attempted or write path data missing |
+| `None/N/A` | 2 (4%) | Edge cases (write_path null) |
 
-## Antipattern Behavior
+**56% of SRN runs (28/50) used the bypass.** In 36% (18/50) the agent went directly to `put_submodel_element` without ever calling `put_submodel`.
 
-The correlation between antipattern hits and correct answers reveals that at 3B active parameters,
-the anti-pattern is essentially the model's default first attempt:
+### 3.2 Per-case bypass breakdown
 
-| | antipattern=True | antipattern=False |
-|---|--:|--:|
-| correct=True | 72% | 28% |
-| correct=False | 62% | 38% |
+| Case | N | `correct` | `direct` | `surfaced` | `cascade` | `None` | N/A |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| srn_empty_submodel_bypass | 10 | 2 | 8 | — | — | — | — |
+| srn_from_fault_context | 10 | 2 | 3 | 2 | — | 1 | 2 |
+| srn_routine_priority | 10 | 1 | 4 | 2 | 2 | 1 | — |
+| srn_serial_number | 10 | 4 | — | 1 | 1 | 4 | — |
+| srn_spatial_hall4 | 10 | 4 | 3 | 2 | — | 1 | — |
+| **Total** | **50** | **13** | **18** | **7** | **3** | **7** | **2** |
 
-127 of 177 correct answers went through at least one validator rejection. For comparison, in
-qwen36-35b (22B active), 70 of 194 correct answers had antipattern hits — the inverse pattern.
-At 3B active parameters, successful runs almost always involve the validator; at 22B active, most
-correct runs avoid the anti-pattern entirely.
+### 3.3 Root cause
 
----
+The `srn_empty_submodel_bypass` case was designed to test whether the agent would push an empty submodel and then build it element-by-element. In 8/10 runs, the agent chose exactly this bypass path — going straight to `put_submodel_element` instead of `put_submodel`.
 
-## Duration Patterns
+For `srn_from_fault_context`, the agent often finds existing SRN submodels from previous runs and decides to patch them via `put_submodel_element` rather than creating a new one atomically.
 
-| Suite | Median (all) | Median (correct) | Median (wrong) |
-|---|--:|--:|--:|
-| anti_pattern | 9.1s | 9.1s | — |
-| asset_specs | 10.7s | 10.7s | — |
-| bench_b | 16.8s | 16.0s | 23.7s |
-| containment_hall4 | 19.5s | 18.9s | 20.7s |
-| srn_ablation_variant_a | 11.0s | 9.9s | 21.6s |
-| srn_autonomous | 9.7s | 11.7s | 8.5s |
-| srn_bypass | 8.4s | 8.1s | 9.2s |
+`put_submodel_element_called=true` in 28/50 runs; `put_submodel_attempted=true` in 30/50 runs.
 
-The model runs slower than qwen36-35b (16.8s vs 14.3s for bench_b) despite having fewer active
-parameters — the higher antipattern hit rate adds extra round-trips. Failed bench_b runs are notably
-longer (23.7s) because the model exhausts reasoning steps trying to find location data that isn't
-where it expects. `srn_autonomous` failures are faster than successes, suggesting early termination
-without completing the write operation.
+**Mitigation:** Wipe the stack (`./down.sh` default, then `./up.sh --vllm`) before each eval run to remove stale SRN data.
 
 ---
 
-## Comparison with Other Models
+## 4. Template Validation Gap
 
-| Suite | qwen35-27b | qwen36-27b | qwen36-35b | qwen35-35b |
+**No template validation rejection was observed on any write call.** All `put_submodel` and `put_submodel_element` calls returned `{"status": "ok"}`.
+
+This confirms the architectural gap:
+1. The SRN template has `Cardinality ZeroToMany` on `ServiceRequestNotification` — an empty submodel passes validation.
+2. `put_submodel_element` has no template check at all — elements are accepted without validation.
+3. The validator only checks structural conformance, not semantic correctness (controlled vocabulary enforcement).
+
+As a result, the agent consistently writes **invented ServiceType values** ("Emergency Stop", "EmergencyStop", "Emergency", "Maintenance", "Routine Inspection") instead of the template's controlled vocabulary ("CorrectiveMaintenance", "Inspection"). The validator cannot catch this because it does not enforce value constraints.
+
+---
+
+## 5. Judge Failure Modes per SRN Case
+
+The judge (gpt-5.4) marked 33/50 SRN runs as incorrect. The dominant failure modes:
+
+### srn_from_fault_context (0/10 correct)
+| Missing fact | Count | Wrong claim | Count |
+|---|--:|---|---:|
+| ServiceType is CorrectiveMaintenance | 10 | ServiceType = "EmergencyStop" / "Emergency Stop" / "Emergency Stop Troubleshooting" / "Emergency" | 4 |
+
+Every run got Priority=High and Status=Open correct, but none used the template vocabulary `CorrectiveMaintenance` for ServiceType.
+
+### srn_routine_priority (0/10 correct)
+| Missing fact | Count | Wrong claim | Count |
+|---|--:|---|---:|
+| Priority is Low | 10 | Priority = "Medium" / "Normal" | 8 |
+| ServiceType is Inspection | 4 | ServiceType = "Routine Inspection" / "Maintenance" | 2 |
+| SR created for UR3e_002 | 3 | Created for UR3e_001 instead | 1 |
+| Status is Open | 2 | | |
+
+The agent never assigns "Low" priority for routine inspections — it defaults to "Medium" or "Normal", failing the priority inference requirement.
+
+### srn_serial_number (8/10 correct)
+| Missing fact | Count | Wrong claim | Count |
+|---|--:|---|---:|
+| Write attempted / serial number resolved | 2 | — | — |
+| Priority is High | 2 | | |
+
+Two runs failed to clearly resolve MIR100-2020-001 → MiR100_001 or to confirm a write attempt.
+
+### srn_spatial_hall4 (6/10 correct)
+| Missing fact | Count | Wrong claim | Count |
+|---|--:|---|---:|
+| Identified MiR100_001 as the robot | 3 | Asserted MiR250_001 instead | 1 |
+| Write attempted / confirmed | 2 | | |
+
+The spatial disambiguation is usually solved correctly, but some runs get confused by multiple MiR instances.
+
+### srn_empty_submodel_bypass (3/10 correct)
+| Missing fact | Count | Wrong claim | Count |
+|---|--:|---|---:|
+| Write attempted / payload contains SRN entry | 5 | — | — |
+| Correct asset identified | 1 | | |
+
+Five runs attempted writes but the answer lacked proof of correct payload content — the agent often gets stuck in a loop trying to verify the write but never produces a clean final answer.
+
+---
+
+## 6. Duration Analysis
+
+| Suite | N | Median (all) | Median (correct) | Median (wrong) |
 |---|--:|--:|--:|--:|
-| anti_pattern | 100% | 100% | 100% | **100%** |
-| asset_specs | 95% | 100% | 100% | **100%** |
-| bench_b | 70% | 80% | 87% | **72%** |
-| containment_hall4 | 96% | 96% | 96% | **82%** |
-| srn_ablation_variant_a | 97% | 90% | 93% | **93%** |
-| srn_autonomous | 67% | 63% | 37% | **33%** |
-| srn_bypass | 95% | 70% | 75% | **75%** |
-| **Total** | **86%** | **85%** | **84%** | **77%** |
+| anti_pattern | 20 | 8.8s | 8.8s | — |
+| asset_specs | 20 | 10.2s | 10.2s | — |
+| bench_b | 60 | 18.8s | 18.2s | 24.3s |
+| containment_hall4 | 50 | 19.5s | 19.4s | 22.0s |
+| srn_autonomous | 50 | 40.1s | 34.8s | 45.0s |
 
-At 3B active parameters, qwen35-35b achieves 77% — 7–9 points below the 27b models. The regressions
-are concentrated in containment (82% vs 96%), bench_b (72% vs 70–87%), and srn_autonomous (33% vs
-37–67%). Simple graph lookups and write-path ablation (srn_ablation) remain competitive, which
-confirms that the capacity gap shows up in tasks requiring multi-step reasoning or indirect graph
-traversal, not in straightforward retrieval.
+SRN write runs are 2.1× slower than read-only runs (median 40.1s vs 19.5s). Within SRN, correct runs are faster than wrong runs (34.8s vs 45.0s) — incorrect runs burn time on futile write-retry loops.
+
+SRN per-case:
+
+| Case | N | Median (all) | Median (correct) | Median (wrong) |
+|---|--:|--:|--:|--:|
+| srn_from_fault_context | 10 | 42.2s | — | 42.2s |
+| srn_routine_priority | 10 | 48.5s | — | 48.5s |
+| srn_serial_number | 10 | 36.5s | 34.2s | 57.7s |
+| srn_spatial_hall4 | 10 | 43.1s | 39.2s | 50.2s |
+| srn_empty_submodel_bypass | 10 | 31.3s | 34.8s | 27.8s |
+
+The two zero-correct cases (fault context, routine priority) have the highest medians (42–49s), reflecting extensive but fruitless tool usage.
 
 ---
 
-## Summary
+## 7. Manuals-First Correlation
 
-qwen35-35b demonstrates that a ~3B-active-parameter MoE model can handle AAS graph queries
-when backed by an active validator. The two defining characteristics of this eval are:
+|  | Manuals first | No manuals | Total |
+|---|--:|--:|--:|
+| Correct | 90 (73%) | 55 (71%) | 145 |
+| Incorrect | 33 (27%) | 22 (29%) | 55 |
 
-1. **High antipattern rate (70%), high correct rate (77%)** — the validator functions as a recovery
-   mechanism rather than a safety net. Every correct answer in simpler suites went through validator
-   rejection; the model relies on the correction loop to reach valid Cypher. This is the strongest
-   empirical argument in the eval dataset for the "validator as active guard-rail" design pattern.
+Reading manuals first provides a negligible +2pp improvement (73% vs 71%). The 35b model is notably less dependent on manual pre-reading than the 397b model — it often proceeds directly to graph queries and still achieves similar or better correctness. However, 62% of runs still read manuals first, largely driven by the containment_hall4 (80%) and bench_b (70%) suites where the agent consistently calls `get_graph_schema` or `get_templates_index` before its first Cypher query.
 
-2. **Capacity ceiling at indirect reasoning** — B2 (indirect graph traversal direction), B4/B5
-   (manual content extraction), and `containment_cobots_hall4` (type classification) all collapse
-   below 60%. These tasks require schema-semantic reasoning that exceeds what 3B active parameters
-   can reliably produce. The threshold between "recoverable with validator" and "systematically
-   failing" maps clearly onto task complexity.
+---
+
+## 8. Comparison with qwen3.5-397b
+
+### Overall
+
+| Metric | 35b | 397b | Delta |
+|---|---|---|---|
+| Overall correctness | 72% | 76% | **−4pp** |
+| Manuals-first rate | 62% | 84% | **−22pp** |
+| idShort violation rate | 62% | 62% | 0pp |
+| Write-path bypass rate | 56% | 44% | **+12pp** |
+| SRN correctness | 34% | 26% | **+8pp** |
+
+### Per-suite comparison
+
+| Suite | Metric | 35b | 397b | Delta |
+|---|---|---|---|---|
+| anti_pattern | Correct | 100% | 100% | 0pp |
+| anti_pattern | Manuals-first | 45% | 65% | −20pp |
+| anti_pattern | Median duration | 8.8s | 18.1s | **−9.3s** |
+| asset_specs | Correct | 100% | 100% | 0pp |
+| asset_specs | Manuals-first | 25% | 75% | **−50pp** |
+| asset_specs | Median duration | 10.2s | 17.9s | **−7.7s** |
+| bench_b | Correct | 73% | 82% | −9pp |
+| bench_b | Manuals-first | 70% | 87% | −17pp |
+| bench_b | Median duration | 18.8s | 34.0s | **−15.2s** |
+| containment_hall4 | Correct | 88% | 100% | **−12pp** |
+| containment_hall4 | Manuals-first | 80% | 84% | −4pp |
+| containment_hall4 | Median duration | 19.5s | 33.2s | **−13.7s** |
+| srn_autonomous | Correct | 34% | 26% | **+8pp** |
+| srn_autonomous | Manuals-first | 54% | 90% | **−36pp** |
+| srn_autonomous | Median duration | 40.1s | 89.8s | **−49.7s** |
+
+### Key takeaways
+
+1. **35b is ~2× faster** across all suites (−9s to −50s), especially in SRN (−49.7s). This is the most striking difference — the smaller model is far more token-efficient.
+2. **35b reads manuals far less** (−22pp overall; −50pp on asset_specs). It often skips `get_graph_schema`/`get_templates_index` and goes straight to Cypher, relying on the validator to correct anti-patterns.
+3. **Despite reading fewer manuals, 35b matches or beats 397b on SRN** (+8pp). The write-path performance is better because the smaller model is less verbose — it constructs simpler payloads that happen to be more correct.
+4. **35b trades read-heavy correctness for speed**: −12pp on containment_hall4 (6 wrong runs, mostly the "ambiguous assets" sub-case) and −9pp on bench_b (4 runs fail to find MiR250 location in Hall 3).
+5. **idShort violation rates are identical** (62% both), confirming this is a model-family trait, not a size-dependent behavior.
+6. **35b has a higher bypass rate** (56% vs 44%), suggesting it defaults to `put_submodel_element` more readily — likely because it constructs simpler plans that skip the atomic `put_submodel` step.

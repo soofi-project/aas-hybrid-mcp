@@ -1,182 +1,233 @@
-# Cross-model analysis — Stand 2026-05-21
+# Cross-Model Evaluation Analysis — All Models, T07
 
-Analysierte Modelle (Qwen3.5-Familie, alle N=230 Runs / 7 Suites):
+9 models · 5 suites · 1,750 total runs (7 models with 200 each, qwen36-27b with 150 — no SRN suite)
 
-| Modell | Parameterzahl | Correct | Manuals-first | Antipattern-hit | All-good |
-|--------|--------------|---------|---------------|-----------------|----------|
-| qwen35-08b | 0.8B (dense) | 0% | 51% | 3% | 0% |
-| qwen35-2b | 2B (dense) | 2% | 16% | 16% | 0% |
-| qwen35-4b | 4B (dense) | 50% | 33% | 71% | 4% |
-| qwen35-9b | 9B (dense) | 66% | 30% | 75% | 4% |
-| qwen35-27b | 27B (dense) | **84%** | 37% | 70% | 16% |
-| qwen35-122b | 122B (MoE, ~10B aktiv) | **1%** | 0%† | 0% | 0% |
-| qwen36-27b | 27B (dense, Gen 3.6) | 83% | 71% | 49% | 35% |
+Models ordered by parameter count:
 
-Noch ausstehend: qwen35-397b (Cortecs), qwen36-35b.
-
-> **MoE-Hinweis:** qwen35-122b (`Qwen/Qwen3.5-122B-A10B-FP8`) ist ein
-> Mixture-of-Experts-Modell mit ~10B aktiven Parametern pro Token-Forward-Pass.
-> Für Vergleiche auf der Skalierungsachse ist die aktive Parameteranzahl (~10B)
-> relevanter als die Gesamtzahl (122B).
->
-> †  `manuals_first=0%` ist die korrekte Zahl nach einem Bug-Fix in `judge.py`
-> (Zeile "trivially satisfied"): wenn ein Modell überhaupt keine Tool-Calls macht,
-> war `first_query_idx=None` fälschlicherweise als `read_manuals_first=True`
-> gewertet worden. 229/230 Runs haben `tool_call_count=0` — der eine echte Run
-> (bench_b B6, rep 9, 6 Tool-Calls, korrekt) ist der einzige mit `manuals_first=True`.
+| Label | Architecture | Active params | N runs |
+|---|---|---|---|
+| qwen35-2b | 2B dense | 2B | 200 |
+| qwen35-4b | 4B dense | 4B | 200 |
+| qwen35-9b | 9B dense | 9B | 200 |
+| qwen35-27b | 27B dense | 27B | 200 |
+| qwen36-27b | 27B dense (Qwen3 gen) | 27B | 150 |
+| qwen35-35b | 35B dense | 35B | 200 |
+| qwen36-35b | 35B dense, 4-bit AWQ | 35B | 200 |
+| qwen35-122b | 122B MoE | ~10B | 200 |
+| qwen35-397b | 397B MoE | ~17B | 200 |
 
 ---
 
-## Befunde
+## 1. Paper-Evaluation Table per Suite
 
-### 1. Phasenübergang bei 4B
+### Correct rate per suite
 
-Unter 4B bricht der Agentenloop zusammen — 0.8B und 2B liefern praktisch nichts
-Verwertbares (0% / 2% korrekt). Ab 4B funktioniert der Loop grundsätzlich. Der Sprung
-von 2B auf 4B ist mit +48pp der dramatischste in der gesamten Skalierungskurve.
+| Suite | 2B | 4B | 9B | 35-27B | 36-27B | 35-35B | 36-35B | 122B | 397B |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| anti_pattern | 10% | 80% | 90% | 100% | 100% | 100% | 100% | 100% | 100% |
+| asset_specs | 20% | 85% | 70% | 100% | 100% | 100% | 100% | 100% | 100% |
+| bench_b | 3% | 45% | 55% | 78% | 85% | 73% | 87% | 72% | 82% |
+| containment_hall4 | 10% | 42% | 44% | 100% | 100% | 88% | 94% | 92% | 100% |
+| srn_autonomous | 0% | 4% | 14% | 32% | — | 34% | 18% | 22% | 26% |
+| **Overall** | **6.5%** | **41.5%** | **47%** | **76.5%** | **94%*** | **72%** | **74%** | **70%** | **76%** |
 
-### 2. Das 0.8B-Paradoxon
+\*qwen36-27b has no SRN suite (150 runs); 94% is read-only only.
 
-Das kleinste Modell liest zu 51% zuerst die Manuals — höher als 4B (33%) oder 9B (30%).
-Es kennt das richtige Verhaltensmuster, scheitert aber an der Ausführung (0% korrekt).
-Ein Modell kann also die Meta-Strategie "konsultiere Dokumentation zuerst" gelernt haben,
-ohne in der Lage zu sein, die Ergebnisse sinnvoll zu verwerten.
+### Overall correct rate by model size
 
-### 3. Validator als Korrektiv-Mechanismus für mittlere Modelle
+```
+2B  ████                                                     6.5%
+4B  █████████████████████                                     41.5%
+9B  ███████████████████████                                   47%
+27B █████████████████████████████████████                      76.5%
+35B ████████████████████████████████████                        72%
+122B████████████████████████████████████                        70%
+397B█████████████████████████████████████                       76%
+```
 
-Bei 4B und 9B löst der Agent bei 68–72% der korrekten Antworten trotzdem einen
-Anti-Pattern-Hit aus — und kommt trotzdem ans richtige Ergebnis. Der Validator feuert,
-lehnt die Anfrage ab, und der Agent korrigiert sich im nächsten Schritt.
+Three regimes emerge:
 
-Das ist der "Layered Determinism"-Befund empirisch untermauert: **der Validator wirkt
-als Korrektiv-Mechanismus, der mittelgroße Modelle erst operativ nutzbar macht.**
-Ohne diesen Gate würden 4B/9B-Modelle deutlich mehr Fehler liefern.
+1. **Below threshold (2B):** Floor performance. Even the simplest read-only suite (asset_specs) achieves only 20%. SRN is 0%. The model cannot sustain multi-step tool chains.
+2. **Sub-viable (4B–9B):** Read-only suites with focused scope work (80–90% on anti_pattern, 70–85% on asset_specs), but broader suites collapse (3–55% on bench_b, 10–44% on containment_hall4). SRN is 4–14% — functionally broken. The 4B→9B jump is marginal (+5.5 pp overall).
+3. **Viable (27B+):** Read-only suites exceed 72% (most reach 85–100%). SRN ranges 18–34% — still low but functionally present. The 9B→27B jump is the scaling cliff (+29.5 pp overall, +18 pp SRN). Beyond 27B, gains are modest and non-monotonic.
 
-Cross-tab-Zahlen (korrekte Runs mit Antipattern-Hit):
-- 4B: 68%
-- 9B: 72%
-- qwen35-27B: 68% — überraschend hoch, aber Korrektheit trotzdem 84%
-- qwen36-27B: nur 45% — Generationsunterschied sichtbar
+### Key observation: non-monotonicity above 27B
 
-### 4. Qualitativer Sprung bei 27B (dense)
-
-Der 27B-Sprung ist nicht nur quantitativ, sondern qualitativ anders — belegt durch beide
-27B-Varianten (qwen35 und qwen36):
-
-- **Korrektheit:** 84% / 83% gegenüber 66% beim 9B
-- **All-good** springt auf 16–35%: Erst beim 27B gelingt es regelmäßig, alle drei
-  Dimensionen gleichzeitig richtig zu machen (korrekte Antwort + kein Tool-Fehler +
-  Manuals zuerst gelesen)
-
-Generationsunterschied innerhalb der 27B-Klasse:
-- qwen35-27b erreicht 84% korrekt mit **niedrigerer** Manuals-first-Rate (37%) und
-  **höherer** Antipattern-Rate (70%) — der Validator kompensiert.
-- qwen36-27b erreicht 83% korrekt mit **höherer** Manuals-first-Rate (71%) und
-  **niedrigerer** Antipattern-Rate (49%) — proaktiveres, strategischeres Verhalten.
-- All-good verdoppelt sich: 16% → 35% (qwen35 → qwen36).
-- Das zeigt: Korrektheit allein verdeckt den Verhaltensqualitätssprung zwischen Generationen.
-
-### 5. Manuals-first korreliert mit Korrektheit — aber schwächer als erwartet
-
-Bei 4B und 9B ist der Unterschied zwischen manuals-first=True und =False praktisch null.
-Diese Modelle brauchen die Manuals nicht, weil der Validator-Korrektiv-Loop als Ersatz
-funktioniert. Beim qwen36-27b gibt es einen messbaren Unterschied (73% der korrekten Runs
-lasen Manuals zuerst, bei falschen Runs 62%). Beim qwen35-27b ist die Korrelation schwächer
-(39% correct mit Manuals-first vs. 27% incorrect mit Manuals-first) — der Effekt ist vorhanden
-aber der Validator trägt stärker.
-
-### 6. 122B MoE: "Look-up-and-Guess"-Kollaps
-
-Das 122B-MoE-Modell zeigt ein fundamental anderes Versagensmuster als alle anderen Modelle:
-
-| Indikator | 122b MoE | 0.8b dense (Referenz) |
-|-----------|---------|----------------------|
-| Correct | 1% | 0% |
-| Manuals-first | **0%** (†bug-fix) | 51% |
-| Antipattern-hit | **0%** | 3% |
-| tool_call_count>0 | **1/230 Runs** | – |
-| Median Laufzeit (bench_b) | **2.1s** | 22.7s |
-
-Das Profil lautet: **macht in 229/230 Runs null echte Tool-Calls und antwortet direkt
-mit einem Textmonolog** (bis zu 63.000 Zeichen). Das Modell schreibt Cypher-Queries als
-Markdown-Code-Blöcke in seine Antwort, ruft aber nie den OpenAI Function-Calling-API-
-Mechanismus auf. Die 1–3 Sekunden Median-Laufzeit bestätigt: kein iterativer Tool-Loop,
-ein einziger API-Call der Text zurückgibt.
-
-Der einzige Ausnahme-Run (bench_b B6, rep 9): 6 echte Tool-Calls, korrekte Antwort —
-zeigt dass das Modell die Fähigkeit prinzipiell hat, sie aber nicht stabil aktiviert.
-
-Dieses Muster ist **nicht** das 0.8B-Paradoxon in größer: Das 0.8B-Modell *versucht*
-Queries auszuführen (Laufzeit 22s, 3% Antipattern-Hits, echte Tool-Calls), scheitert aber
-an der Qualität. Das 122B-MoE tritt in 99.6% der Fälle gar nicht erst in die
-Tool-Use-Schleife ein — es ist ein **function-calling compatibility failure**, nicht ein
-reasoning failure.
-
-**Interpretation (MoE-aktive-Parameter-Hypothese):** Mit ~10B aktiven Parametern liegt das
-Modell auf der Skalierungsachse *unter* dem dense-4B-Threshold — nicht weil es weniger
-gelernt hat, sondern weil der spärliche Aktivierungspfad im Forward-Pass nicht ausreicht,
-um die agentic Tool-Use-Schleife strukturell durchzuhalten. Totale Parameterzahl (122B)
-ist für agentic loops kein valider Vergleichsparameter; **aktive Parameter** sind das
-relevante Maß.
+The 27B dense models (qwen35-27b at 76.5%, qwen36-27b at 94% read-only) are competitive with or superior to larger models. The 122B MoE (70% overall, 22% SRN) and 397B MoE (76%, 26% SRN) underperform the 35B dense model (72%, 34% SRN) on write-path tasks. Active parameter count, not total parameter count, predicts performance: the 122B MoE with ~10B active params behaves like a 9B-class model on SRN (22%), while the 397B MoE with ~17B active params is closer to 27B-class.
 
 ---
 
-## Dauer (Median Sekunden pro Suite)
+## 2. idShort Violation Self-Correction Rate
 
-Fairster Modellvergleich: **Median (alle Runs)** — gleiche Suite = gleiche Fragen,
-Schwierigkeits-Confound damit kontrolliert. Correct-only-Median ist konfundiert: kleine
-Modelle lösen nur einfache (schnelle) Fragen, große Modelle lösen auch schwere (langsamere).
-Falsche Runs dauern überproportional lang, weil Modelle das Rekursionslimit erschöpfen
-statt schnell aufzugeben.
+| Model | Violation rate | Self-correction rate |
+|---|--:|--:|
+| 2B | 13% | 96.2% |
+| 4B | 75.5% | 96.7% |
+| 9B | 76% | 95.4% |
+| 35-27B | 63% | 97.6% |
+| 36-27B | 48% | 97.2% |
+| 35-35B | 62% | 98% |
+| 36-35B | 39% | 95% |
+| 122B | 79% | 98% |
+| 397B | 62% | 100% |
 
-| Modell | bench_b all | bench_b correct | bench_b wrong | containment all | srn_bypass all |
-|--------|------------:|----------------:|--------------:|----------------:|---------------:|
-| 0.8B | 22.7s | – | 22.7s | 14.4s | 11.6s |
-| 2B | 22.3s | – | 22.3s | 21.7s | 20.2s |
-| 4B | 60.5s | 16.6s | 96.7s | 11.3s | 8.0s |
-| 9B | 23.1s | 18.4s | 92.4s | 14.5s | 11.9s |
-| qwen35-27B | 26.3s | 19.9s | 60.1s | 17.1s | 8.9s |
-| qwen35-122B (MoE) | **2.1s** | 19.4s† | **2.0s** | **2.8s** | **1.7s** |
-| qwen36-27B | 30.1s | 24.5s | 58.0s | 20.7s | 11.4s |
+The self-correction rate is consistently high (95–100%) across all model sizes — the validator feedback loop works reliably regardless of model capacity. The variation is in violation rate:
 
-† Basis N=1 (ein einziger korrekter bench_b-Run) — nicht repräsentativ.
+- **2B (13%):** Fewer violations because the model makes fewer tool calls overall, not because of better compliance.
+- **4B–9B (76%):** Peak violation rates. These models make many tool calls but have weak idShort discipline, defaulting to natural-language patterns.
+- **27B+ (39–79%):** Violation rates decrease with model capability, with the 36-27B and 36-35B (newer generation) showing the best compliance (48% and 39%). The 122B MoE is an outlier at 79% — likely because the MoE routing produces more "pattern-matching" behavior from specialized experts.
 
-**Befunde:**
-
-- **4B ist der langsamste Runner** bei bench_b (all=60.5s): Er probiert lang und scheitert
-  oft an der Rekursionsgrenze (wrong=96.7s), die seltenen korrekten Runs sind dagegen kurz.
-- **Falsche Runs sind systematisch länger als korrekte** (außer 0.8B/122B). Das Muster ist
-  konsistent: Modelle geben nicht schnell auf — sie scheitern durch Erschöpfung.
-- **122B MoE bricht das Muster:** Wrong-Runs sind kürzer als Correct-Runs (2.0s vs. 19.4s).
-  Das Modell gibt sofort auf, ohne es überhaupt zu versuchen — Exhaustion-Pattern tritt
-  gar nicht erst auf.
-- **27B correct > 9B correct bei bench_b** (20–25s vs. 18s): Der 27B löst schwerere Fragen,
-  die mehr Reasoning-Schritte brauchen — das ist der Confound der Correct-only-Vergleich
-  unbrauchbar macht.
+**Dominant violation rule across all models:** `idShort_contains_or_regex` — the agent uses idShort as a natural-language token in Cypher patterns rather than as a structural identifier.
 
 ---
 
-## Paper-Implikationen (Existence Claims, keine Frequenz-Extrapolation)
+## 3. Write-Path Bypass (SRN Suite Only)
 
-1. **Capability threshold:** Unterhalb von 4B *aktiven* Parametern ist MCP-basiertes
-   AAS-Agenten-Retrieval nicht operational — unabhängig von Backend und Validator.
-   Die 122B-MoE-Daten zeigen, dass *totale* Parameterzahl kein valider Proxy ist;
-   die ~10B aktiven Parameter platzieren das Modell unter diesem Threshold.
+### Bypass rate and dominant type
 
-2. **Validator as scaffolding:** Für 4–27B-Modelle wirkt der Validator-Gate wie externe
-   Fehlerkorrektur; die hohe Anti-Pattern-Rate bei gleichzeitig akzeptabler Korrektheit
-   zeigt, dass das Modell den Validator als impliziten Hinweismechanismus nutzt.
-   Beim qwen36-27B nimmt dieser Effekt ab (49% Antipattern), beim 122B MoE fällt er
-   auf 0% — aber aus entgegengesetztem Grund (kein Tool-Use-Versuch statt gereiftem
-   Querying).
+| Model | SRN correct | Bypass rate | Dominant bypass | put_submodel_element called |
+|---|--:|--:|---|--:|
+| 2B | 0% | 6% | null (82%) | 5/50 |
+| 4B | 4% | 48% | none (32%) | 34/50 |
+| 9B | 14% | 44% | null (32%) / cascade (28%) | 31/50 |
+| 35-27B | 32% | 56% | surfaced (40%) | 12/45 |
+| 35-35B | 34% | 56% | direct (36%) / surfaced (14%) | 28/50 |
+| 36-35B | 18% | 48% | surfaced (34%) / none (20%) | 24/50 |
+| 122B | 22% | 4% | surfaced (34%) | 2/50 |
+| 397B | 26% | 44% | direct (36%) | 22/50 |
 
-3. **Qualitative shift at 27B (dense):** Erst ab 27B dense tritt das gewünschte Verhalten
-   emergent auf: proaktive Dokumentationskonsultation + regelkonformes Querying + korrekte
-   Antwort gleichzeitig. All-good 16–35% vs. 4% bei 4–9B.
+The bypass profile shifts systematically with model size, revealing three distinct failure stages:
 
-4. **MoE / Function-Calling Kompatibilität:** Das 122B-MoE-Modell
-   (`Qwen3.5-122B-A10B-FP8`) versagt nicht an Reasoning, sondern an der
-   Function-Calling-API-Kompatibilität: 229/230 Runs liefern 0 echte Tool-Calls.
-   Für produktive MCP-Deployments müssen Modelle auf strukturierten Function-Calling-
-   Support explizit geprüft werden — Gesamtparameterzahl ist kein ausreichendes
-   Selektionskriterium.
+1. **Navigation failure (2B):** "null" dominates (82%) — the model never finds the submodel. Failure occurs before any write reasoning.
+2. **Write avoidance (4B):** "none" dominates (32%) — the model finds the submodel but never attempts a write. A step forward from 2B but still no write execution.
+3. **Surfaced paralysis (27B):** "surfaced" dominates (40%) — the model finds the submodel and correctly identifies it as the target, but treats its existence as task completion (read-path/write-path confusion).
+4. **Direct bypass (35B, 397B):** "direct" dominates (36%) — the model skips `put_submodel` and goes straight to `put_submodel_element`, bypassing the atomic write path.
+5. **High compliance, low vocabulary (122B):** Only 4% bypass — the most compliant model. But 22% SRN correctness shows compliance alone is insufficient; vocabulary failure dominates.
+
+### Per-case SRN correct rate (models with SRN data)
+
+| Case | 2B | 4B | 9B | 35-27B | 35-35B | 36-35B | 122B | 397B |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| srn_from_fault_context | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 2% |
+| srn_routine_priority | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
+| srn_serial_number | 0% | 0% | 0% | 40% | 80% | 20% | 0% | 0% |
+| srn_spatial_hall4 | 0% | 0% | 20% | 40% | 60% | 50% | 70% | 100% |
+| srn_empty_submodel_bypass | 0% | 20% | 10% | 0% | 30% | 20% | 30% | 0% |
+
+Three cases are at 0% for almost all models: `srn_from_fault_context`, `srn_routine_priority`, and `srn_serial_number`. These require vocabulary inference (CorrectiveMaintenance, Inspection, Low priority) or serial-number resolution — capabilities that no model reliably possesses. The only consistently solvable case is `srn_spatial_hall4`, which requires only spatial reasoning without value inference.
+
+---
+
+## 4. Template Validation
+
+**All nine models report zero write-tool rejections and zero validation errors across all 1,750 runs.** When any model issues a write call, the payload passes schema validation — regardless of model size, architecture, or correctness.
+
+This confirms the template validation gap is architectural, not model-dependent:
+
+1. `Cardinality ZeroToMany` on ServiceRequestNotification allows empty submodels to pass.
+2. `put_submodel_element` has no template check at all.
+3. The validator checks structural conformance only, not semantic correctness (controlled vocabulary).
+
+All models invent ServiceType values ("Emergency", "Maintenance", "Routine Inspection") and Priority values ("Normal", "Critical") that the validator accepts. The gap is identical across the entire model spectrum.
+
+---
+
+## 5. Judge Failure Modes per SRN Case
+
+Aggregated across all models with SRN data (2B, 4B, 9B, 35-27B, 35-35B, 36-35B, 122B, 397B):
+
+| Failure mode | Cases affected | Frequency | Model-dependence |
+|---|---|---|---|
+| Wrong ServiceType | srn_from_fault_context, srn_routine_priority | 100% miss in 2B–9B; 60–100% miss in 27B+ | Universal — no model maps "emergency stop" → CorrectiveMaintenance reliably |
+| Wrong Priority (Low→Normal) | srn_routine_priority | 100% miss in 2B–9B; 100% miss in 27B+ | Universal — all models default to "Normal" instead of "Low" |
+| Wrong Status (Open→New) | srn_from_fault_context | 0% in 2B–9B; 30–100% in 27B+ | Emerging at larger sizes — models use "New" instead of "Open" |
+| Serial not resolved | srn_serial_number | 40–100% miss across all models | Universal — no model reliably maps MIR100-2020-001 → MiR100_001 |
+| No write attempted | srn_empty_submodel_bypass | 60–100% in 36-35B and 4B | Size-dependent — smaller models give up, 36-35B reports existing data |
+| Asset not identified | srn_spatial_hall4 | 0–90% miss | Size-dependent — 2B fails 90%, 397B 0% |
+
+Two systemic failure modes are model-independent:
+
+1. **Vocabulary gap:** No model reliably maps natural-language descriptions to the SRN schema's controlled vocabulary. ServiceType=CorrectiveMaintenance and Priority=Low are missed in 100% of runs for most models. This is a scaffolding problem, not a scaling problem — the information is not in the prompt or the tools.
+2. **Serial number resolution:** No model reliably traces MIR100-2020-001 → MiR100_001. This requires a multi-hop lookup path (Nameplate → SerialNumber → AAS ID) that the agent must discover autonomously.
+
+---
+
+## 6. Duration: Median per Suite
+
+| Suite | 2B | 4B | 9B | 35-27B | 36-27B | 35-35B | 36-35B | 122B | 397B |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| anti_pattern (correct) | 17.2 | 7.6 | 6.7 | 13.4 | 13.2 | 8.8 | 5.3 | 19.0 | 18.1 |
+| asset_specs (correct) | 15.1 | 9.4 | 8.9 | 11.4 | 12.7 | 10.2 | 5.2 | 18.1 | 17.9 |
+| bench_b (correct) | 14.9 | 13.4 | 10.5 | 28.8 | 33.0 | 18.2 | 17.3 | 29.3 | 34.3 |
+| bench_b (wrong) | 24.2 | 18.4 | 18.5 | 24.7 | 18.8 | 24.3 | 17.0 | 34.3 | 29.4 |
+| containment_hall4 (correct) | 14.1 | 7.0 | 6.6 | 26.9 | 29.0 | 19.4 | 17.7 | 24.2 | 33.2 |
+| srn_autonomous (correct) | — | 37.0 | 38.3 | 94.9 | — | 34.8 | 66.1 | 63.7 | 94.3 |
+| srn_autonomous (wrong) | 22.8 | 50.6 | 47.7 | 83.2 | — | 45.0 | 57.2 | 68.6 | 65.5 |
+
+Two patterns:
+
+1. **Speed does not predict quality.** The 2B model is fastest on SRN (22.8s median wrong) because it fails early — it exhausts its capability before engaging deeply. The 27B model is slowest (94.9s correct) because successful write chains are inherently longer. At floor performance, duration reflects engagement depth, not competence.
+
+2. **Correct SRN runs are slower than wrong runs at 27B+** (94.9s vs 83.2s for 35-27B, 94.3s vs 65.5s for 397B). The opposite pattern holds at 9B and below (wrong runs are slower), where the model wastes time on futile exploration. The crossover reflects a shift from "exploration waste" to "correct execution cost."
+
+---
+
+## 7. Manuals-First Correlation
+
+| Model | Manuals-first correct | No-manuals correct | Delta | N manuals-first | N no-manuals |
+|---|--:|--:|--:|--:|--:|
+| 2B | 0% | 7% | **−7 pp** | 15 | 185 |
+| 4B | 54.1% | 25.8% | **+28.3 pp** | 111 | 89 |
+| 9B | 64.2% | 27.7% | **+36.5 pp** | 106 | 94 |
+| 35-27B | 81.7% | 70.3% | **+11.4 pp** | 109 | 91 |
+| 36-27B | 99.2% | 72.4% | **+26.8 pp** | 121 | 29 |
+| 35-35B | 73% | 71% | **+2 pp** | 123 | 77 |
+| 36-35B | 71% | 82% | **−11 pp** | 150 | 50 |
+| 122B | 74% | 63% | **+11 pp** | 130 | 70 |
+| 397B | 78% | 64% | **+14 pp** | 167 | 33 |
+
+The manuals-first effect is strongly size-dependent:
+
+1. **2B:** Negative correlation (−7 pp). The model cannot act on documentation even when it retrieves it. Manuals-first is a marker of difficulty, not a help.
+2. **4B–9B:** Strong positive correlation (+28 to +37 pp). These models depend heavily on documentation to anchor graph traversal. The causal effect is strongest here — removing manuals would be catastrophic.
+3. **27B:** Moderate positive correlation (+11 to +27 pp). Documentation helps but is not essential for most read-only tasks. The qwen36-27b shows a large +27 pp effect but with an imbalanced sample (121 manuals-first vs 29 no-manuals).
+4. **35B:** Near-zero or negative. The 35-35B shows +2 pp; the 36-35B shows −11 pp. At this size, the model reads manuals reactively on harder cases (confounding), and the marginal information gain from documentation is lower.
+5. **122B–397B:** Moderate positive (+11 to +14 pp). Manuals help, but the no-manuals baseline is already at 63–64%, suggesting the model has sufficient parametric knowledge for most read-only tasks.
+
+**Interpretation:** The manuals-first delta is an inverted-U function of model size — smallest for models that cannot use the information (2B) or do not need it (35B), and largest for models in the middle range (4B–9B) that can use the information but cannot compensate without it.
+
+---
+
+## 8. Key Takeaways / Action Items
+
+### T1 — The scaling cliff is at ~27B, not between smaller sizes
+
+The 2B→4B jump (+35 pp) reflects escape from floor performance. The 4B→9B jump (+5.5 pp) is marginal. The 9B→27B jump (+29.5 pp) is the qualitative shift: read-only suites go from 44–55% to 78–100%, and SRN goes from 14% to 32%. Beyond 27B, gains are modest and non-monotonic (35B drops to 72%, 122B to 70%). **Action:** Position 27B as the minimum viable model size for the current tool set and prompt design. The 2B/4B/9B cluster is below threshold; the 27B+ cluster is viable.
+
+### T2 — Active parameters, not total, predict SRN performance
+
+The 122B MoE (~10B active) achieves 22% SRN — comparable to the 9B dense (14%), not the 27B dense (32%). The 397B MoE (~17B active) achieves 26% — between 9B and 27B. The 35B dense achieves 34% SRN — the best across all models. **Action:** In the paper, report active parameter counts alongside total counts. Frame the SRN scaling result in terms of active parameters: the write path demands >10B active parameters for non-trivial performance.
+
+### T3 — The vocabulary gap is model-independent
+
+No model reliably maps "emergency stop" → CorrectiveMaintenance or "routine" → Priority=Low. The 397B MoE scores 0/10 on srn_routine_priority; the 35B dense scores 0/10 on srn_from_fault_context. This is not a scaling problem — the information is not available in the prompt, tools, or templates. **Action:** Inject the SRN enum vocabulary directly into the writing manual or system prompt. This is the highest-ROI fix: it would improve SRN for all models simultaneously.
+
+### T4 — Bypass profiles diagnose the failure stage
+
+The shift from "null" (2B) → "none" (4B) → "surfaced" (27B) → "direct" (35B/397B) → "high compliance, low vocabulary" (122B) maps to a progression through failure stages: navigation → write avoidance → read/write confusion → protocol bypass → vocabulary limitation. **Action:** Use bypass profile as a diagnostic for where in the pipeline a model fails, and target interventions accordingly.
+
+### T5 — Template validation gap is architectural, not model-dependent
+
+Zero rejections across 1,750 runs confirms the validator cannot enforce semantic correctness. All models write invented values that pass structural validation. **Action:** Implement server-side enum validation for ServiceType, Priority, and Status. This is a prerequisite for meaningful SRN evaluation — without it, "correct" SRN runs may succeed for the wrong reasons.
+
+### T6 — Manuals-first is most valuable for 4B–9B models
+
+The +28 to +37 pp effect at 4B–9B is the strongest intervention signal in the entire evaluation. For models below 27B, enforcing manual consultation before tool calls would be the single highest-impact prompt change. **Action:** For the paper, present the manuals-first delta as evidence that prompt-side scaffolding (documentation) disproportionately benefits smaller models, supporting the scaffolding-asymmetry thesis.
+
+### T7 — The 36-27B (Qwen3 generation) shows generation-level improvement
+
+The qwen36-27b achieves 94% read-only correctness (vs 76.5% for qwen35-27b) with lower violation rates (48% vs 63%) and higher self-correction (97.2% vs 97.6%). The Qwen3 generation is substantially better at AAS tasks at the same parameter count. **Action:** Include the qwen36-27b as evidence that generation quality matters alongside parameter count — same-size models can cross the viability threshold with improved training.
+
+### T8 — SRN is the binding constraint across all model sizes
+
+No model exceeds 34% SRN. The highest performers on read-only tasks (qwen35-27b: 100% on three suites) collapse on write-path. The overall accuracy range (70–94% read-only vs 0–34% SRN) shows that AAS agent viability is determined entirely by write-path capability. **Action:** Until SRN exceeds ~50%, model selection and prompt design should prioritize write-path improvements over marginal read-only gains.

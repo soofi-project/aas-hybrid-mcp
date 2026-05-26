@@ -1,0 +1,2296 @@
+{
+  "cases": [
+    "cases/srn_autonomous.yaml"
+  ],
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
+  "summary": {
+    "totals": {
+      "n": 50,
+      "correct": 11,
+      "correct_rate": 0.22,
+      "manuals_first": 26,
+      "manuals_first_rate": 0.52,
+      "tool_error_free": 5,
+      "tool_error_free_rate": 0.1,
+      "all_good": 0,
+      "all_good_rate": 0.0
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "srn_empty_submodel_bypass",
+        "n": 10,
+        "correct": 4,
+        "correct_rate": 0.4,
+        "manuals_first": 2,
+        "manuals_first_rate": 0.2,
+        "tool_error_free": 5,
+        "tool_error_free_rate": 0.5,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_from_fault_context",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 10,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 0,
+        "tool_error_free_rate": 0.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_routine_priority",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 6,
+        "manuals_first_rate": 0.6,
+        "tool_error_free": 0,
+        "tool_error_free_rate": 0.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_serial_number",
+        "n": 10,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 0,
+        "manuals_first_rate": 0.0,
+        "tool_error_free": 0,
+        "tool_error_free_rate": 0.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "srn_spatial_hall4",
+        "n": 10,
+        "correct": 7,
+        "correct_rate": 0.7,
+        "manuals_first": 8,
+        "manuals_first_rate": 0.8,
+        "tool_error_free": 0,
+        "tool_error_free_rate": 0.0,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 50,
+        "correct": 11,
+        "correct_rate": 0.22,
+        "manuals_first": 26,
+        "manuals_first_rate": 0.52,
+        "tool_error_free": 5,
+        "tool_error_free_rate": 0.1,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a summary to the user with the troubleshooting steps and confirmation that the service request was created.\n\nBased on my analysis of the AAS data and documentation:\n\n## Emergency Stop Issue - MiR100_001 in Hall 4\n\n**What to do:**\n\n1. **Check for safety zone intrusion first:**\n   - According to the MiR100 documentation, if a person or moving object enters the safety zones, the robot triggers an emergency stop and stops immediately\n   - **Action:** Clear the area around the robot - ensure no people or objects are in the safety zones\n   - If this was the cause, the emergency stop should **reset automatically** once the safety zone is clear\n\n2. **If the red LED remains on after clearing the area:**\n   - This indicates an **internal safety circuit error**\n   - The MiR100 has a redundant electrical safety circuit with SICK Safety components\n   - **Action:** Do not attempt to reset manually - this requires technical inspection\n   - The robot will remain in emergency stop until the redundancy is verified and the issue is resolved by qualified personnel\n\n3. **Reference documentation:**\n   - See the MiR100 User Guide: [Manual page 10 - Safety circuit](http://localhost:8091/submodels/dXJuOnN1Ym1vZGVsOm1pcjEwMDp0eXBlOmhhbmRvdmVyZG9jdW1lbnRhdGlvbg/submodel-elements/Documents%5B0%5D.DocumentVersions%5B0%5D.DigitalFiles%5B0%5D/attachment#page=10)\n\n## Service Request Created\n\nI've created a service request notification for this issue:\n- **Service Request ID:** SRN-MiR100-001-20260524-001\n- **Status:** Open\n- **Priority:** High\n- **Asset:** MiR100_001 (urn:asset:mir100:001)\n- **Error Code:** E-STOP-RED-LED\n- **Timestamp:** 2026-05-24T09:11:34+00:00\n\nThe service request has been logged in the AAS and contains all the diagnostic information for the maintenance team.",
+      "duration_s": 101.59,
+      "tool_call_count": 21,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the 'Service Request Created' summary; it supports MiR100_001, High priority, and Open status, but does not state ServiceType=CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 1,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a summary of what I found and the actions taken.\n\nBased on my investigation:\n\n**Asset Identified:**\n- Transport robot: MiR100_001 (Mobile Industrial Robot)\n- Location: Hall 4\n- AAS ID: urn:aas:mir100:001\n\n**Documentation Search Results:**\nThe PDF documentation (MiR100.pdf) in the HandoverDocumentation submodel was searched for emergency stop troubleshooting information. The documentation mentions:\n- \"yellow-purple error lights\" for \"lost\" situations (when the vehicle cannot find a safe path)\n- Emergency stop is referenced in the application interface (pin 3 stops by emergency stop)\n- However, **no specific troubleshooting instructions for red LED emergency stop** were found in the available documentation\n\n**Service Request Created:**\nA ServiceRequestNotification has been created with ID: `urn:aas-hybrid-mcp:srn:mir100-001:emergency-stop-20260524-091318`\n- Status: Open\n- Priority: High\n- Service Type: Emergency\n- Error Code: EMERGENCY_STOP_RED_LED\n- Timestamp: 2026-05-24T09:13:18+00:00\n\n**Recommended Actions (General Guidance):**\nSince the documentation doesn't contain specific red LED emergency stop troubleshooting:\n\n1. **Check the emergency stop button** - Ensure it hasn't been physically pressed. If pressed, twist/pull to release.\n\n2. **Check for obstacles** - The robot may have detected an obstacle triggering the emergency stop.\n\n3. **Check power/battery** - Low battery or power issues can trigger emergency stops.\n\n4. **Contact service** - According to the documentation (page 25), if service is needed, contact your retailer or visit: http://mobile-industrial-robots.com/en/retailers/\n\n5. **Review the full manual** - See the MiR100 documentation at [Manual](http://localhost:8091/submodels/dXJuOnN1Ym1vZGVsOm1pcjEwMDp0eXBlOmhhbmRvdmVyZG9jdW1lbnRhdGlvbg/submodel-elements/Documents%5B0%5D.DocumentVersions%5B0%5D.DigitalFiles%5B0%5D/attachment) for more details.\n\nThe service request has been logged in the system for maintenance team follow-up.",
+      "duration_s": 95.346,
+      "tool_call_count": 18,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the 'Service Request Created' summary; it supports MiR100_001, High, and Open, but asserts the wrong service type.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_graph_schema",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me summarize the findings and actions for the user.\n\n## Summary\n\n**Asset Identified:** MiR100_001 (Transport Robot) in Hall 4\n\n**Problem:** Emergency stop activated with red LED on\n\n### Troubleshooting Steps (from documentation):\n\nAccording to the MiR100 manual ([Manual p. 25](http://localhost:8091/submodels/dXJuOnN1Ym1vZGVsOm1pcjEwMDp0eXBlOmhhbmRvdmVyZG9jdW1lbnRhdGlvbg/submodel-elements/Documents%5B0%5D.DocumentVersions%5B0%5D.DigitalFiles%5B0%5D/attachment#page=25)):\n\n1. **Pull the vehicle to an unobstructed area**\n2. **Check if the destination is blocked** or if the vehicle doesn't drive well\n3. **Verify the vehicle's destination corresponds with its position on the map**\n4. **Check that the camera is unobstructed and working**\n5. **Check that status is OK in the Diagnostic menu** in the MiR Web Interface\n6. **Check that the wheels are unobstructed and not tangled up in anything**\n\nTo turn off the vehicle ([Manual p. 21](http://localhost:8091/submodels/dXJuOnN1Ym1vZGVsOm1pcjEwMDp0eXBlOmhhbmRvdmVyZG9jdW1lbnRhdGlvbg/submodel-elements/Documents%5B0%5D.DocumentVersions%5B0%5D.DigitalFiles%5B0%5D/attachment#page=21)):\n- Press the red emergency stop button (turns off power to motors)\n- Turn the black On/Off button on the front of the vehicle\n- Wait for the light to turn off\n\n### Service Request Created:\n\n✅ **Service Request ID:** `SRN-MIR100-001-20260524-091449`\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Maintenance\n- **Error Code:** EMERGENCY_STOP_RED_LED\n- **Reported By:** HALL4-OPERATOR\n- **Timestamp:** 2026-05-24T09:14:49+00:00\n\nThe service request has been logged in the system under the MiR100_001 Asset Administration Shell.",
+      "duration_s": 67.36,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the 'Service Request Created' summary for MiR100_001; it supports created/Open/High but asserts Service Type as Maintenance instead of CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Maintenance"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 4,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"entity.idShort"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a summary to the user with the troubleshooting information and the service request details.\n\nBased on my investigation:\n\n**Asset Identified:**\n- Transport robot: **MiR100_001** located in **Hall 4**\n\n**Troubleshooting Information from Documentation:**\n\nAccording to the MiR100 handover documentation:\n\n1. **Emergency Stop Behavior**: The documentation mentions that when the vehicle encounters issues, it can trigger error states. The \"Alert for 'lost'\" section (page 14) states that if the vehicle cannot find a safe path, it stops and turns on error lights.\n\n2. **Service Contact**: For emergency situations requiring service:\n   - Contact your retailer\n   - MiR Support: support@mir-robots.com\n   - Phone: +45 20 377 577\n   - Website: http://mobile-industrial-robots.com/en/retailers/\n\n3. **General Guidance**: \n   - The red LED on emergency stop typically indicates the emergency stop circuit has been activated\n   - Check if the emergency stop button was pressed and reset it if safe\n   - Verify no obstacles are blocking the robot's path\n   - Check the MiR Web Interface for diagnostics (Service > Status > Diagnostics)\n\n**Service Request Created:**\nI have created a service request (ID: `SRN-MiR100-001-20260524-091559`) with the following details:\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Description**: Transport robot MiR100_001 in Hall 4 has triggered emergency stop. Red LED indicator is on. Robot stopped unexpectedly. Requires immediate inspection and service.\n- **Time**: 2026-05-24T09:15:59+00:00\n\n**Next Steps:**\n1. Ensure the area around the robot is safe\n2. Check if the emergency stop button can be safely reset\n3. Contact MiR support or your retailer for immediate service assistance\n4. The service request has been logged in the system for tracking",
+      "duration_s": 80.62,
+      "tool_call_count": 18,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details; it correctly identifies MiR100_001 with High priority and Open status, but gives the service type as Emergency instead of CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a summary of what I found and the actions taken.\n\nBased on my investigation, here's what I found and what you should do:\n\n## Summary\n\n**Asset Identified:** MiR100_001 (transport robot in Hall 4)\n\n**Issue:** Emergency stop activated with red LED illuminated\n\n## What the Documentation Says\n\nAccording to the MiR100 documentation:\n- The robot has an emergency stop button that stops the vehicle when activated\n- When the robot cannot find a safe path, it stops and turns on yellow-purple error lights\n- The emergency stop affects the battery voltage supply (pin 3 stops by emergency stop)\n\n**Note:** The specific red LED emergency stop troubleshooting information is not detailed in the searchable PDF documentation. The documentation mentions yellow-purple error lights for \"lost\" situations, but the red LED typically indicates an emergency stop condition.\n\n## Recommended Actions (General Guidance)\n\nFor emergency stop with red LED on:\n\n1. **Check the emergency stop button** - Ensure it hasn't been pressed. If pressed, twist to release/reset\n2. **Inspect the area** - Look for obstacles, safety zone violations, or people in the robot's path\n3. **Check for faults** - Look at the robot's display/interface for error codes\n4. **Reset the system** - After clearing the cause, reset the emergency stop and restart the robot\n5. **Contact support** - If the issue persists, contact Mobile Industrial Robots support:\n   - Phone: +45 20 377 577\n   - Email: support@mir-robots.com\n   - Website: www.mir-robots.com\n\n## Service Request Created\n\nI've created a service request (ID: `SRN-20260524-091720-MIR100`) with the following details:\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Emergency\n- **Error Code:** EMERGENCY_STOP_ACTIVE\n- **Timestamp:** 2026-05-24T09:17:20+00:00\n- **Asset:** MiR100_001 in Hall 4\n\nThe service request has been logged in the system for maintenance tracking.",
+      "duration_s": 88.615,
+      "tool_call_count": 17,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details; it supports MiR100_001, High, and Open, but asserts the wrong Service Type.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The submodel was created successfully. Now let me provide a summary of the findings and the service request that was created.\n\nBased on my investigation, here's what I found and what you should do:\n\n## Summary\n\n**Asset Identified:** MiR100_001 (transport robot) in Hall 4\n\n## What the documentation says about emergency stop:\n\nAccording to the MiR100 documentation (HandoverDocumentation, page 10, section 2.4 Safety circuit):\n\n1. **Safety zone intrusion:** If a person or object enters the safety zones, the safety circuit forces the robot into emergency stop and it stops immediately. When the person/object is out of the safety zone again, the emergency stop **resets automatically**.\n\n2. **Internal safety circuit errors:** If any internal errors occur in the safety circuit, the robot immediately goes into emergency stop with all moving parts voltage-free by mechanical disconnection. Only when the redundancy is provided can the emergency stop be reset.\n\n3. **Main components related to emergency stop** (page 12):\n   - Brake relay (component 5): Ensures immediate motor brake when emergency brake is activated\n   - Optocoupler (component 11): Communications for emergency stop\n\n## Recommended Actions:\n\n1. **Check for safety zone intrusion:** Look for any person or object in the robot's safety zones. If found, clear the area - the emergency stop should reset automatically.\n\n2. **Check if emergency stop button was pressed:** Verify if the physical E-stop button was activated.\n\n3. **If the red LED remains on after clearing the area:** This may indicate an internal safety circuit error. According to the documentation, you need to verify that the redundancy is provided before the emergency stop can be reset.\n\n4. **Contact service if needed:** If the issue persists or if there's an internal safety circuit error, contact your retailer or Mobile Industrial Robots support (support@mir-robots.com, phone: +45 20 377 577).\n\n## Service Request Created:\n\nI have created a service request notification with ID: `urn:aas-hybrid-mcp:srn:mir100-001:emergency-stop-20260524-091850`\n\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Emergency\n- **Error Code:** E-STOP-RED-LED\n- **Description:** Emergency stop activated on MiR100_001 in Hall 4 with red LED indicator on\n\nThe service request has been logged in the system for tracking and follow-up.",
+      "duration_s": 74.041,
+      "tool_call_count": 22,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details for MiR100_001; it supports asset, priority, and status, but fails because ServiceType is asserted as Emergency instead of CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a comprehensive answer to the user with the troubleshooting steps and confirmation that the service request has been created.\n\nBased on my investigation of the AAS data and documentation for the MiR100 transport robot in Hall 4:\n\n## Troubleshooting Steps for Emergency Stop (Red LED On)\n\nAccording to the MiR100 user guide documentation ([Manual p. 10](http://localhost:8091/submodels/dXJuOnN1Ym1vZGVsOm1pcjEwMDp0eXBlOmhhbmRvdmVyZG9jdW1lbnRhdGlvbg/submodel-elements/Documents%5B0%5D.DocumentVersions%5B0%5D.DigitalFiles%5B0%5D/attachment#page=10)):\n\n### Immediate Actions:\n\n1. **Check the safety zone** - The most common cause is a person or object in the robot's safety zone:\n   - Look around the robot for any people or obstacles\n   - Clear the area around the robot\n   - The emergency stop will **reset automatically** once the safety zone is clear\n\n2. **If the red LED remains on after clearing the area:**\n   - This indicates an **internal safety circuit error**\n   - The robot has a redundant SICK safety circuit (components #10 and #11 in the main components list)\n   - All moving parts are voltage-free due to mechanical disconnection\n\n3. **For internal errors:**\n   - The redundancy must be verified before the emergency stop can be reset\n   - This requires technical inspection by qualified personnel\n\n### Service Request Created\n\nI have created a service request (ID: `SRN-MiR100-001-20260524-092004`) with:\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Asset**: MiR100_001 (urn:asset:mir100:001)\n- **Timestamp**: 2026-05-24T09:20:04+00:00\n\n### Next Steps:\n\n1. **First**: Clear any people/objects from around the robot and wait for automatic reset\n2. **If still not working**: Contact your retailer or MiR support for technical service\n   - MiR Support: support@mir-robots.com\n   - Phone: +45 20 377 577\n   - Website: [MiR Support Site](http://mobile-industrial-robots.com/en/retailers/)\n\nThe service request has been logged in the system for tracking and follow-up by maintenance personnel.",
+      "duration_s": 64.824,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details; it supports MiR100_001, High priority, and Open status, but wrongly lists Service Type as Emergency instead of CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          },
+          {
+            "index": 5,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"entity.idShort"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a comprehensive answer to the user with the troubleshooting guidance and confirmation of the service request.\n\nBased on my investigation of the AAS environment and the MiR100 transport robot documentation, here's what you need to know:\n\n## Emergency Stop Situation - MiR100_001 in Hall 4\n\n**What I found:**\n- The transport robot is MiR100_001, located in Hall 4\n- The robot has triggered an emergency stop with red LED illuminated\n- A service request has been created: **SRN-MIR100-001-20260524-092104**\n\n## Immediate Actions to Take:\n\n1. **Check the emergency stop button** - The most common cause is that the E-stop button was pressed. Look for the red emergency stop button on the robot and check if it's engaged.\n\n2. **Reset the emergency stop** - If the E-stop button is pressed, twist it to release and reset the safety circuit.\n\n3. **Check for obstacles** - Ensure there are no obstacles blocking the robot's path or triggering safety sensors.\n\n4. **Check the LED status** - According to the documentation, the robot uses:\n   - Yellow-purple error lights for \"lost\" situations (when it can't find a safe path)\n   - Red LED indicates emergency stop or critical fault\n\n5. **Access the MiR Web Interface** - Log on to check the diagnostics:\n   - Go to Service > Status > Diagnostics\n   - Check all components for error codes\n   - Review the fault history\n\n## Service Request Created:\n\nI've created a service request (SRN-MIR100-001-20260524-092104) with:\n- **Priority:** High\n- **Status:** Open\n- **Service Type:** Emergency\n- **Error Code:** E-STOP-RED-LED\n- **Description:** Transport robot MiR100_001 in Hall 4 has triggered an emergency stop with red LED illuminated\n\n## Documentation Reference:\n\nThe MiR100 documentation ([MiR100.pdf](http://localhost:8091/submodels/dXJuOnN1Ym1vZGVsOm1pcjEwMDp0eXBlOmhhbmRvdmVyZG9jdW1lbnRhdGlvbg/submodel-elements/Documents%5B0%5D.DocumentVersions%5B0%5D.DigitalFiles%5B0%5D/attachment)) mentions:\n- Emergency stop compliance with EN 13850 (Machine safety: Emergency stop)\n- Application interface pin 3 is \"Stops by emergency stop\"\n- For detailed diagnostics, use the MiR Web Interface\n\n**Next steps:** Contact the maintenance team (Partner: Maintenance-Team) to inspect the robot if the emergency stop cannot be reset locally.",
+      "duration_s": 85.258,
+      "tool_call_count": 21,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details; it supports MiR100_001, High priority, and Open status, but asserts the wrong service type.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 1,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a comprehensive answer to the user with troubleshooting guidance and confirmation that the service request has been created.\n\nBased on my search of the MiR100 documentation, I couldn't find specific troubleshooting steps for \"emergency stop with red LED on\" in the available PDF. However, I can provide general guidance and confirm the service request has been created.\n\n**Summary of findings:**\n- **Robot identified:** MiR100_001 in Hall 4\n- **Issue:** Emergency stop activated, red LED on\n- **Service request created:** Yes (ID: SRN-20260524-092234)\n\nLet me provide the answer to the user.",
+      "duration_s": 64.587,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list: Robot identified MiR100_001 in Hall 4, issue emergency stop/red LED, service request created yes; verdict: incorrect because priority, service type, and status are not stated.",
+        "missing_facts": [
+          "Priority is High",
+          "ServiceType is CorrectiveMaintenance",
+          "Status is Open"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_from_fault_context",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 had an emergency stop, the red LED is on. What should I do and please create a service request.",
+      "final_answer": "The service request has been created successfully. Now let me provide a summary of what I found and what actions were taken.\n\nBased on my investigation:\n\n**Asset Identified:**\n- The transport robot in Hall 4 is **MiR100_001** (Mobile Industrial Robot MiR100, instance 001)\n\n**Troubleshooting Information:**\nI searched the PDF documentation (MiR100 User Guide) but did not find specific information about emergency stop with red LED indicator. The documentation mentions:\n- Yellow-purple error lights for \"lost\" situations (when the vehicle cannot find a safe path)\n- The document references EN 13850 standard for emergency stop\n- Contact information for support: support@mir-robots.com, phone +45 20 377 577\n\n**General Guidance for Emergency Stop with Red LED:**\nSince the specific troubleshooting steps weren't in the available documentation, here's general guidance for MiR robots:\n1. **Check the emergency stop button** - Ensure it hasn't been pressed. If pressed, twist to release/reset\n2. **Check for obstacles** - Remove any obstacles in the robot's path\n3. **Check the MiR Web Interface** - Log in to view diagnostics and error codes\n4. **Contact support** - If the issue persists, contact Mobile Industrial Robots support\n\n**Service Request Created:**\nI've created a service request with the following details:\n- **ID:** urn:aas-hybrid-mcp:srn:mir100-001:emergency-stop-20260524-092337\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Emergency\n- **Short Text:** Emergency stop activated - Red LED on\n- **Detailed Information:** Transport robot MiR100_001 in Hall 4 has triggered emergency stop. Red LED indicator is on. Worker reported the issue. Requires immediate attention.\n- **Start of Fault:** 2026-05-24T09:23:37+00:00\n- **Error Code:** E-STOP-RED-LED\n\n**Next Steps:**\n1. Check the emergency stop button on the robot and reset if needed\n2. Access the MiR Web Interface to check diagnostics\n3. If the issue persists, contact MiR support at support@mir-robots.com or +45 20 377 577\n4. The service request has been logged for tracking purposes",
+      "duration_s": 75.56,
+      "tool_call_count": 17,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the 'Service Request Created' summary; it supports MiR100_001, High priority, and Open status, but fails because it asserts Service Type as Emergency instead of CorrectiveMaintenance.",
+        "missing_facts": [
+          "ServiceType is CorrectiveMaintenance"
+        ],
+        "wrong_claims": [
+          "Service Type: Emergency"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been created successfully with all the required elements:\n\n- **ServiceRequestNotificationId**: SRN-UR3e-002-20260524-001\n- **Status**: Open\n- **Priority**: Normal\n- **ServiceType**: Routine Inspection\n- **ShortText**: \"Routine inspection is due for UR3e robot arm in Hall 4\"\n- **NumberOfServiceRequestNotifications**: 1\n\nThe service request for the UR3e robot arm (UR3e_002) in Hall 4 has been created successfully. The routine inspection request is now logged with:\n- ID: `urn:aas-hybrid-mcp:srn:002:routine-inspection-2026-05-24`\n- Status: Open\n- Priority: Normal\n- Created at: 2026-05-24T09:24:42+00:00\n\nThe service request is now available in the Asset Administration Shell for the UR3e_002 robot arm in Hall 4.",
+      "duration_s": 70.194,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request fields; it supports UR3e_002, Status Open, and an inspection request, but it gives Priority as Normal instead of Low.",
+        "missing_facts": [
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority: Normal"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been successfully created. Let me provide a summary of what was done:\n\n---\n\n**Service Request Created Successfully**\n\nI've created a service request for the UR3e robot arm (UR3e_002) in Hall 4 for routine inspection.\n\n**Details:**\n- **Asset:** UR3e_002 (AAS ID: `urn:aas:ur3e:002`)\n- **Location:** Hall 4\n- **Service Request ID:** `SRN-UR3e-002-20260524-001`\n- **Submodel ID:** `urn:aas-hybrid-mcp:srn:ur3e-002:routine-inspection-2026-05-24`\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Created:** 2026-05-24T09:25:46+00:00\n\n**Description:** Scheduled routine inspection for UR3e robot arm (UR3e_002) located in Hall 4. Standard maintenance procedures to be followed including joint inspection, cable check, and calibration verification.\n\nThe service request follows the IDTA \"Service Request Notification\" template (semanticId: `0173-1#01-AHX443#001`) and is now available in the AAS environment for maintenance teams to track and process.",
+      "duration_s": 67.656,
+      "tool_call_count": 9,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request details; it supports UR3e_002 and Status Open, but fails Priority Low and uses Service Type Routine Inspection instead of Inspection.",
+        "missing_facts": [
+          "Priority is Low",
+          "ServiceType is Inspection"
+        ],
+        "wrong_claims": [
+          "Priority: Normal",
+          "Service Type: Routine Inspection"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request already exists and is complete. Let me summarize what I found:\n\n**According to the graph data**, a service request for the UR3e robot arm in Hall 4 has already been created:\n\n- **Asset**: UR3e_002 (located in Hall 4)\n- **Service Request ID**: SRN-UR3e-002-20260524-001\n- **Status**: Open\n- **Priority**: Normal\n- **Service Type**: Routine Inspection\n- **Short Text**: \"Routine inspection due for UR3e robot arm in Hall 4\"\n- **Long Text**: \"Scheduled routine inspection for UR3e robot arm (UR3e_002) located in Hall 4. Standard maintenance procedures to be followed including joint inspection, cable check, and calibration verification.\"\n- **Reported By**: HALL4-MAINTENANCE (MaintenanceSystem-Hall4)\n- **Created**: 2026-05-24T09:25:46+00:00\n\nThe service request submodel is located at: `urn:aas-hybrid-mcp:srn:ur3e-002:routine-inspection-2026-05-24` under the UR3e_002 Asset Administration Shell (`urn:aas:ur3e:002`).\n\nThe routine inspection service request is already in the system and ready for the maintenance team to act on.",
+      "duration_s": 42.844,
+      "tool_call_count": 15,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the summarized service request fields for UR3e_002; it supports asset, status, and inspection type but fails the required Low priority by asserting Normal.",
+        "missing_facts": [
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority is Normal"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been successfully created. Here's a summary:\n\n## Service Request Created Successfully\n\n**Asset:** UR3e robot arm (UR3e_002) in Hall 4\n\n**Service Request Details:**\n- **Submodel ID:** `urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-2026-05-24`\n- **Service Request ID:** SRN-UR3e-002-20260524-001\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Customer Number:** HALL4-MAINTENANCE\n- **Created:** 2026-05-24T09:27:40+00:00\n\n**Description:**\n- **Short Text:** \"Routine inspection due for UR3e robot arm in Hall 4\"\n- **Long Text:** \"Scheduled routine maintenance inspection for UR3e robot arm located in Hall 4. Standard preventive maintenance procedures to be performed.\"\n\nThe service request notification has been added to the UR3e_002 Asset Administration Shell and is now available in the system for maintenance scheduling.",
+      "duration_s": 74.796,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request details for UR3e_002; it supports created request, status Open, and inspection type, but fails because priority is asserted as Normal.",
+        "missing_facts": [
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority: Normal"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been successfully created for the UR3e robot arm in Hall 4. Here's a summary:\n\n**Service Request Created Successfully**\n\n- **Asset**: UR3e_002 (located in Hall 4)\n- **Service Request ID**: SRN-UR3e-002-20260524-002\n- **Submodel ID**: urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-2026-05-24-002\n- **Status**: Open\n- **Priority**: Normal\n- **Service Type**: Routine Inspection\n- **Short Text**: \"Routine inspection is due for UR3e robot arm in Hall 4\"\n- **Created**: 2026-05-24T09:28:57+00:00\n\nThe service request notification submodel has been added to the UR3e_002 Asset Administration Shell with the ServiceRequestNotification template (semanticId: 0173-1#01-AHX443#001).",
+      "duration_s": 73.606,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request summary bullets; it supports UR3e_002, Status Open, and Inspection, but fails because Priority is asserted as Normal.",
+        "missing_facts": [
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority is Normal"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been successfully created. The new submodel `urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-2026-05-24-final` is now registered under the UR3e_002 Asset Administration Shell.\n\n## Summary\n\nI have successfully created a **ServiceRequestNotification** for the UR3e robot arm in Hall 4:\n\n**Asset identified:** UR3e_002 (located in Hall 4, confirmed via HierarchicalStructures submodel)\n\n**Service Request Details:**\n- **Submodel ID:** `urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-2026-05-24-final`\n- **Service Request ID:** SRN-UR3e-002-20260524-001\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Short Text:** \"Routine inspection due for UR3e robot arm in Hall 4\"\n- **Long Text:** \"Scheduled routine inspection for UR3e robot arm (UR3e_002) located in Hall 4. Standard maintenance procedures to be followed.\"\n- **Timestamp:** 2026-05-24T09:30:10+00:00 (UTC)\n\nThe service request follows the **Service Request Notification** template (semanticId: `0173-1#01-AHX443#001`) and is now registered in the AAS environment for the UR3e_002 robot arm.",
+      "duration_s": 72.639,
+      "tool_call_count": 13,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "The core list is the Service Request Details bullets; it supports creation for UR3e_002 and Status Open, but it gives Priority as Normal and Service Type as Routine Inspection instead of the required Low and Inspection.",
+        "missing_facts": [
+          "ServiceType is Inspection",
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority: Normal",
+          "Service Type: Routine Inspection"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been successfully created. Let me provide a summary to the user.\n\n---\n\n**Service request created successfully!**\n\nAccording to the graph data, I've created a new ServiceRequestNotification submodel for the UR3e robot arm (UR3e_002) located in Hall 4.\n\n**Details:**\n- **Asset:** UR3e_002 (globalAssetId: urn:asset:ur3e:002)\n- **Location:** Hall 4 (confirmed via HierarchicalStructures submodel)\n- **Service Request ID:** SRN-UR3e-002-2026-05-24-001\n- **Submodel ID:** `urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-2026-05-24-new`\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Created:** 2026-05-24T09:31:20+00:00\n\nThe service request notification follows the IDTA Service Request Notification template (semanticId: 0173-1#01-AHX443#001) and includes:\n- Short text: \"Routine inspection due for UR3e robot arm in Hall 4\"\n- Long text: \"Scheduled routine inspection for UR3e robot arm located in Hall 4. Standard maintenance procedures to be followed.\"\n- Related asset linked to UR3e_002\n\nThe submodel is now available under the UR3e_002 Asset Administration Shell and can be used by maintenance systems to track and process this routine inspection request.",
+      "duration_s": 54.767,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request summary fields for UR3e_002; it supports creation, asset, status Open, but fails required ServiceType and Priority values.",
+        "missing_facts": [
+          "ServiceType is Inspection",
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority is Normal",
+          "Service Type is Routine Inspection"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 9,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "The service request has been successfully created and verified. Let me provide a summary to the user.\n\n---\n\n**Service Request Created Successfully**\n\nAccording to the graph data, I've created a service request for the UR3e robot arm in Hall 4:\n\n**Asset Identified:** UR3e_002 (AAS ID: `urn:aas:ur3e:002`) - This is the UR3e robot located in Hall 4 (confirmed via HierarchicalStructures submodel).\n\n**Service Request Details:**\n- **Service Request ID:** SRN-UR3e-002-20260524-001\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Short Text:** \"Routine inspection due for UR3e robot arm in Hall 4\"\n- **Created:** 2026-05-24T09:32:26+00:00\n\n**Submodel ID:** `urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-20260524`\n\nThe service request follows the IDTA Service Request Notification template (semanticId: `0173-1#01-AHX443#001`) and includes:\n- Related asset information (UR3e_002 in Hall 4)\n- Service type as \"Routine Inspection\"\n- Status set to \"Open\" for maintenance team action\n\nThe maintenance team can now process this routine inspection request for the UR3e robot arm.",
+      "duration_s": 69.458,
+      "tool_call_count": 18,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the 'Service Request Details' bullets; it supports UR3e_002, Status Open, and inspection type, but fails Priority Low by asserting Normal.",
+        "missing_facts": [
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority: Normal"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "Confirmed - UR3e_002 is in Hall 4. The service request has been successfully created.\n\n**Summary:**\n\nI've created a service request for the UR3e robot arm (UR3e_002) in Hall 4 for routine inspection.\n\n**Service Request Details:**\n- **Asset:** UR3e_002 (located in Hall 4)\n- **Service Request ID:** SRN-UR3e-002-20260524-003\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Description:** Routine inspection due for UR3e robot arm in Hall 4\n- **Created:** 2026-05-24T09:33:28+00:00\n\nThe service request submodel has been added to the AssetAdministrationShell for UR3e_002 (urn:aas:ur3e:002) and is now visible in the AAS environment.",
+      "duration_s": 70.003,
+      "tool_call_count": 25,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the Service Request Details for UR3e_002; it supports created request, Status Open, and inspection type, but fails Priority Low by asserting Priority Normal.",
+        "missing_facts": [
+          "Priority is Low"
+        ],
+        "wrong_claims": [
+          "Priority: Normal"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 4,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_routine_priority",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "Please create a service request for the UR3e robot arm in Hall 4 - routine inspection is due.",
+      "final_answer": "I've successfully created a service request for the UR3e robot arm in Hall 4. Here's the summary:\n\n**Service Request Created:**\n- **Asset:** UR3e robot arm (urn:asset:ur3e:002) in Hall 4\n- **AAS ID:** urn:aas:ur3e:002\n- **Submodel ID:** urn:aas-hybrid-mcp:srn:ur3e:002:routine-inspection-20260524-004\n- **Service Request ID:** SRN-UR3e-002-20260524-004\n- **Status:** Open\n- **Priority:** Normal\n- **Service Type:** Routine Inspection\n- **Description:** Routine inspection due for UR3e robot arm in Hall 4\n- **Created:** 2026-05-24T09:34:36+00:00\n\nThe service request submodel follows the ServiceRequestNotification template structure with:\n- Service request notification ID\n- Status (Open)\n- Priority (Normal)\n- Service type (Routine Inspection)\n- Short text description\n- Detailed information including long text and start of fault timestamp\n\nThe submodel has been added to the Asset Administration Shell for the UR3e robot arm in Hall 4.",
+      "duration_s": 57.016,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request summary bullets; it supports UR3e_002 and Status Open, but fails required Priority Low and ServiceType Inspection.",
+        "missing_facts": [
+          "Priority is Low",
+          "ServiceType is Inspection"
+        ],
+        "wrong_claims": [
+          "Priority: Normal",
+          "Service Type: Routine Inspection"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_manual_page"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 11,
+            "tool": "put_submodel",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully created and logged. Here's a summary of what was done:\n\n**Service Request Logged Successfully**\n\nAccording to the graph data, I've created a new service request notification for the MiR with serial number MIR100-2020-001:\n\n- **Service Request ID**: SRN-20260524-093529-MIR100\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Error Code**: EMERGENCY_STOP\n- **Start of Fault**: 2026-05-24T09:35:29+00:00\n- **Asset**: MiR100 (Serial: MIR100-2020-001)\n- **Description**: Emergency stop triggered on MiR100 - Immediate service required\n\nThe service request submodel has been created under the AAS `urn:aas:mir100:001` with ID `urn:aas-hybrid-mcp:srn:mir100-001:emergency-stop-20260524-093529`.\n\nThe emergency stop incident has been logged and is ready for service team attention.",
+      "duration_s": 65.781,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request summary fields; it supports a write attempt and High priority, but does not resolve the serial to MiR100_001 and instead asserts the asset as MiR100 with serial MIR100-2020-001.",
+        "missing_facts": [
+          "The serial number MIR100-2020-001 was resolved to MiR100_001"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully logged for the MiR with serial number MIR100-2020-001. Here's a summary of what was recorded:\n\n**Service Request Logged Successfully**\n\n- **Asset**: MiR100 (serial: MIR100-2020-001)\n- **Service Request ID**: SRN-20260524-093641-MIR100\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Error Code**: EMERGENCY_STOP\n- **Start of Fault**: 2026-05-24T09:36:41+00:00\n- **Short Text**: \"Emergency stop triggered on MiR100-2020-001\"\n- **Long Text**: \"MiR with serial number MIR100-2020-001 triggered an emergency stop. Service request logged at 2026-05-24T09:36:41Z.\"\n\nThe service request has been created in the AAS environment under the AssetAdministrationShell `urn:aas:mir100:001` with submodel ID `urn:aas-hybrid-mcp:srn:mir100-001:emergency-stop-20260524-093641`.",
+      "duration_s": 82.049,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the logged service request summary; it supports a write attempt and High priority, but does not resolve the serial to MiR100_001 and instead asserts a different asset identity/service type.",
+        "missing_facts": [
+          "The answer does not state that serial number MIR100-2020-001 was resolved to MiR100_001"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 10,
+            "tool": "put_submodel",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully logged. Let me provide a summary to the user.\n\n**Service request logged successfully for MiR with serial number MIR100-2020-001.**\n\nAccording to the graph data, I created a new ServiceRequestNotification submodel under the AssetAdministrationShell `urn:aas:mir100:001` with the following details:\n\n- **Service Request ID**: SRN-20260524-093804\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Short Text**: Emergency Stop triggered\n- **Long Text**: MiR with serial number MIR100-2020-001 triggered an emergency stop. Immediate service required.\n- **Start of Fault**: 2026-05-24T09:38:04+00:00\n\nThe submodel ID is `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-093804`.\n\nThe service request is now recorded in the AAS and ready for maintenance team attention.",
+      "duration_s": 46.989,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the logged service request summary; it supports a write attempt and High priority, but does not resolve MIR100-2020-001 to MiR100_001.",
+        "missing_facts": [
+          "The answer does not state that serial number MIR100-2020-001 was resolved to MiR100_001."
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 5,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"p.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has already been logged. Looking at the existing submodel:\n\n- **ServiceRequestNotificationId**: SRN-20260524-093804\n- **CustomerNumber**: MIR100-2020-001 (the serial number)\n- **Status**: Open\n- **ServiceType**: Emergency\n- **Priority**: High\n- **StartOfFault**: 2026-05-24T09:38:04+00:00\n- **NumberOfServiceRequestNotifications**: 1\n\nThe service request for the emergency stop on MiR with serial number MIR100-2020-001 has already been created and logged. The service request ID is **SRN-20260524-093804** with status \"Open\" and priority \"High\".\n\n**Summary:**\n- A service request has already been logged for the MiR100 (serial: MIR100-2020-001) emergency stop\n- Service Request ID: **SRN-20260524-093804**\n- Status: Open\n- Priority: High\n- Service Type: Emergency\n- Fault start time: 2026-05-24T09:38:04 UTC\n\nThe service request is already in the system and no new entry needs to be created.",
+      "duration_s": 27.828,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the existing service request fields and summary; it supports a logged request and High priority, but does not resolve MIR100-2020-001 to MiR100_001.",
+        "missing_facts": [
+          "The answer does not resolve serial number MIR100-2020-001 to MiR100_001"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 8,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully logged. Let me provide a summary to the user.\n\n**Service Request Logged Successfully**\n\nAccording to the graph data, I've created a service request notification for the MiR with serial number MIR100-2020-001:\n\n- **Service Request ID**: SRN-20260524-093918\n- **Asset**: MiR100_001 (urn:aas:mir100:001)\n- **Serial Number**: MIR100-2020-001\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Error Code**: EMERGENCY_STOP\n- **Start of Fault**: 2026-05-24T09:39:18+00:00\n- **Short Text**: Emergency stop triggered\n- **Description**: MiR with serial number MIR100-2020-001 triggered an emergency stop. Immediate service required.\n\nThe service request notification submodel has been created under the AAS `urn:aas:mir100:001` with ID `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-093918`.",
+      "duration_s": 81.489,
+      "tool_call_count": 17,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request summary bullets; it supports resolving MIR100-2020-001 to MiR100_001, attempted/logged write, and High priority, but it positively asserts a forbidden unsupported requirement by saying the request was successfully logged rather than attempted/validated and uses the wrong service type.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "Positively asserts successful logging/creation instead of only an attempted write or reported validation error",
+          "Service Type is asserted as Emergency instead of the expected CorrectiveMaintenance"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 10,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully created with all the required elements:\n\n- **ServiceRequestNotificationId**: SRN-20260524-094038\n- **Status**: Open\n- **Priority**: High\n- **ServiceType**: Emergency\n- **CustomerNumber**: MIR100-2020-001\n- **ErrorCode**: EMERGENCY_STOP\n- **StartOfFault**: 2026-05-24T09:40:38+00:00\n- **ShortText**: Emergency stop triggered on MiR100-2020-001\n- **LongText**: The MiR with serial number MIR100-2020-001 has triggered an emergency stop. Immediate service required.\n\nThe service request for the MiR with serial number MIR100-2020-001 has been successfully logged. The submodel ID is `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-094038`.\n\n**Summary:**\n- **Asset**: MiR100 (serial: MIR100-2020-001)\n- **Issue**: Emergency stop triggered\n- **Service Request ID**: SRN-20260524-094038\n- **Status**: Open\n- **Priority**: High\n- **Timestamp**: 2026-05-24T09:40:38+00:00\n\nThe service request is now recorded in the AAS and can be tracked for maintenance follow-up.",
+      "duration_s": 74.232,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request fields and summary; it supports a write attempt and High priority, but does not resolve MIR100-2020-001 to MiR100_001.",
+        "missing_facts": [
+          "The agent resolved the serial number MIR100-2020-001 to MiR100_001"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 2,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully logged. Let me provide a summary to the user.\n\n**Service request logged successfully for MiR with serial number MIR100-2020-001.**\n\nAccording to the graph data, I created a new ServiceRequestNotification submodel with the following details:\n\n- **Submodel ID**: `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-094153`\n- **Service Request Notification ID**: `SRN-20260524-094153`\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Error Code**: EMERGENCY_STOP\n- **Start of Fault**: 2026-05-24T09:41:53+00:00\n- **Customer Number**: MIR100-2020-001\n- **Short Text**: \"Emergency stop triggered\"\n- **Long Text**: \"MiR with serial number MIR100-2020-001 triggered an emergency stop.\"\n\nThe service request has been registered in the Asset Administration Shell for the MiR100 asset (`urn:aas:mir100:001`) and conforms to the Service Request Notification template (semanticId: `0173-1#01-AHX443#001`).",
+      "duration_s": 63.205,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the logged service request summary fields; it supports a write attempt and High priority, but does not resolve the serial to MiR100_001 and instead identifies the asset only by serial/urn while also asserting Service Type Emergency.",
+        "missing_facts": [
+          "The answer does not explicitly resolve serial number MIR100-2020-001 to MiR100_001."
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 3,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully logged. Let me provide a summary to the user.\n\n**Service request logged successfully for MiR100-2020-001.**\n\nAccording to the graph data, I've created a new ServiceRequestNotification submodel under the Asset Administration Shell `MiR100_001` (ID: `urn:aas:mir100:001`) with the following details:\n\n- **Submodel ID**: `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-094252`\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Short Text**: \"Emergency stop triggered on MiR100-2020-001\"\n- **Long Text**: \"The MiR with serial number MIR100-2020-001 has triggered an emergency stop. Immediate service required.\"\n- **Error Code**: EMERGENCY_STOP\n- **Start of Fault**: 2026-05-24T09:42:52+00:00\n\nThe service request is now recorded in the AAS environment and can be tracked by maintenance personnel.",
+      "duration_s": 59.089,
+      "tool_call_count": 12,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the logged service-request summary fields; it supports resolution to MiR100_001 and a write attempt with High priority, but it positively asserts Service Type Emergency instead of the expected corrective-maintenance request.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "Positively asserts Service Type as \"Emergency\" rather than the expected corrective-maintenance service request."
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully created. Let me verify the key details:\n\n- **ServiceRequestNotificationId**: SRN-MIR100-20260524-094350\n- **Status**: Open\n- **Priority**: High\n- **ServiceType**: Emergency\n- **ErrorCode**: EMERGENCY_STOP\n- **StartOfFault**: 2026-05-24T09:43:50+00:00\n- **ShortText**: Emergency stop triggered on MiR100\n- **LongText**: Asset MIR100-2020-001 triggered an emergency stop. Immediate service required.\n- **CustomerNumber**: MIR100-2020-001\n\nThe service request has been logged successfully for the MiR with serial number MIR100-2020-001.\n\n**Summary:**\n- Created a new ServiceRequestNotification submodel for the MiR100 asset (AAS ID: `urn:aas:mir100:001`)\n- Submodel ID: `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-094350`\n- Recorded the emergency stop event with:\n  - High priority\n  - Status: Open\n  - Error code: EMERGENCY_STOP\n  - Timestamp: 2026-05-24T09:43:50+00:00\n\nThe service request is now logged in the system and ready for maintenance team action.",
+      "duration_s": 74.434,
+      "tool_call_count": 15,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details; it supports a write attempt and High priority, but does not resolve MIR100-2020-001 to MiR100_001 and instead treats the serial as the asset/customer identifier.",
+        "missing_facts": [
+          "The agent resolved the serial number MIR100-2020-001 to MiR100_001"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 6,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 7,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          },
+          {
+            "index": 9,
+            "tool": "put_submodel",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_serial_number",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The MiR with serial number MIR100-2020-001 just triggered an emergency stop. Quickly log a service request for it.",
+      "final_answer": "The service request has been successfully logged. Let me provide a summary to the user.\n\n**Service request logged successfully for MiR with serial number MIR100-2020-001.**\n\nAccording to the graph data, I've created a new ServiceRequestNotification submodel with the following details:\n\n- **Service Request ID**: SRN-MIR100-20260524-094505\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Emergency\n- **Event**: Emergency stop triggered\n- **Start of Fault**: 2026-05-24T09:45:05+00:00\n- **ErrorCode**: EMERGENCY_STOP\n- **Asset**: MIR100-2020-001\n\nThe submodel ID is `urn:aas-hybrid-mcp:srn:mir100-2020-001:emergency-stop-20260524-094505` and it's now linked to the MiR100_001 Asset Administration Shell.",
+      "duration_s": 46.392,
+      "tool_call_count": 17,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the logged service request summary; it supports resolution to MiR100_001, a write attempt, and High priority, but positively asserts the wrong service type.",
+        "missing_facts": [],
+        "wrong_claims": [
+          "Service Type was asserted as Emergency instead of the expected CorrectiveMaintenance."
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 9,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 11,
+            "tool": "put_submodel",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The service request notification has been successfully created for the transport robot MiR100_001 in Hall 4. \n\n**Summary:**\n\nI've created a service request notification for the transport robot showing a fault light:\n\n- **Asset**: MiR100_001 (transport robot in Hall 4)\n- **AAS ID**: `urn:aas:mir100:001`\n- **Service Request Notification ID**: `urn:aas-hybrid-mcp:srn:hall4:mir100_001_fault`\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Maintenance\n- **Short Text**: \"Transport robot MiR100_001 in Hall 4 showing fault light\"\n- **Start of Fault**: 2026-05-24T09:45:59+00:00\n\nThe notification has been created under the Hall4 AssetAdministrationShell and is now available in the AAS environment for maintenance teams to act upon.",
+      "duration_s": 65.004,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list is the service request summary for MiR100_001 in Hall 4, and it identifies the correct robot and positively states the notification was created.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 3,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_graph_schema",
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 3,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 7,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"e.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The submodel was created successfully with all the required elements. The service request notification for the transport robot MiR100_001 in Hall 4 has been created.\n\nLet me summarize what was done:\n\n1. Found the transport robot MiR100_001 in Hall 4 (confirmed via HierarchicalStructures submodel)\n2. Created a ServiceRequestNotification submodel with:\n   - ServiceRequestNotificationId: SRN-HALL4-MIR100-20260524-094658\n   - Status: Open\n   - Priority: High\n   - ShortText: \"Fault light detected on transport robot MiR100_001 in Hall 4\"\n   - ServiceType: Maintenance\n   - DetailedInformation with LongText, StartOfFault timestamp, and ErrorCode\n   - RelatedAsset pointing to the MiR100_001 asset\n   - OnsiteContact information\n\nThe submodel was created at `urn:aas-hybrid-mcp:srn:hall4:mir100_001_fault_light` under the MiR100_001 AAS.\n\nNote: The semanticId (0173-1#01-AHX443#001) could not be set directly via the put_submodel tool due to validation constraints, but the submodel structure conforms to the ServiceRequestNotification template.\n\n**Service Request Notification Created Successfully**\n\nI've created a service request notification for the transport robot MiR100_001 in Hall 4 that is showing a fault light.\n\n**Details:**\n- **Asset:** MiR100_001 (transport robot in Hall 4)\n- **Notification ID:** SRN-HALL4-MIR100-20260524-094658\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Maintenance\n- **Fault Code:** FAULT_LIGHT\n- **Start of Fault:** 2026-05-24T09:46:58+00:00\n\n**Description:** The transport robot MiR100_001 located in Hall 4 is showing a fault light. Immediate inspection required.\n\nThe service request notification has been created as a Submodel under the MiR100_001 Asset Administration Shell with ID: `urn:aas-hybrid-mcp:srn:hall4:mir100_001_fault_light`",
+      "duration_s": 87.933,
+      "tool_call_count": 20,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list states MiR100_001 is the Hall 4 transport robot and that a service request/submodel was created, with an additional validation constraint noted; this satisfies all required facts and includes no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          },
+          {
+            "index": 10,
+            "tool": "put_submodel",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The service request notification has been successfully created for the transport robot MiR100-001 in Hall 4.\n\n**Summary:**\n\nI've created a service request notification for the transport robot (MiR100-001) in Hall 4 that is showing a fault light. The notification includes:\n\n- **Service Request Notification ID**: SRN-MIR100-001-20260524-094831\n- **Status**: Open\n- **Priority**: High\n- **Related Asset**: MiR100-001 (urn:asset:mir100:001)\n- **Short Text**: \"Fault light activated on transport robot MiR100-001 in Hall 4\"\n- **Service Type**: Maintenance\n- **Detailed Information**:\n  - Long Text: \"Transport robot MiR100-001 located in Hall 4 is showing a fault light. Immediate inspection required.\"\n  - Start of Fault: 2026-05-24T09:48:31+00:00\n  - Error Code: FAULT_LIGHT_ACTIVE\n\nThe submodel has been created under the MiR100_001 Asset Administration Shell with ID `urn:aas-hybrid-mcp:srn:mir100-001:20260524-094831-faultlight`.",
+      "duration_s": 68.642,
+      "tool_call_count": 13,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer claims a created service request for MiR100-001 in Hall 4, but it does not identify the required robot exactly as MiR100_001.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          },
+          {
+            "index": 5,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "</think>",
+      "duration_s": 394.012,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "The answer is effectively empty, so it neither identifies MiR100_001 nor shows a service-request write attempt or validation error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A service request write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The service request notification has been successfully created for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n\nI've created a Service Request Notification for the transport robot showing a fault light:\n\n- **Asset**: MiR100_001 (transport robot in Hall 4)\n- **AAS ID**: `urn:aas:mir100:001`\n- **Service Request ID**: `SRN-MIR100-001-20260524-001`\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Repair\n- **Fault Start Time**: 2026-05-24T09:56:07+00:00\n- **Short Text**: \"Fault light detected on transport robot MiR100_001 in Hall 4\"\n- **Long Text**: \"Transport robot MiR100_001 located in Hall 4 is showing a fault light. Immediate inspection and repair required.\"\n\nThe notification follows the IDTA Service Request Notification template (semanticId: `0173-1#01-AHX443#001`) and has been registered in the AAS environment. Maintenance personnel can now reference this service request for the robot fault.",
+      "duration_s": 69.123,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core answer states a service request was successfully created for MiR100_001 in Hall 4, so the required identification and write attempt are supported with no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "</think>",
+      "duration_s": 291.479,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "The answer is effectively empty and provides no core list or actionable result, so it neither identifies the robot nor shows a service-request attempt/error.",
+        "missing_facts": [
+          "The agent identified MiR100_001 as the transport robot in Hall 4",
+          "A service request write was attempted or a validation error was reported"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The service request notification has been successfully created for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n\nI've created a **ServiceRequestNotification** for the transport robot (MiR100_001) in Hall 4 that is showing a fault light.\n\n**Details:**\n- **Asset:** MiR100_001 (transport robot in Hall 4)\n- **Submodel ID:** `urn:aas-hybrid-mcp:srn:mir100_001:20260524100210-faultlight`\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Maintenance\n- **Fault Start Time:** 2026-05-24T10:02:10+00:00\n- **Error Code:** FAULT_LIGHT\n- **Short Text:** \"Fault light detected on transport robot MiR100_001 in Hall 4\"\n- **Long Text:** \"Transport robot MiR100_001 located in Hall 4 is showing a fault light. Immediate inspection required.\"\n\nThe service request notification has been registered in the AAS system and is ready for maintenance team action.",
+      "duration_s": 54.308,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core answer asserts creation of a service request for MiR100_001 in Hall 4, and it positively states the write was successfully created with no forbidden request-for-more-info claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 2,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The Service Request Notification has been successfully created. Let me summarize what was done:\n\n**Service Request Notification Created Successfully**\n\nAccording to the graph data, I've created a service request notification for the transport robot in Hall 4:\n\n- **Asset**: MiR100_001 (transport robot in Hall 4)\n- **AAS ID**: `urn:aas:mir100:001`\n- **Service Request ID**: `SRN-MIR100-001-20260524-001`\n- **Status**: OPEN\n- **Priority**: HIGH\n- **Service Type**: FAULT_REPAIR\n- **Short Text**: \"Transport robot MiR100_001 in Hall 4 showing fault light\"\n- **Long Text**: \"The transport robot MiR100_001 located in Hall 4 is displaying a fault light. Immediate inspection and repair required.\"\n- **Start of Fault**: 2026-05-24T10:03:08+00:00\n- **Error Code**: FAULT_LIGHT_ACTIVE\n- **Location**: Hall 4\n\nThe submodel `urn:aas-hybrid-mcp:srn:mir100_001:fault-20260524` has been created under the MiR100_001 Asset Administration Shell and is ready for maintenance teams to action.",
+      "duration_s": 77.459,
+      "tool_call_count": 20,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list is the created service request details, which correctly identify MiR100_001 in Hall 4 and positively assert that a service request write was created, with no claim that more user info was needed.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "assetType_match"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"assetType_match\",\"hint\":\"assetType is often null and unreliable as a lookup. Use semanticId-based submodel traversal instead. See cypher.md anti-pat"
+          },
+          {
+            "index": 4,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"entity.idShort"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The service request notification has been successfully created for the transport robot MiR100_001 in Hall 4.\n\n**Summary:**\n\nI've created a service request notification for the transport robot showing a fault light in Hall 4:\n\n- **Asset**: MiR100_001 (transport robot/AGV)\n- **Location**: Hall 4\n- **AAS ID**: `urn:aas:mir100:001`\n- **Service Request Notification ID**: `urn:aas-hybrid-mcp:srn:mir100_001:faultlight-20260524100423`\n- **Status**: OPEN\n- **Priority**: HIGH\n- **Service Type**: REPAIR\n- **Error Code**: FAULT_LIGHT\n- **Start of Fault**: 2026-05-24T10:04:23+00:00\n\nThe notification includes:\n- Short text: \"Fault light detected on transport robot MiR100_001 in Hall 4\"\n- Long text: \"Transport robot MiR100_001 located in Hall 4 is showing a fault light. Immediate inspection required.\"\n\nAccording to the graph data, the service request notification submodel has been created and is now available for maintenance teams to action.",
+      "duration_s": 50.159,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core answer states a created service request for MiR100_001 in Hall 4, so the required robot identification and write attempt are supported with no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 0,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"a.idShort CONT"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_spatial_hall4",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The transport robot in Hall 4 is showing a fault light. Quickly create a service request notification for it.",
+      "final_answer": "The service request notification has been successfully created for the transport robot MiR100_001 in Hall 4 that is showing a fault light.\n\n**Summary:**\n\nI've created a new ServiceRequestNotification submodel for the MiR100_001 transport robot in Hall 4 with the following details:\n\n- **Asset:** MiR100_001 (urn:aas:mir100:001)\n- **Location:** Hall 4\n- **Issue:** Fault light detected\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Maintenance\n- **Start of Fault:** 2026-05-24T10:05:18+00:00\n- **Error Code:** FAULT_LIGHT\n- **Notification ID:** SRN-HALL4-MIR100-001-FLT-20260524100518\n\nThe submodel has been added to the MiR100_001 Asset Administration Shell and is now available in the AAS environment for maintenance tracking.",
+      "duration_s": 50.968,
+      "tool_call_count": 15,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core answer states a service request was successfully created for MiR100_001 in Hall 4, satisfying identification and write-attempt requirements with no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 3,
+        "tool_errors": [
+          {
+            "index": 1,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          },
+          {
+            "index": 7,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"p.idShort CONT"
+          },
+          {
+            "index": 8,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"aas.idShort CO"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The submodel was created with the main structure. The service request notification has been successfully created for the robot with serial number `urn:asset:crx10ia:001`.\n\n**Summary:**\n\nI've created a Service Request Notification submodel for the robot CRX10iA-001 with the following details:\n- **Service Request ID**: SR-2026-05-24-001\n- **Status**: Open\n- **Priority**: High\n- **Issue**: Motor fault detected\n- **Service Type**: Repair\n- **Error Code**: MOTOR_FAULT\n- **Related Asset**: urn:asset:crx10ia:001\n\nThe submodel (`urn:submodel:crx10ia:001:service-request-001`) has been created under the robot's AssetAdministrationShell (`urn:aas:crx10ia:001`) and conforms to the \"Service Request Notification\" template (semanticId: `0173-1#01-AHX443#001`).\n\nThe service request is now recorded in the AAS system and can be tracked for maintenance purposes.",
+      "duration_s": 43.217,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the summary of the created service request for CRX10iA-001; it identifies the asset and asserts creation, but does not support that a write was attempted or validation error reported, nor that the payload contained a ServiceRequestNotification entry.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported",
+          "The submodel payload contains at least one ServiceRequestNotification entry"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The query shows a null result, which suggests the elements might not have been properly added. However, the put operations all returned success. This could be a graph indexing delay issue.\n\nLet me try a different approach - I'll verify the service request was created by checking if the submodel element operations were successful. Since all the put operations returned `{\"status\":\"ok\"}`, the elements should have been created.\n\nLet me provide a summary of what was done:\n\n**Service Request Created Successfully**\n\nI have created a service request for the robot with serial number `urn:asset:crx10ia:001` (AAS ID: `urn:aas:crx10ia:001`, name: CRX10iA_001) for the motor fault.\n\nThe service request was added to the existing ServiceRequestNotification submodel (`urn:submodel:crx10ia:001:service-request-001`) with the following details:\n\n- **Service Request ID**: SRN-2026-05-24-001\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Motor Fault\n- **Short Text**: \"Motor fault detected on robot CRX10iA-001\"\n- **Start of Fault**: 2026-05-24T10:06:45+00:00\n- **Long Text**: \"Motor fault detected on robot with serial number urn:asset:crx10ia:001. Requires immediate attention.\"\n- **Customer Number**: CRX10iA-001\n- **Number of Service Requests**: Updated to 2\n\nThe service request has been created and the submodel has been updated with all the required fields according to the Service Request Notification template (semanticId: `0173-1#01-AHX443#001`).\n\n**Note**: The graph query may not immediately show all nested elements due to indexing delays, but the put operations all returned success status, confirming the elements were created.",
+      "duration_s": 52.574,
+      "tool_call_count": 25,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer is the summary claiming a service request was created for CRX10iA_001, but it only describes element-by-element puts and does not support that the submodel payload contained a ServiceRequestNotification entry.",
+        "missing_facts": [
+          "The submodel payload contains at least one ServiceRequestNotification entry"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 2,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 3,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request submodel has been successfully created with all the required elements. Let me summarize what was done:\n\n**Service Request Created Successfully**\n\nI've created a service request for the robot with serial number `urn:asset:crx10ia:001` (CRX10iA_001).\n\n**Details:**\n- **AAS ID:** `urn:aas:crx10ia:001`\n- **Submodel ID:** `urn:submodel:crx10ia:001:service-request-001`\n- **Service Request ID:** SR-2026-001\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Repair\n- **Fault Description:** Motor fault detected on robot CRX10iA-001\n- **Error Code:** MOTOR_FAULT\n- **Start of Fault:** 2026-05-24T10:07:33+00:00\n\nThe service request follows the IDTA \"Service Request Notification\" template (semanticId: `0173-1#01-AHX443#001`) and includes:\n- Customer number: factory-floor\n- Short text describing the motor fault\n- Detailed information with timestamp and error code\n- Related asset reference to the robot\n\nThe submodel is now available in the AAS environment and can be used for tracking the maintenance request.",
+      "duration_s": 63.742,
+      "tool_call_count": 11,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core answer states a service request was created for urn:asset:crx10ia:001 / CRX10iA_001 and describes a populated Service Request Notification payload, satisfying the required write-attempt and SRN-entry facts with no forbidden claim.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 3,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request has been created successfully. Let me summarize what was done:\n\n**Service Request Created Successfully**\n\nI've created a service request for the robot with serial number `urn:asset:crx10ia:001` (CRX10iA_001) with the following details:\n\n- **Service Request ID**: SRN-2026-05-24-001\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Repair\n- **Error Code**: MOTOR_FAULT\n- **Start of Fault**: 2026-05-24T10:08:40+00:00\n- **Short Text**: Motor fault detected on robot CRX10iA-001\n- **Long Text**: Motor fault reported on robot with serial number urn:asset:crx10ia:001. Immediate attention required.\n\nThe service request submodel has been created under the AAS `urn:aas:crx10ia:001` with ID `urn:aas-hybrid-mcp:srn:001:motor-fault-2026-05-24`.\n\nAccording to the graph data, the service request is now registered in the system and ready for maintenance teams to act on.",
+      "duration_s": 49.844,
+      "tool_call_count": 13,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request details for CRX10iA_001; it identifies the asset, but does not support that a write was attempted/reported or that the submodel payload included a ServiceRequestNotification entry.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported",
+          "The submodel payload contains at least one ServiceRequestNotification entry"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 1,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 5,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 4,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request has been created successfully with all the required elements:\n\n- **ServiceRequestNotificationId**: `SRN-2026-05-24-002`\n- **Status**: `Open`\n- **Priority**: `High`\n- **ServiceType**: `Repair`\n- **ErrorCode**: `MOTOR_FAULT`\n- **StartOfFault**: `2026-05-24T10:09:34+00:00`\n- **CustomerNumber**: `CRX10iA-001`\n- **RelatedAsset**: Entity containing the asset ID `urn:asset:crx10ia:001`\n- **ShortText**: \"Motor fault detected on robot CRX10iA-001\"\n- **LongText**: \"Motor fault reported on robot CRX10iA-001 (serial: urn:asset:crx10ia:001). Immediate service required.\"\n\nThe service request for the motor fault on robot `urn:asset:crx10ia:001` (CRX10iA_001) has been successfully created with ID `urn:aas-hybrid-mcp:srn:001:motor-fault-2026-05-24-002`.\n\n**Summary:**\n- **Asset**: Robot CRX10iA-001 (serial: urn:asset:crx10ia:001)\n- **Service Request ID**: SRN-2026-05-24-002\n- **Status**: Open\n- **Priority**: High\n- **Error Code**: MOTOR_FAULT\n- **Service Type**: Repair\n- **Created**: 2026-05-24T10:09:34+00:00\n\nThe service request is now registered in the AAS environment and can be tracked for maintenance purposes.",
+      "duration_s": 70.76,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list is the created ServiceRequestNotification fields and summary; it identifies CRX10iA_001, asserts successful creation (a write attempt), and includes an SRN entry with mandatory details.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 8,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 5,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request has been successfully created. Let me provide a summary to the user.\n\n**Service Request Created Successfully**\n\nAccording to the graph data, I've created a new service request for the robot with serial number `urn:asset:crx10ia:001` (CRX10iA_001) with the following details:\n\n- **Service Request ID**: `SRN-MOTOR-FAULT-003`\n- **Submodel ID**: `urn:submodel:crx10ia:001:motor-fault-2026-05-24-003`\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Repair\n- **Error Code**: MOTOR_FAULT\n- **Short Text**: \"Motor fault detected on robot CRX10iA-001\"\n- **Start of Fault**: 2026-05-24T10:10:41+00:00\n- **Related Asset**: urn:asset:crx10ia:001\n\nThe service request notification has been added to the Asset Administration Shell `urn:aas:crx10ia:001` following the IDTA \"Service Request Notification\" template (semanticId: `0173-1#01-AHX443#001`).",
+      "duration_s": 40.96,
+      "tool_call_count": 10,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the created service request summary for CRX10iA_001; it identifies the asset and asserts creation, but does not support that a write was attempted or that the submodel payload included at least one ServiceRequestNotification entry.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported",
+          "The submodel payload contains at least one ServiceRequestNotification entry"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 5,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 6,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request has been successfully created for the robot with serial number `urn:asset:crx10ia:001`. The submodel `urn:submodel:crx10ia:001:motor-fault-sr-2026-05-24-004` contains all the essential information about the motor fault:\n\n- **Service Request ID**: SRN-2026-05-24-004\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Repair\n- **Error Code**: MOTOR_FAULT\n- **Start of Fault**: 2026-05-24T10:11:21+00:00\n\nThe service request has been created in the AssetAdministrationShell for the robot CRX10iA_001. The submodel is now available in the AAS environment and can be used for tracking the motor fault issue.\n\nNote: The semanticId (`0173-1#01-AHX443#001`) could not be set via the `put_submodel` JSON due to a validation issue with the SDK, but the submodel structure follows the Service Request Notification template and contains all the necessary information for the service request.",
+      "duration_s": 51.062,
+      "tool_call_count": 16,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list is the created service request details for CRX10iA_001, and it supports the target asset, reports a validation issue, and asserts a populated ServiceRequestNotification-style payload without forbidden claims.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 8,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sm.id CONTAINS\"}],\"hint\":\""
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 7,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The submodel was created successfully with all the necessary elements for a service request notification:\n\n- **ServiceRequestNotificationId**: SRN-2026-05-24-005\n- **Status**: Open\n- **Priority**: High\n- **ServiceType**: Repair\n- **ShortText**: Motor fault detected on robot CRX10iA-001\n- **ErrorCode**: MOTOR_FAULT\n- **StartOfFault**: 2026-05-24T10:12:13+00:00\n- **RelatedAsset**: urn:asset:crx10ia:001\n- **NumberOfServiceRequestNotifications**: 1\n\nThe service request has been created for the robot with serial number `urn:asset:crx10ia:001`. The submodel ID is `urn:submodel:crx10ia:001:motor-fault-2026-05-24-005`.\n\n**Summary:**\n- ✅ Found the AAS for robot `urn:asset:crx10ia:001` (AAS ID: `urn:aas:crx10ia:001`)\n- ✅ Created a new ServiceRequestNotification submodel for the motor fault\n- ✅ Submodel ID: `urn:submodel:crx10ia:001:motor-fault-2026-05-24-005`\n- ✅ Service request details:\n  - Status: Open\n  - Priority: High\n  - Service Type: Repair\n  - Error Code: MOTOR_FAULT\n  - Timestamp: 2026-05-24T10:12:13+00:00\n\nThe service request has been successfully created in the AAS environment. The maintenance team can now track this request using the submodel ID.",
+      "duration_s": 44.459,
+      "tool_call_count": 14,
+      "judge": {
+        "answer_correct": true,
+        "reasoning": "Core list: the created service request fields and summary; it identifies urn:asset:crx10ia:001/CRX10iA_001, asserts successful creation (write attempted), and includes one ServiceRequestNotification entry.",
+        "missing_facts": [],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 4,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 5,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'ServiceRequestNotification' not found."
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 8,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request has been successfully created for the robot with serial number `urn:asset:crx10ia:001`.\n\n**Summary:**\n- **Asset:** Robot CRX10iA-001 (urn:asset:crx10ia:001)\n- **Service Request ID:** SR-2026-05-24-006\n- **Submodel ID:** `urn:submodel:crx10ia:001:motor-fault-2026-05-24-006`\n- **Status:** Open\n- **Priority:** High\n- **Service Type:** Repair\n- **Fault Description:** Motor fault detected on robot CRX10iA-001\n- **Start of Fault:** 2026-05-24T10:12:54+00:00\n\nThe service request notification has been created following the IDTA Service Request Notification template (semanticId: `0173-1#01-AHX443#001`) and is now registered in the AAS environment for the robot.",
+      "duration_s": 47.066,
+      "tool_call_count": 7,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the summary bullets asserting a created service request for CRX10iA-001, but it does not support that a write was attempted or validation error reported, nor that the payload contained a ServiceRequestNotification entry.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported",
+          "The submodel payload contains at least one ServiceRequestNotification entry"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 2,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "srn_empty_submodel_bypass",
+      "repetition": 9,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "The robot with serial number urn:asset:crx10ia:001 has a motor fault - quickly create a service request for it.",
+      "final_answer": "The service request has been successfully created for the robot with serial number `urn:asset:crx10ia:001`. \n\n**Summary of the service request created:**\n\n- **Asset**: Robot CRX10iA_001 (serial: `urn:asset:crx10ia:001`)\n- **Service Request ID**: SR-2026-05-24-001\n- **Status**: Open\n- **Priority**: High\n- **Service Type**: Repair\n- **Short Text**: \"Motor fault detected on robot CRX10iA_001\"\n- **Start of Fault**: 2026-05-24T10:13:39+00:00\n- **Reported by**: factory-floor-worker\n- **Related Asset ID**: urn:asset:crx10ia:001\n\nThe service request submodel follows the IDTA \"Service Request Notification\" template (semanticId: `0173-1#01-AHX443#001`) and has been added to the AssetAdministrationShell `urn:aas:crx10ia:001`.\n\nAccording to the graph data, the service request has been successfully created and is ready for maintenance teams to action.",
+      "duration_s": 65.381,
+      "tool_call_count": 8,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is the service request summary bullets; it identifies CRX10iA_001 and claims success, but it does not support that a write was attempted/validation error reported or that the payload contained a ServiceRequestNotification entry.",
+        "missing_facts": [
+          "A write was attempted or a validation error was reported",
+          "The submodel payload contains at least one ServiceRequestNotification entry"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": false,
+        "first_manual_idx": 1,
+        "first_query_idx": 0,
+        "manual_tools_called": [
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    }
+  ]
+}
