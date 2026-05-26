@@ -29,6 +29,14 @@ Acceptable as an entry point when the user explicitly names an asset —
 but do not derive purpose or structure from `idShort`. Verify via
 submodels and their semanticIds.
 
+**5. MANAGES_ASSET ≠ contained assets.**
+`MANAGES_ASSET` is the shell-to-asset identity link (modeling layer only). A
+container asset is not "inside itself" in the real world. For "what is in /
+inside / contained in `<container>`" questions, traverse the Entity hierarchy
+via `HAS_SUBMODEL -> HAS_ELEMENT* -> Entity -> REPRESENTS_ASSET` and exclude
+the container's own asset from the result. `MANAGES_ASSET` only answers
+identity questions: "which asset IS shell X" or "what does shell X represent".
+
 Unrecognised `SemanticConcept.id` values: call `lookup_semantic_id(id)`
 to resolve to human-readable semantics.
 
