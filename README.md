@@ -172,3 +172,9 @@ separately), and the ETFA 2026 Bench-B protocol.
 ## License
 
 MIT — DFKI GmbH
+
+
+
+
+ Which devices are located in Hall 3? What is the maximum speed of the mir 100?  The transport robot in Hall 4 has a red status light —
+      what does it mean and how do I fix it?

@@ -16,4 +16,4 @@ COPY --from=builder /install /usr/local
 
 EXPOSE 8120
 
-CMD ["opentelemetry-instrument", "uvicorn", "aas_agent.api:app", "--host", "0.0.0.0", "--port", "8120"]
+CMD ["uvicorn", "aas_agent.api:app", "--host", "0.0.0.0", "--port", "8120"]
