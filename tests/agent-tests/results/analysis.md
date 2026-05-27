@@ -28,10 +28,10 @@ Models ordered by parameter count:
 | asset_specs | 20% | 85% | 70% | 100% | 100% | 100% | 100% | 100% | 100% |
 | bench_b | 3% | 45% | 55% | 78% | 85% | 73% | 87% | 72% | 82% |
 | containment_hall4 | 10% | 42% | 44% | 100% | 100% | 88% | 94% | 92% | 100% |
-| srn_autonomous | 0% | 4% | 14% | 32% | — | 34% | 18% | 22% | 26% |
-| **Overall** | **6.5%** | **41.5%** | **47%** | **76.5%** | **94%*** | **72%** | **74%** | **70%** | **76%** |
+| srn_autonomous | 0% | 4% | 14% | 32% | 14% | 34% | 18% | 22% | 26% |
+| **Overall** | **6.5%** | **41.5%** | **47%** | **76.5%** | **74%** | **72%** | **74%** | **70%** | **76%** |
 
-\*qwen36-27b has no SRN suite (150 runs); 94% is read-only only.
+qwen36-27b overall recalculated at N=200 (150 read-path + 50 SRN): (20+20+51+50+7)/200 = 74%.
 
 ### Overall correct rate by model size
 
@@ -83,26 +83,33 @@ The self-correction rate is consistently high (95–100%) across all model sizes
 
 ## 3. Write-Path Bypass (SRN Suite Only)
 
-### Bypass rate and dominant type
+**Note:** The original bypass classification (navigation failure / write avoidance / surfaced /
+direct bypass) was derived by the framework's regex-based tool-call extractor, which misaligns
+name↔result blocks when tool results contain embedded code fences. The per-tier bypass labels are
+therefore not reproducible and have been replaced with assignment-independent metrics below.
+See `task_paper_bench_c_bypass_rewrite.md` for root-cause details.
 
-| Model | SRN correct | Bypass rate | Dominant bypass | put_submodel_element called |
-|---|--:|--:|---|--:|
-| 2B | 0% | 6% | null (82%) | 5/50 |
-| 4B | 4% | 48% | none (32%) | 34/50 |
-| 9B | 14% | 44% | null (32%) / cascade (28%) | 31/50 |
-| 35-27B | 32% | 56% | surfaced (40%) | 12/45 |
-| 35-35B | 34% | 56% | direct (36%) / surfaced (14%) | 28/50 |
-| 36-35B | 18% | 48% | surfaced (34%) / none (20%) | 24/50 |
-| 122B | 22% | 4% | surfaced (34%) | 2/50 |
-| 397B | 26% | 44% | direct (36%) | 22/50 |
+### Write success vs. semantic correctness (all 9 models, N=50 per model)
 
-The bypass profile shifts systematically with model size, revealing three distinct failure stages:
+| Model | SRN % (judge) | Wrote % (write signal) | put_submodel calls |
+|---|--:|--:|--:|
+| 2B  |  0% | 12% |  6/50 |
+| 4B  |  4% | 74% | 37/50 |
+| 9B  | 14% | 58% | 29/50 |
+| 35-27B | 32% | 98% | 49/50 |
+| 35-35B | 34% | 92% | 46/50 |
+| 36-35B | 18% | 76% | 38/50 |
+| 36-27B | 14% | 96% | 48/50 |
+| 122B | 22% | 92% | 46/50 |
+| 397B | 26% | 92% | 46/50 |
+| **Total** | — | **77% (345/450)** | |
 
-1. **Navigation failure (2B):** "null" dominates (82%) — the model never finds the submodel. Failure occurs before any write reasoning.
-2. **Write avoidance (4B):** "none" dominates (32%) — the model finds the submodel but never attempts a write. A step forward from 2B but still no write execution.
-3. **Surfaced paralysis (27B):** "surfaced" dominates (40%) — the model finds the submodel and correctly identifies it as the target, but treats its existence as task completion (read-path/write-path confusion).
-4. **Direct bypass (35B, 397B):** "direct" dominates (36%) — the model skips `put_submodel` and goes straight to `put_submodel_element`, bypassing the atomic write path.
-5. **High compliance, low vocabulary (122B):** Only 4% bypass — the most compliant model. But 22% SRN correctness shows compliance alone is insufficient; vocabulary failure dominates.
+**Key finding:** The write success vs. semantic correctness gap is model-size-independent.
+Write success scales quickly (6% at 2B → 96–98% at 27B+) but SRN correctness peaks at 34%
+(35-35B). Even Qwen3.6-27B, which writes in 96% of runs, achieves only 14% SRN correctness —
+identical to the 9B model. The bottleneck is vocabulary, not structure. Zero write-tool
+rejections were recorded across all 450 runs (assignment-independent: no `validation failed` /
+`does not exist` / `conformance` signatures in any run).
 
 ### Per-case SRN correct rate (models with SRN data)
 
@@ -120,7 +127,7 @@ Three cases are at 0% for almost all models: `srn_from_fault_context`, `srn_rout
 
 ## 4. Template Validation
 
-**All nine models report zero write-tool rejections and zero validation errors across all 1,750 runs.** When any model issues a write call, the payload passes schema validation — regardless of model size, architecture, or correctness.
+**All nine models report zero write-tool rejections and zero validation errors across all 450 SRN-suite runs (1,750 total across all suites).** When any model issues a write call, the payload passes schema validation — regardless of model size, architecture, or correctness.
 
 This confirms the template validation gap is architectural, not model-dependent:
 

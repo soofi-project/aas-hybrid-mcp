@@ -71,7 +71,7 @@ sondern "degenerative determinism":
 
 **Datei:** `paper/etfa2026/content/10-evaluation.tex`
 
-**Status:** ⬜ Open — kann sofort geschrieben werden (Daten liegen vor)
+**Status:** ✅ Done (2026-05-26) — minimaler Satz in §10 Z. 28 eingefügt: Pilot-T=0-Beobachtung (122B byte-identisch über N=3) als Setup, kein "requires non-zero temperature"-Overclaim. Qwen-Default-Begründung stand bereits im Satz davor.
 
 ### T3 — §11 Discussion: Temperature-als-Funktion-von-Scaffolding-Absatz
 
@@ -106,11 +106,11 @@ verschieben.
 
 - [x] T=0 Quick-Tests (N=3) für qwen35-122b und qwen35-9b durchgeführt
 - [x] Keine Greedy-Loops bestätigt; degenerativer Determinismus dokumentiert
-- [ ] §10 enthält korrigierte T=0-Begründung (kein "greedy loop"-Claim)
-- [ ] §11 enthält Temperature-als-Funktion-von-Scaffolding-Absatz mit Validator-als-Ersatz-These
-- [ ] §13 enthält Temperatur-Scaffolding-Forschungsfrage
-- [ ] Alter Task geschlossen
-- [ ] Paper kompiliert ohne Fehler
+- [x] §10 enthält korrigierte T=0-Begründung (kein "greedy loop"-Claim)
+- [x] §11 enthält Temperature-als-Funktion-von-Scaffolding-Absatz mit Validator-als-Ersatz-These
+- [x] §13 enthält Temperatur-Scaffolding-Forschungsfrage
+- [x] Alter Task geschlossen
+- [x] Paper kompiliert ohne Fehler
 
 ## References
 
