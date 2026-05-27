@@ -10,17 +10,13 @@ from typing import AsyncIterator
 _TOOL_OUTPUT_CHARS = 3000
 _TOOL_ARGS_CHARS = 800
 
-# Top-level langgraph nodes whose entry should appear as a <think> block
-# when streaming verbose. The prebuilt ReAct agent has two: "agent" (the
-# LLM call) and "tools" (ToolNode). The tool node already produces its own
-# tool-start/tool-end blocks, so we only surface "agent" here.
 _REACT_NODES = frozenset({"agent"})
 
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
 
+from aas_agent.agent_react_graph import build_react_graph
 from aas_agent.http_client import _build_http_client
 from aas_agent.mcp_client import MCPClientManager
 from aas_agent.trace import ConversationLogger
@@ -71,7 +67,7 @@ def _thinking_from_effort(
 
 
 class AgentRunner:
-    """Wraps a LangGraph ReAct agent with MCP tool/resource integration.
+    """Wraps a custom LangGraph ReAct agent with MCP tool/resource integration.
 
     Two ReAct graphs are pre-built — one with the underlying LLM in
     thinking mode, one without — so ``reasoning_effort`` on an incoming
@@ -122,15 +118,15 @@ class AgentRunner:
 
         tools = list(all_tools) + [get_current_utc_time]
 
-        self._agent_thinking_off = create_react_agent(
-            model=self._build_llm(enable_thinking=False, temperature=self._temperature),
+        self._agent_thinking_off = build_react_graph(
+            llm=self._build_llm(enable_thinking=False, temperature=self._temperature),
             tools=tools,
-            prompt=self._full_system_message,
+            system_prompt=self._full_system_message,
         )
-        self._agent_thinking_on = create_react_agent(
-            model=self._build_llm(enable_thinking=True, temperature=self._temperature),
+        self._agent_thinking_on = build_react_graph(
+            llm=self._build_llm(enable_thinking=True, temperature=self._temperature),
             tools=tools,
-            prompt=self._full_system_message,
+            system_prompt=self._full_system_message,
         )
         log.info(
             "Agent initialized with %d tools (default_thinking=%s)",
@@ -212,9 +208,10 @@ class AgentRunner:
         """Convert OpenAI-format messages to LangChain message objects.
 
         System messages from the incoming list are intentionally skipped —
-        ``create_react_agent`` injects its own system prompt via the ``prompt``
-        argument, and a second system message can cause models (especially
-        Qwen/vLLM) to ignore the graph's system prompt entirely.
+        the custom ReAct graph injects its own system prompt via the
+        ``system_prompt`` argument to ``build_react_graph``, and a second
+        system message can cause models (especially Qwen/vLLM) to ignore
+        the graph's system prompt entirely.
         """
         lc_messages: list = []
         for msg in messages:
@@ -274,7 +271,7 @@ class AgentRunner:
                 trace.flush()
             return
 
-        # Verbose: tools + LLM tokens + node-entry blocks (prebuilt-react "agent" node).
+        # Verbose: tools + LLM tokens + node-entry blocks (custom react "agent" node).
         in_tool_block = False
         try:
             async for event in agent.astream_events(
