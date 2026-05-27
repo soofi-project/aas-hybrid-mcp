@@ -17,6 +17,13 @@ from typing import Any
 from framework.cases import Case
 from framework.runner import TResult
 
+# BaSyx write success signals (see basyx_client.put_submodel / put_submodel_element).
+# These short tokens survive the 200-char result-preview truncation, so we can
+# detect a successful write even though the regex-reconstructed call<->result
+# binding is unreliable when tool results embed code fences (```).
+PS_OK = re.compile(r'"status"\s*:\s*"ok"\s*,\s*"id"')
+PSE_OK = re.compile(r'"status"\s*:\s*"ok"\s*,\s*"idShortPath"')
+
 
 @dataclass
 class CypherViolation:
@@ -51,13 +58,15 @@ class WritePathAnalysis:
     """
 
     put_submodel_attempted: bool = False
-    put_submodel_error: str | None = None   # error text if put_submodel failed
+    put_submodel_error: str | None = None   # informational only; not used for classification
     put_submodel_element_called: bool = False
+    wrote: bool = False   # a write succeeded (put_submodel or put_submodel_element)
     bypass_type: str | None = None
     # "direct"   — put_submodel_element used without prior put_submodel attempt
-    # "cascade"  — put_submodel failed → put_submodel_element called afterwards
+    # "cascade"  — put_submodel had no success signal → put_submodel_element called
     # "correct"  — put_submodel succeeded, no put_submodel_element for new submodel
-    # "surfaced" — put_submodel failed, no put_submodel_element fallback
+    # "surfaced" — put_submodel had no success signal, no put_submodel_element fallback
+    # None       — legitimate child-write (put_submodel ok + element) or no write
 
 
 @dataclass
@@ -114,6 +123,7 @@ class Evaluation:
                 "put_submodel_attempted": self.write_path.put_submodel_attempted,
                 "put_submodel_error": self.write_path.put_submodel_error,
                 "put_submodel_element_called": self.write_path.put_submodel_element_called,
+                "wrote": self.write_path.wrote,
                 "bypass_type": self.write_path.bypass_type,
             } if self.write_path else None,
             "notes": self.notes,
@@ -191,52 +201,66 @@ def _detect_tool_violations(case: Case, result: TResult) -> list[ToolViolation]:
 def _analyse_write_path(result: TResult) -> WritePathAnalysis | None:
     """Classify how the agent handled submodel creation.
 
-    Looks at the sequence of put_submodel / put_submodel_element tool calls
-    and their results to determine which bypass pattern (if any) occurred.
+    Classification is driven by a BaSyx *success* signal, not an error-substring
+    heuristic. The agent's tool results are reconstructed by a regex over the
+    rendered text stream (runner._parse_tool_calls); that regex mis-assigns
+    result blocks whenever a tool result embeds code fences (```), which
+    get_manual_page / get_template / get_graph_schema all emit. A foreign Cypher
+    error then lands on a put_submodel call. So we ignore the (unreliable) per-call
+    binding and search for the success token across the joined result blob — the
+    same approach as reclassify_write_path.py. Tool names + order survive the regex,
+    so attempted/called flags are trustworthy.
+
     Only returns an analysis when at least one write tool was called.
     """
     write_tools = {"put_submodel", "put_submodel_element"}
-    relevant = [(i, tc) for i, tc in enumerate(result.tool_calls) if tc.name in write_tools]
+    relevant = [tc for tc in result.tool_calls if tc.name in write_tools]
     if not relevant:
         return None
 
-    analysis = WritePathAnalysis()
+    names = [tc.name for tc in result.tool_calls]
+    blob = " ".join(tc.result or "" for tc in result.tool_calls)
 
-    # Find put_submodel calls and check if they errored.
-    ps_error_indices: set[int] = set()
-    for i, tc in relevant:
-        if tc.name != "put_submodel":
-            continue
-        analysis.put_submodel_attempted = True
-        result_text = tc.result or ""
-        # Tool errors arrive as "Tool error: ..." or contain "error"/"failed" in the result.
-        if "error" in result_text.lower() or "failed" in result_text.lower() or "validation" in result_text.lower():
-            ps_error_indices.add(i)
-            if not analysis.put_submodel_error:
-                analysis.put_submodel_error = result_text[:300]
+    ps_attempted = "put_submodel" in names
+    pse_called = "put_submodel_element" in names
+    ps_ok = ps_attempted and bool(PS_OK.search(blob))
+    pse_ok = pse_called and bool(PSE_OK.search(blob))
 
-    # Check put_submodel_element calls.
-    pse_indices = [i for i, tc in relevant if tc.name == "put_submodel_element"]
-    analysis.put_submodel_element_called = bool(pse_indices)
+    analysis = WritePathAnalysis(
+        put_submodel_attempted=ps_attempted,
+        put_submodel_element_called=pse_called,
+        wrote=ps_ok or pse_ok,
+    )
 
-    # Classify.
-    if not analysis.put_submodel_attempted and analysis.put_submodel_element_called:
+    # Informational only: best-effort error snippet when put_submodel had no
+    # success signal. Does NOT feed the classification.
+    if ps_attempted and not ps_ok:
+        analysis.put_submodel_error = _error_snippet(blob)
+
+    # Classify onto the existing 4-type taxonomy (names kept so analysis.md
+    # consumers don't break).
+    if not ps_attempted and pse_called:
         analysis.bypass_type = "direct"
-    elif analysis.put_submodel_attempted and ps_error_indices and analysis.put_submodel_element_called:
-        # put_submodel_element must come AFTER a failed put_submodel.
-        first_pse = min(pse_indices)
-        last_ps_error = max(ps_error_indices)
-        if first_pse > last_ps_error:
-            analysis.bypass_type = "cascade"
-        else:
-            analysis.bypass_type = "direct"
-    elif analysis.put_submodel_attempted and not analysis.put_submodel_element_called:
-        if ps_error_indices:
-            analysis.bypass_type = "surfaced"
-        else:
-            analysis.bypass_type = "correct"
+    elif ps_attempted and not ps_ok and pse_called:
+        analysis.bypass_type = "cascade"
+    elif ps_attempted and not ps_ok and not pse_called:
+        analysis.bypass_type = "surfaced"
+    elif ps_attempted and ps_ok and not pse_called:
+        analysis.bypass_type = "correct"
+    # else: ps_ok and pse_called (legitimate child-write) → bypass_type stays None
 
     return analysis
+
+
+def _error_snippet(blob: str) -> str | None:
+    """Best-effort error excerpt from the joined result blob, for diagnostics only."""
+    low = blob.lower()
+    for token in ("error", "failed", "validation"):
+        idx = low.find(token)
+        if idx != -1:
+            start = max(0, idx - 30)
+            return blob[start:start + 300].strip()
+    return None
 
 
 def _detect_validator_rejections(result: TResult) -> list[ValidatorRejection]:
