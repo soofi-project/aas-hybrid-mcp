@@ -43,6 +43,7 @@ class ChunkData:
 # ---------------------------------------------------------------------------
 
 _embedding_model = None
+_converter = None
 
 
 def _get_embedding_model():
@@ -51,6 +52,30 @@ def _get_embedding_model():
     if _embedding_model is None:
         _embedding_model = get_embedding_model()
     return _embedding_model
+
+
+def reset_converter() -> None:
+    """Release the DocumentConverter singleton and run a GC cycle."""
+    global _converter
+    import gc
+    _converter = None
+    gc.collect()
+
+
+def _get_converter() -> "DocumentConverter":
+    """Lazy-init the DocumentConverter on first use (loads layout models once)."""
+    global _converter
+    if _converter is None:
+        pipeline_options = PdfPipelineOptions(artifacts_path=os.environ.get("DOCLING_ARTIFACTS_PATH"))
+        pipeline_options.do_table_structure = os.environ.get("PDF_TABLE_STRUCTURE", "false").lower() == "true"
+        pipeline_options.do_ocr = False
+        pipeline_options.queue_max_size = int(os.environ.get("DOCLING_QUEUE_MAX_SIZE", "8"))
+        _converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
+    return _converter
 
 
 # ---------------------------------------------------------------------------
@@ -194,15 +219,7 @@ def convert_pdf_to_markdown(pdf_bytes: bytes) -> str:
         # artifacts_path points docling at models pre-fetched by `docling-tools models download`
         # (flat layout under ~/.cache/docling/models/), bypassing huggingface_hub snapshot_download
         # which expects a different on-disk format and would hit the network under HF_HUB_OFFLINE=1.
-        pipeline_options = PdfPipelineOptions(artifacts_path=os.environ.get("DOCLING_ARTIFACTS_PATH"))
-        pipeline_options.do_table_structure = os.environ.get("PDF_TABLE_STRUCTURE", "false").lower() == "true"
-        pipeline_options.do_ocr = False
-        converter = DocumentConverter(
-            format_options={
-                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
-            }
-        )
-        result = converter.convert(tmp_path)
+        result = _get_converter().convert(tmp_path)
 
         if result.status == ConversionStatus.SUCCESS:
             md = _items_to_markdown_with_page_markers(result.document)
