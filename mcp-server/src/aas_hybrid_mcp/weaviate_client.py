@@ -237,6 +237,14 @@ def _search_sync(
         # Build a jump-URL for browser navigation to the specific PDF page.
         jump_url = f"{raw_url}#page={raw_page}" if raw_url and raw_page > 0 else raw_url
 
+        # Build a ready-made Markdown link the LLM can insert verbatim
+        # without having to reconstruct the (long, fragile) URL itself.
+        heading = props.get("source_heading", "")
+        label = f"{heading}, p. {raw_page}" if heading and raw_page else ""
+        if not label and raw_page:
+            label = f"p. {raw_page}"
+        md_link = f"[{label}]({jump_url})" if label and jump_url else ""
+
         # Only emit fields that carry information; empty strings / zero-page
         # signal "not applicable" (e.g. SubmodelElementList children have no
         # idShort) and are dropped to reduce LLM context noise.
@@ -251,6 +259,7 @@ def _search_sync(
             ("source_url", raw_url),
             ("source_filename", props.get("source_filename", "")),
             ("source_jump_url", jump_url),
+            ("source_md_link", md_link),
             ("submodel_id", props.get("submodel_id", props.get("submodelId", ""))),
             ("sm_element_path", props.get("sm_element_path", props.get("smElementPath", ""))),
             ("id_short", props.get("id_short", props.get("idShort", ""))),

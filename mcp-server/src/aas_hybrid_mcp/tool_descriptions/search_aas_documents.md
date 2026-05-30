@@ -29,3 +29,6 @@ default 10), `asset_name` (optional str — enables scoped rewrite),
 `doc_language` (optional str — e.g. "en", "de").
 OUTPUT: `results` list with chunk text and metadata; `total` count;
 `query_rewritten` (bool); `rewritten_query` (str, when rewritten).
+Each result may include `source_md_link` — a ready-made Markdown link
+(e.g. `[2 Safety, p. 7](http://...)`). **Always insert `source_md_link`
+verbatim** into your response; never retype or reconstruct the URL.

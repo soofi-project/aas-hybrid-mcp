@@ -1,0 +1,256 @@
+name: aas-bench
+
+networks:
+  aas-bench-network:
+    driver: bridge
+
+services:
+
+  ########### Kafka ###################################################################
+
+  kafka:
+    image: confluentinc/cp-kafka:${KAFKA_VERSION}
+    hostname: kafka
+    container_name: bench-kafka
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTER_BROKER://kafka:9094,PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTER_BROKER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTER_BROKER://:9094,CONTROLLER://:9095,PLAINTEXT://:9092,EXTERNAL://:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTER_BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_BROKER_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9095
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: benchAASBenchKafkaClusterID01
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 10485760
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 10485760
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/kafka/9092"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - aas-bench-network
+
+  ########### MongoDB #################################################################
+
+  mongo:
+    image: mongo:${MONGODB_VERSION}
+    hostname: mongo
+    container_name: bench-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoAdmin
+      MONGO_INITDB_ROOT_PASSWORD: mongoPassword
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "mongodb://mongoAdmin:mongoPassword@localhost:27017/admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    networks:
+      - aas-bench-network
+
+  ########### Neo4j ###################################################################
+
+  neo4j:
+    image: dfki-neo4j:5.26.8-community-bullseye-apoc
+    build:
+      context: ../../neo4j
+    container_name: bench-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: none
+      NEO4J_dbms_memory_heap_max__size: 8G
+      NEO4J_dbms_memory_pagecache_size: 4G
+    healthcheck:
+      test: ["CMD", "cypher-shell", "RETURN 1"]
+      interval: 30s
+      start_period: 8s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aas-bench-network
+
+  ########### BaSyx Components #########################################################
+
+  aas-registry:
+    image: eclipsebasyx/aas-registry-log-mongodb:${BASYX_V3_VERSION}
+    container_name: bench-aas-registry
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - aas-bench-network
+
+  submodel-registry:
+    image: eclipsebasyx/submodel-registry-log-mongodb:${BASYX_V3_VERSION}
+    container_name: bench-submodel-registry
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - aas-bench-network
+
+  aas-discovery:
+    image: eclipsebasyx/aas-discovery:${BASYX_V3_VERSION}
+    container_name: bench-aas-discovery
+    restart: unless-stopped
+    ports:
+      - "9100:8081"
+    environment:
+      BASYX_BACKEND: MongoDB
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+      SPRING_DATA_MONGODB_DATABASE: aas-env
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - aas-bench-network
+
+  aas-environment:
+    image: eclipsebasyx/aas-environment:${BASYX_V3_VERSION}
+    container_name: bench-aas-environment
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      BASYX_BACKEND: MongoDB
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI}
+      SPRING_DATA_MONGODB_DATABASE: aas-env
+      BASYX_FEATURE_KAFKA_ENABLED: "true"
+      BASYX_AASREPOSITORY_FEATURE_DISCOVERYINTEGRATION: http://aas-discovery:8081
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      BASYX_AASREPOSITORY_FEATURE_REGISTRYINTEGRATION: http://aas-registry:8080
+      BASYX_SUBMODELREPOSITORY_FEATURE_REGISTRYINTEGRATION: http://submodel-registry:8080
+      BASYX_AASREPOSITORY_FEATURE_AASXUPLOAD_ENABLED: "true"
+      BASYX_CORS_ALLOWED_ORIGINS: "*"
+      BASYX_CORS_ALLOWED_METHODS: GET,POST,PATCH,DELETE,PUT,OPTIONS,HEAD
+      BASYX_ENVIRONMENT: file:/application/files/aasx/
+      BASYX_EXTERNALURL: http://localhost:8081,http://aas-environment:8081,http://host.docker.internal:8081
+      SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_REQUEST_SIZE: 10485760
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 500MB
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 500MB
+    volumes:
+      - ./aasx/:/application/files/aasx/
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      aas-registry:
+        condition: service_healthy
+      submodel-registry:
+        condition: service_healthy
+      aas-discovery:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "http://localhost:8081/actuator/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 3600s
+    networks:
+      - aas-bench-network
+
+  ########### AKHQ (Kafka UI) ##########################################################
+
+  akhq:
+    image: tchiotludo/akhq:${AKHQ_VERSION}
+    container_name: bench-akhq
+    restart: unless-stopped
+    ports:
+      - "8086:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            bench-kafka:
+              properties:
+                bootstrap.servers: "kafka:9092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - aas-bench-network
+
+  ########### Kafka Connect — Neo4j v2 (Bolt+UNWIND) ##################################
+
+  kafka-connect-neo4j-v2:
+    image: dfkibasys/aas-neo4j-kafka-connect-plugin:${NEO4J_V2_TAG}
+    container_name: bench-kafka-connect-neo4j
+    restart: unless-stopped
+    ports:
+      - "8084:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-neo4j"
+      CONNECT_LOG4J_LOGGERS: "de.dfki.cos.aas2graph.kafka.cypher.params.models=WARN,de.dfki.cos=INFO,org.apache.kafka.connect=ERROR,org.apache.kafka.connect.runtime=WARN,io.pebbletemplates.pebble=ERROR"
+      BASYX_AAS_REPO_URL: http://aas-environment:8081
+      NEO4J_URI: "bolt://neo4j:7687"
+      CONNECT_CONSUMER_POLL_INTERVAL_MS: "100"
+      CONNECT_CONSUMER_FETCH_MAX_WAIT_MS: "50"
+      CONNECT_CONSUMER_FETCH_MIN_BYTES: "1"
+      CONNECT_CONSUMER_MAX_POLL_RECORDS: "500"
+      CONNECT_CONSUMER_OVERRIDE_SESSION_TIMEOUT_MS: "30000"
+      CONNECT_CONSUMER_OVERRIDE_MAX_POLL_INTERVAL_MS: "600000"
+      CONNECT_CONSUMER_OVERRIDE_HEARTBEAT_INTERVAL_MS: "3000"
+    volumes:
+      - ./bolt-connector-v2.json:/etc/kafka-connect/config/neo4j-connector.json:ro
+    depends_on:
+      kafka:
+        condition: service_started
+      neo4j:
+        condition: service_healthy
+    networks:
+      - aas-bench-network
