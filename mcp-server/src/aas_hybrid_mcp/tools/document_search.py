@@ -14,12 +14,25 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool(description=load_description("search_aas_documents"))
     async def search_aas_documents(
         query: str,
-        submodel_id: str | None = None,
+        submodel_id: str,
         limit: int = 10,
         asset_name: str | None = None,
         doc_language: str | None = None,
     ) -> dict:
         """Search AAS documents by semantic similarity."""
+        # Mandatory scoping: only submodel_id builds the Weaviate filter
+        # (asset_name feeds the query rewriter, it does NOT restrict results).
+        # An unscoped search would return chunks from unrelated assets, so we
+        # reject it server-side rather than silently falling back to a
+        # repository-wide search.
+        if not submodel_id or not submodel_id.strip():
+            raise ValueError(
+                "'submodel_id' is required and must be non-empty. Locate the "
+                "relevant submodel first via query_aas_graph (follow "
+                "DERIVED_FROM to the type shell for documentation), then pass "
+                "its full ID. An unscoped search would surface documentation "
+                "from unrelated assets."
+            )
         limit = max(1, min(limit, MAX_LIMIT))
 
         try:

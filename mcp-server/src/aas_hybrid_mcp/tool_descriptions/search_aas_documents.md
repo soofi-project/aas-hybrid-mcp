@@ -4,11 +4,13 @@ WHEN TO USE: questions whose answers live inside PDF documentation
 (troubleshooting, safety instructions, calibration, datasheets,
 error-code tables).
 
-**Always scope with `submodel_id`** — obtained first via `query_aas_graph`.
-Never invent or guess one: IDs are URIs (`https://…`, `urn:…`),
-not human labels. Unscoped search loses asset-pinning and risks
-cross-asset hallucinations. Documentation typically lives on the
-Type AAS (discover via `DERIVED_FROM`), not on the instance shell.
+**`submodel_id` is REQUIRED** — obtained first via `query_aas_graph`.
+The server rejects an empty or missing `submodel_id`; there is no
+repository-wide fallback. Never invent or guess one: IDs are URIs
+(`https://…`, `urn:…`), not human labels. Unscoped search would lose
+asset-pinning and risk cross-asset hallucinations. Documentation
+typically lives on the Type AAS (discover via `DERIVED_FROM`), not on
+the instance shell.
 
 DIAGNOSTICS ON EMPTY RESULTS — when `submodel_id` is given:
 - `not_indexed`: no document chunks for this submodel. Re-check the ID
@@ -24,7 +26,7 @@ QUERY HYGIENE:
 - If unsure about vocabulary, rely on the server-side query rewriter — it
   expands informal phrasing into datasheet terminology automatically.
 
-INPUT: `query` (str), `submodel_id` (optional str), `limit` (1–50,
+INPUT: `query` (str), `submodel_id` (required str), `limit` (1–50,
 default 10), `asset_name` (optional str — enables scoped rewrite),
 `doc_language` (optional str — e.g. "en", "de").
 OUTPUT: `results` list with chunk text and metadata; `total` count;

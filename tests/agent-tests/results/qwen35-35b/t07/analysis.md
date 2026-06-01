@@ -1,6 +1,6 @@
 # Results Analysis: qwen3.5-35b — Trial 07
 
-**Model:** qwen3.5-35b (dense) via Cortecs
+**Model:** qwen3.5-35b (dense) via vLLM on H200
 **Agent variant:** react
 **Judge:** gpt-5.4 via Cortecs
 **Date:** 2026-05-24

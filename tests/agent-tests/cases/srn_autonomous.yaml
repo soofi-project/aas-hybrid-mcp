@@ -14,6 +14,12 @@
 #   tempting.
 #
 # See task_srn_eval_rerun_after_typed_tool_removal.md for context.
+#
+# NOTE (2026-05-31): ServiceType ground-truth corrected to the actual IDTA SRN
+# IEC 61360 valueList ("Repair", "Inner Inspection"). The prior values
+# "CorrectiveMaintenance"/"Inspection" are NOT in the template enumeration.
+# Re-grading is unnecessary: <2% of T07 runs emitted any template-valid
+# ServiceType and none would flip outcome (most omit the field or write free text).
 
 cases:
   - name: srn_from_fault_context
@@ -26,20 +32,20 @@ cases:
       tool_called: put_submodel
       tool_args:
         priority: "High"
-        service_type: "CorrectiveMaintenance"
+        service_type: "Repair"
     forbidden_tools: [put_submodel_element]
     llm_criteria: >
       The agent must identify the robot in Hall 4 as MiR100_001 and call
       put_submodel with a complete Service Request Notification payload
       including Status=Open, priority High, and
-      service_type CorrectiveMaintenance. It must NOT ask the user for any
+      service_type Repair. It must NOT ask the user for any
       field values. The response must confirm the SRN was created or report a
       validation error.
     ground_truth:
       required_facts:
         - "A service request was created for MiR100_001 (the transport robot in Hall 4)"
         - "Priority is High"
-        - "ServiceType is CorrectiveMaintenance"
+        - "ServiceType is Repair"
         - "Status is Open"
       must_not_claim:
         - "The user must provide additional information before the request can be created"
@@ -59,19 +65,19 @@ cases:
       keywords: ["Open"]
       tool_called: put_submodel
       tool_args:
-        service_type: "Inspection"
+        service_type: "Inner Inspection"
         priority: "Low"
     forbidden_tools: [put_submodel_element]
     llm_criteria: >
       The agent must identify UR3e_002 (the UR3e in Hall 4) and infer
-      priority Low for a routine inspection and service_type Inspection.
+      priority Low for a routine inspection and service_type Inner Inspection.
       Status must be Open. Must NOT ask the user for any values -
       all fields are derivable from the context. Must use put_submodel
       as a single atomic call, not put_submodel_element.
     ground_truth:
       required_facts:
         - "A service request was created for UR3e_002"
-        - "ServiceType is Inspection"
+        - "ServiceType is Inner Inspection"
         - "Priority is Low"
         - "Status is Open"
       must_not_claim:
@@ -95,7 +101,7 @@ cases:
       create a Service Request Notification via put_submodel as a single atomic
       call - not via sequential put_submodel_element calls. Priority must
       reflect an emergency stop (High). Status=Open,
-      ServiceType=CorrectiveMaintenance. Mark as FAIL if put_submodel_element
+      ServiceType=Repair. Mark as FAIL if put_submodel_element
       is used to construct the submodel.
     ground_truth:
       required_facts:
@@ -106,7 +112,7 @@ cases:
         - "The user must provide additional information before the request can be created"
       notes: >
         Serial number MIR100-2020-001 -> MiR100_001. Emergency stop -> High
-        priority. ServiceType CorrectiveMaintenance expected. Tool-path check
+        priority. ServiceType Repair expected. Tool-path check
         (put_submodel vs put_submodel_element) is in process signal.
     tags: [srn, bypass_regression, serial_number_lookup]
 
