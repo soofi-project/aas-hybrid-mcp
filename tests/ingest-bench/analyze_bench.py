@@ -18,25 +18,23 @@ def _fmt(v, unit: str = "") -> str:
     return f"{v}{unit}"
 
 
-def analyze(path: Path) -> None:
-    data = json.loads(path.read_text(encoding="utf-8"))
-
-    print(f"\nFile:       {path.name}")
-    print(f"Timestamp:  {data.get('timestamp', '?')}")
-    print(f"AASX files: {data.get('aasx_count', '?')}")
-
-    m = data.get("metrics") or {}
-    c = data.get("cypher") or {}
-    n = data.get("neo4j_counts") or {}
+def _print_version(label: str, vd: dict) -> None:
+    m = vd.get("metrics") or {}
+    c = vd.get("cypher") or {}
+    n = vd.get("neo4j_counts") or {}
 
     print(f"\n{'=' * 52}")
-    print(f" v2  (Bolt+UNWIND)")
+    print(f" {label}")
     print(f"{'=' * 52}")
     print(f"  Total events:        {_fmt(m.get('total_events'))}")
     print(f"  Drain time:          {_fmt(m.get('drain_time_s'), ' s')}")
     print(f"  Throughput:          {_fmt(m.get('throughput_events_per_s'), ' ev/s')}")
     print(f"  Mean latency/event:  {_fmt(m.get('mean_latency_ms'), ' ms')}")
     print(f"  Peak lag:            {_fmt(m.get('peak_lag'))}")
+
+    if n.get("elements") and m.get("drain_time_s"):
+        rate = n["elements"] / m["drain_time_s"]
+        print(f"  Element write rate:  {_fmt(round(rate, 1), ' elem/s')}")
 
     if n:
         print(f"\n  Neo4j node counts:")
@@ -53,6 +51,24 @@ def analyze(path: Path) -> None:
                   f"p95={_fmt(q.get('p95_ms'), 'ms')}  "
                   f"p99={_fmt(q.get('p99_ms'), 'ms')}")
 
+
+def analyze(path: Path) -> None:
+    data = json.loads(path.read_text(encoding="utf-8"))
+
+    print(f"\nFile:       {path.name}")
+    print(f"Timestamp:  {data.get('timestamp', '?')}")
+    print(f"AASX files: {data.get('aasx_count', '?')}")
+
+    # Result JSON nests each plugin version under a "v1"/"v2" key; older flat
+    # files put metrics/cypher/neo4j_counts at the top level.
+    versions = [(f"{k}  (Bolt+UNWIND)" if k == "v2" else k, data[k])
+                for k in ("v1", "v2") if isinstance(data.get(k), dict)]
+    if not versions:
+        versions = [("v2  (Bolt+UNWIND)", data)]
+
+    for label, vd in versions:
+        _print_version(label, vd)
+
     print()
 
 
@@ -66,7 +82,7 @@ def main() -> None:
             print("No result files found in results/")
             sys.exit(1)
         paths = [paths[-1]]
-        print(f"(using latest result — pass a path to override)")
+        print("(using latest result -- pass a path to override)")
 
     for p in paths:
         analyze(p)

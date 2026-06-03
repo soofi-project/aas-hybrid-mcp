@@ -127,7 +127,7 @@ Outlook-Texte sind teurer zu fixen als sie zu prüfen — vor Commit kurz gegen 
 Bestimmte Citations haben eine politische Dimension — die Autoren sind potentielle Reviewer im ImplAAS-Workshop.
 
 - **Garmaev et al. 2023** (`garmaev2023submodel`, Miny = ImplAAS-2026-Organisator): Positionierung als **Adoption + Modus-Erweiterung** („we use their generator in write-mode"), niemals „Baseline" / „surpass" / „we improve on". Wir erben ihre Limits (AllowedRange, AllowedValue, TechnicalData-extensions) explizit.
-- **Stolze 2025, Büttner 2025, Miny-Paper aus ImplAAS-2025**: müssen mindestens als Related-Work-Anker auftauchen (siehe `task_paper_implaas2025_citations` für die Pflicht-/Strategie-Liste).
+- **Stolze 2025, Büttner 2025, Miny-Paper aus ImplAAS-2025**: kuratierte Anker-Liste — wenn inhaltlich einschlägig, mindestens als Related-Work-Anker auftauchen lassen (siehe `task_paper_implaas2025_citations`). Das ist **keine** Blanket-Regel „jedes ImplAAS-2025-Paper muss zitiert bleiben": andere ImplAAS-Paper (z. B. Gneuß et al., `gneuss2025aas_sdk`, am 2026-06-01 entfernt) dürfen ersatzlos raus, wenn der Claim sie nicht trägt — ein unbelegter/zugespitzter Claim wiegt schwerer als ein Anker.
 - **`sonnenberg2025aas_kg`** (eigenes Vorjahrs-Paper): Selbstzitat als Kontinuität, nicht als „we previously claimed X".
 
 ## Style

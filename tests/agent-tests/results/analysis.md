@@ -1,20 +1,20 @@
 # Cross-Model Evaluation Analysis — All Models, T07
 
-9 models · 5 suites · 1,750 total runs (7 models with 200 each, qwen36-27b with 150 — no SRN suite)
+9 models · 5 suites · 1,800 total runs (200 each: 150 read-path + 50 SRN)
 
 Models ordered by parameter count:
 
 | Label | Architecture | Active params | N runs |
 |---|---|---|---|
-| qwen35-2b | 2B dense | 2B | 200 |
-| qwen35-4b | 4B dense | 4B | 200 |
-| qwen35-9b | 9B dense | 9B | 200 |
-| qwen35-27b | 27B dense | 27B | 200 |
-| qwen36-27b | 27B dense (Qwen3 gen) | 27B | 150 |
-| qwen35-35b | 35B dense | 35B | 200 |
-| qwen36-35b | 35B dense, 4-bit AWQ | 35B | 200 |
-| qwen35-122b | 122B MoE | ~10B | 200 |
-| qwen35-397b | 397B MoE | ~17B | 200 |
+| qwen35-2b | 2B dense, BF16 | 2B | 200 |
+| qwen35-4b | 4B dense, BF16 | 4B | 200 |
+| qwen35-9b | 9B dense, BF16 | 9B | 200 |
+| qwen35-27b | 27B dense, FP8 | 27B | 200 |
+| qwen36-27b | 27B dense, FP8 | 27B | 200 |
+| qwen35-35b | 35B-A3B MoE, FP8 | ~3B | 200 |
+| qwen36-35b | 35B-A3B MoE, FP8 | ~3B | 200 |
+| qwen35-122b | 122B-A10B MoE, FP8 | ~10B | 200 |
+| qwen35-397b | 397B-A17B MoE (ext., Cortecs) | ~17B | 200 |
 
 ---
 
@@ -53,7 +53,7 @@ Three regimes emerge:
 
 ### Key observation: non-monotonicity above 27B
 
-The 27B dense models (qwen35-27b at 76.5%, qwen36-27b at 94% read-only) are competitive with or superior to larger models. The 122B MoE (70% overall, 22% SRN) and 397B MoE (76%, 26% SRN) underperform the 35B dense model (72%, 34% SRN) on write-path tasks. Active parameter count, not total parameter count, predicts performance: the 122B MoE with ~10B active params behaves like a 9B-class model on SRN (22%), while the 397B MoE with ~17B active params is closer to 27B-class.
+The 27B dense models (qwen35-27b at 76.5%, qwen36-27b at 94% read-only) are competitive with or superior to larger models. The 122B-A10B MoE (70% overall, 22% SRN) and 397B-A17B MoE (76%, 26% SRN) underperform the 35B-A3B MoE (72%, 34% SRN) on write-path tasks. Notably, neither total nor active parameter count predicts SRN: the best write-path model (qwen35-35b, 35B-A3B with only ~3B active) beats both the 122B-A10B (~10B active, 22%) and the 397B-A17B (~17B active, 26%), and edges the 27B dense (32%). Once the 35B models are correctly classified as A3B MoE, the earlier "active params predict performance" reading no longer holds — generation and per-model training dominate over raw active-parameter scale on the write path.
 
 ---
 
@@ -127,7 +127,7 @@ Three cases are at 0% for almost all models: `srn_from_fault_context`, `srn_rout
 
 ## 4. Template Validation
 
-**All nine models report zero write-tool rejections and zero validation errors across all 450 SRN-suite runs (1,750 total across all suites).** When any model issues a write call, the payload passes schema validation — regardless of model size, architecture, or correctness.
+**All nine models report zero write-tool rejections and zero validation errors across all 450 SRN-suite runs (1,800 total across all suites).** When any model issues a write call, the payload passes schema validation — regardless of model size, architecture, or correctness.
 
 This confirms the template validation gap is architectural, not model-dependent:
 
@@ -211,13 +211,13 @@ The manuals-first effect is strongly size-dependent:
 
 The 2B→4B jump (+35 pp) reflects escape from floor performance. The 4B→9B jump (+5.5 pp) is marginal. The 9B→27B jump (+29.5 pp) is the qualitative shift: read-only suites go from 44–55% to 78–100%, and SRN goes from 14% to 32%. Beyond 27B, gains are modest and non-monotonic (35B drops to 72%, 122B to 70%). **Action:** Position 27B as the minimum viable model size for the current tool set and prompt design. The 2B/4B/9B cluster is below threshold; the 27B+ cluster is viable.
 
-### T2 — Active parameters, not total, predict SRN performance
+### T2 — Neither total nor active parameter count predicts SRN performance
 
-The 122B MoE (~10B active) achieves 22% SRN — comparable to the 9B dense (14%), not the 27B dense (32%). The 397B MoE (~17B active) achieves 26% — between 9B and 27B. The 35B dense achieves 34% SRN — the best across all models. **Action:** In the paper, report active parameter counts alongside total counts. Frame the SRN scaling result in terms of active parameters: the write path demands >10B active parameters for non-trivial performance.
+The best write-path model is qwen35-35b (35B-A3B MoE, ~3B active) at 34% SRN — ahead of the 397B-A17B (~17B active, 26%), the 122B-A10B (~10B active, 22%), and the 27B dense (32%). A ~3B-active MoE thus tops a ~17B-active one, so active parameter count does not order the models. The spread within the same 35B-A3B architecture across generations (35-35B 34% vs 36-35B 18%) exceeds the spread across active-parameter tiers, indicating that generation/training — not scale — drives write-path performance. **Action:** Do not frame SRN as a parameter-scaling result. Report architecture + generation, and treat the 27B-dense / 35B-A3B cluster as the viable write-path tier with no clean scaling law above it.
 
 ### T3 — The vocabulary gap is model-independent
 
-No model reliably maps "emergency stop" → CorrectiveMaintenance or "routine" → Priority=Low. The 397B MoE scores 0/10 on srn_routine_priority; the 35B dense scores 0/10 on srn_from_fault_context. This is not a scaling problem — the information is not available in the prompt, tools, or templates. **Action:** Inject the SRN enum vocabulary directly into the writing manual or system prompt. This is the highest-ROI fix: it would improve SRN for all models simultaneously.
+No model reliably maps "emergency stop" → CorrectiveMaintenance or "routine" → Priority=Low. The 397B-A17B MoE scores 0/10 on srn_routine_priority; the 35B-A3B MoE scores 0/10 on srn_from_fault_context. This is not a scaling problem — the information is not available in the prompt, tools, or templates. **Action:** Inject the SRN enum vocabulary directly into the writing manual or system prompt. This is the highest-ROI fix: it would improve SRN for all models simultaneously.
 
 ### T4 — Bypass profiles diagnose the failure stage
 
@@ -231,9 +231,11 @@ Zero rejections across 1,750 runs confirms the validator cannot enforce semantic
 
 The +28 to +37 pp effect at 4B–9B is the strongest intervention signal in the entire evaluation. For models below 27B, enforcing manual consultation before tool calls would be the single highest-impact prompt change. **Action:** For the paper, present the manuals-first delta as evidence that prompt-side scaffolding (documentation) disproportionately benefits smaller models, supporting the scaffolding-asymmetry thesis.
 
-### T7 — The 36-27B (Qwen3 generation) shows generation-level improvement
+### T7 — The 36-27B (newer 3.6 generation) improves read-path
 
-The qwen36-27b achieves 94% read-only correctness (vs 76.5% for qwen35-27b) with lower violation rates (48% vs 63%) and higher self-correction (97.2% vs 97.6%). The Qwen3 generation is substantially better at AAS tasks at the same parameter count. **Action:** Include the qwen36-27b as evidence that generation quality matters alongside parameter count — same-size models can cross the viability threshold with improved training.
+The qwen36-27b achieves 94% read-only correctness (vs 76.5% for qwen35-27b) with lower violation rates (48% vs 63%) and comparable self-correction (97.2% vs 97.6%). On the **read path** the newer 3.6 generation is substantially better at the same parameter count — this is the robust generation signal.
+
+On the write path the matched pairs run the other way (3.6-27b 14% vs 3.5-27b 32%; 3.6-35b-A3B 18% vs 3.5-35b-A3B 34%), but this is **not** interpretable as a generation regression. The SRN setup is underspecified — the controlled-vocabulary the model must hit is not surfaced in prompt, tools, or template (finding T3) — and at N=10/case the rates are indicative only, not a reliable ranking. The direction could reverse under a better-instrumented write test. **Action:** Use qwen36-27b as read-path evidence that generation quality matters alongside parameter count; do **not** report a write-path generation ranking — treat write-path differences as setup-bound and revisit only after vocabulary injection + higher N.
 
 ### T8 — SRN is the binding constraint across all model sizes
 
