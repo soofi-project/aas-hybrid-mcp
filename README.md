@@ -44,7 +44,7 @@ The `--vllm` flag switches to a local vLLM backend (config in `.env.vllm`). Adju
 
 ## Embedding Model
 
-Configured in `.env.embedding` — the same model must be used for both embedding service and MCP server. API keys go into `~/.env.secrets`.
+Set via `EMBEDDING_MODEL` in `.env` (overridden by `.env.vllm` when using `--vllm`). The same model must be used for both embedding service and MCP server. API keys go into `~/.env.secrets`.
 
 ## Testing & Benchmarks
 

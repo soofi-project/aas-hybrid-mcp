@@ -61,20 +61,20 @@ python bench_docling.py --device cuda --no-weaviate
 ## Usage
 
 ```bash
-# CPU benchmark, N=10 (default):
+# CPU benchmark, N=3 (default):
 python bench_docling.py
 
-# CPU benchmark, N=3:
-python bench_docling.py --runs 3
+# CPU benchmark, N=10:
+python bench_docling.py --runs 10
 
 # CPU benchmark without Weaviate (Docling + Chunk + Embed only):
 python bench_docling.py --no-weaviate
 
-# GPU benchmark, N=10:
+# GPU benchmark, N=3 (default):
 python bench_docling.py --device cuda
 
-# GPU benchmark, N=3:
-python bench_docling.py --device cuda --runs 3
+# GPU benchmark, N=10:
+python bench_docling.py --device cuda --runs 10
 ```
 
 ## Output

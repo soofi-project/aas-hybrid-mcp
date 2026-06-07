@@ -46,6 +46,7 @@ tail -f logs/run_all_qwen35-27b_T07.out
 kill <PID>
 
 # 3 — Grade all 5 suites (skips already-judged files)
+# judge.sh uses the Cortecs gpt-5.4 endpoint as the judge (CORTECSAI_API_KEY).
 ./judge.sh qwen35-27b T07
 
 # 4 — Analyse results
@@ -116,7 +117,10 @@ python run_tests.py [options]
   --export PATH          JSON export (default: results/run_<ts>.json)
   --temperature T        Sampling temperature (default: 0.7)
   --include-tags TAGS    Only run cases with matching tag
-  --exclude-tags TAGS    Skip cases with matching tag (default: requires_fixture)
+  --exclude-tags TAGS    Skip cases with matching tag (default: none)
+  --agent-url URL        Agent endpoint (default: agent_url from config.yaml)
+  --config PATH          Config file (default: config.yaml)
+  --strict-validation    Fail the run on case schema issues
 
 python judge.py [options]
   --input PATH           Raw output from run_tests.py
@@ -124,6 +128,7 @@ python judge.py [options]
   --output PATH          Output path (default: <input-stem>_judged.json)
   --base-url URL         Judge LLM endpoint (default: $LLM_BASE_URL)
   --model NAME           Judge model id (default: $LLM_MODEL)
+  --api-key-env NAME     Env var holding the bearer token (default: OPENAI_API_KEY)
   --concurrency N        Parallel judge calls (default: 4)
   --limit N              Smoke-test mode: only judge the first N records
 ```
