@@ -4,6 +4,15 @@ An MCP (Model Context Protocol) server combining Neo4j graph queries and Weaviat
 
 Built on top of [aas\_neo4j\_integration](https://github.com/dfkibasys/aas_neo4j_integration) (Kafka Connect → Neo4j ingestion plugin).
 
+## Companion Project
+
+| Project | Role |
+|---------|------|
+| **aas-hybrid-mcp** (this) | Operational **MCP server** — Neo4j graph, Weaviate vectors, agent tools, BaSyx client |
+| [aas-layered-qa](https://mrk40.dfki.de/fai2/soofi/aas-layered-qa) | **Layered query compiler** — semantic DSL → Cypher pipeline that plugs into this server |
+
+`aas-layered-qa` provides a formal, multi-stage compilation layer for structured query patterns, replacing ad-hoc Cypher generation in the agent tool chain with deterministic intent-to-query mapping.
+
 ## Architecture
 
 ```
