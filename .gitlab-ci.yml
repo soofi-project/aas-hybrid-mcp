@@ -1,5 +1,6 @@
 # Builds the container image and pushes it to this project's own registry.
-# Two images from subfolders: mcp-server and submodel-templates-sync.
+# Four images from subfolders: mcp-server, submodel-templates-sync,
+# embedding-service and kafka-connect-rag.
 #
 # push to the default branch -> :snapshot (moving) and :<short sha> (immutable)
 # push of a git tag          -> :<tag name> (immutable)
@@ -29,7 +30,10 @@ build-image:
     PLATFORMS: "linux/amd64,linux/arm64"
   parallel:
     matrix:
-      - SUBDIR: [mcp-server, submodel-templates-sync]
+      # embedding-service is the long one of the four: torch CPU plus the
+      # Docling models its Dockerfile downloads, per platform, under QEMU on
+      # arm64. If the job ever needs a timeout, it is this entry, not the rest.
+      - SUBDIR: [mcp-server, submodel-templates-sync, embedding-service, kafka-connect-rag]
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
