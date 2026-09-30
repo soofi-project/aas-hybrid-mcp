@@ -29,6 +29,8 @@ cp .env.secrets.example ~/.env.secrets   # add your API key(s)
 
 The `--vllm` flag switches to a local vLLM backend (config in `.env.vllm`). Adjust `LLM_BASE_URL`, `LLM_MODEL`, and `EMBEDDING_MODEL` there to match your setup. Without `--vllm`, the stack uses the OpenAI-compatible defaults from `.env`.
 
+The `--llmproxy` flag switches the chat LLM + query rewriter to the external mrk40 LiteLLM proxy (SOOFI models, config in `.env.litellm`), requires `SOOFI_LLM_API_KEY` in `~/.env.secrets`. Embedding/reranker are not served there — combine with `--vllm` (H200) or leave the `.env` defaults.
+
 **After changing AASX files:** run `./down.sh` first (default wipe) to avoid BaSyx 409 conflicts.
 
 ## Ports

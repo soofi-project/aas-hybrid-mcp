@@ -89,10 +89,17 @@ class TResult:
 class AgentTester:
     """Async HTTP client that runs queries against the agent's /v1/chat/completions endpoint."""
 
-    def __init__(self, agent_url: str, timeout_s: float = 300.0, temperature: float = 0.7) -> None:
+    def __init__(
+        self,
+        agent_url: str,
+        timeout_s: float = 300.0,
+        temperature: float = 0.7,
+        reasoning_effort: str | None = None,
+    ) -> None:
         self._base = agent_url.rstrip("/")
         self._timeout = timeout_s
         self._temperature = temperature
+        self._reasoning_effort = reasoning_effort
 
     async def run_query(
         self,
@@ -122,6 +129,8 @@ class AgentTester:
             "stream": True,
             "temperature": self._temperature,
         }
+        if self._reasoning_effort is not None:
+            payload["reasoning_effort"] = self._reasoning_effort
 
         start = time.perf_counter()
         result = TResult(

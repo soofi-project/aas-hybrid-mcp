@@ -29,7 +29,7 @@ from aas_agent.usage import (
     empty_usage,
     encode_usage_sentinel,
 )
-from aas_agent.verbose_stream_utils import node_transition_block
+from aas_agent.verbose_stream_utils import node_transition_block, stream_error_message
 
 # Top-level langgraph nodes whose entry is rendered as a <think> block
 # when streaming verbose. Matches the routing in ``reflexion_graph.py``.
@@ -92,7 +92,10 @@ class ReflexionAgentRunner:
         """Build Reflexion graph using pre-loaded shared resources."""
         tools = list(all_tools) + [get_current_utc_time]
 
-        exec_llm = self._build_llm(enable_thinking=False, with_tools=True, streaming=True, temperature=self._temperature)
+        exec_llm_off = self._build_llm(enable_thinking=False, with_tools=True, streaming=True, temperature=self._temperature)
+        exec_llm_on = self._build_llm(enable_thinking=True, with_tools=True, streaming=True, temperature=self._temperature)
+        # judge/reflect/finalizer stay thinking-off deliberately — they parse
+        # structured output and don't benefit from reasoning traces.
         structure_llm = self._build_llm(
             enable_thinking=False, with_tools=False, streaming=False, temperature=self._temperature
         )
@@ -102,7 +105,7 @@ class ReflexionAgentRunner:
             base_system = f"{self._system_prompt}\n\n---\n\n{mcp_context}"
 
         self._graph_thinking_off = build_reflexion_graph(
-            exec_llm=exec_llm,
+            exec_llm=exec_llm_off,
             tools=tools,
             base_system=base_system,
             judge_llm=structure_llm,
@@ -111,7 +114,16 @@ class ReflexionAgentRunner:
             max_trials=int(self._max_trials),
             accept_threshold=self._accept_threshold,
         )
-        self._graph_thinking_on = self._graph_thinking_off
+        self._graph_thinking_on = build_reflexion_graph(
+            exec_llm=exec_llm_on,
+            tools=tools,
+            base_system=base_system,
+            judge_llm=structure_llm,
+            reflect_llm=structure_llm,
+            finalizer_llm=structure_llm,
+            max_trials=int(self._max_trials),
+            accept_threshold=self._accept_threshold,
+        )
 
         log.info(
             "Reflexion agent initialized — %d tools, threshold=%.1f, max_trials=%s",
@@ -137,7 +149,7 @@ class ReflexionAgentRunner:
             model_kwargs["parallel_tool_calls"] = False
 
         if self._llm_base_url and "openai.com" not in self._llm_base_url:
-            use_thinking = self._default_thinking and enable_thinking
+            use_thinking = enable_thinking
             extra_body = {
                 "chat_template_kwargs": {"enable_thinking": use_thinking},
                 "top_k": 20,  # vLLM-specific; not a standard OpenAI param
@@ -225,9 +237,9 @@ class ReflexionAgentRunner:
                         yield text
                         trace.append(text)
                         break
-        except Exception:
+        except Exception as exc:
             log.exception("Fatal error in Reflexion stream")
-            err = "\n\n[stream error — see server logs]\n"
+            err = stream_error_message(exc)
             yield err
             trace.append(err)
         finally:
@@ -347,9 +359,9 @@ async def _stream_reflexion_verbose(
                                         trace.append(text)
             except Exception:
                 log.exception("Error handling Reflexion stream event kind=%s", event.get("event"))
-    except Exception:
+    except Exception as exc:
         log.exception("Fatal error in Reflexion verbose stream")
-        err = "\n\n[stream error — see server logs]\n"
+        err = stream_error_message(exc)
         yield err
         trace.append(err)
     finally:

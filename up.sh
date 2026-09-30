@@ -38,6 +38,18 @@ for arg in "$@"; do
             set -a; source .env.vllm; set +a
             echo "[INFO] vllm backend activated"
             ;;
+        --llmproxy)
+            COMPOSE_FILES+=(-f docker-compose.litellm.yml)
+            # Source .env.litellm + secrets so ${SOOFI_LLM_API_KEY} in
+            # docker-compose.litellm.yml's environment: block resolves
+            # (this proxy validates the bearer token, unlike vLLM).
+            set -a; source .env.litellm; source "$HOME/.env.secrets" 2>/dev/null || true; set +a
+            echo "[INFO] llmproxy backend activated (mrk40 LiteLLM, SOOFI models)"
+            ;;
+        --thinking)
+            export AGENT_DEFAULT_THINKING=true
+            echo "[INFO] thinking mode enabled (AGENT_DEFAULT_THINKING=true)"
+            ;;
         *)
             echo "[WARN] Unknown arg: $arg"
             ;;

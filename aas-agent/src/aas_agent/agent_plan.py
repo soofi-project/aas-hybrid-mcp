@@ -43,6 +43,7 @@ from aas_agent.verbose_stream_utils import (
     extract_final_text,
     is_verbose,
     node_transition_block,
+    stream_error_message,
 )
 
 # Top-level langgraph nodes whose entry should appear as a <think> block
@@ -240,12 +241,10 @@ class PlanReflectAgentRunner:
             model_kwargs["parallel_tool_calls"] = False
 
         if self._llm_base_url and "openai.com" not in self._llm_base_url:
-            # vLLM: respect _default_thinking from AGENT_DEFAULT_THINKING env var.
-            # When False, force thinking off regardless of enable_thinking.
-            if not self._default_thinking:
-                use_thinking = False
-            else:
-                use_thinking = enable_thinking
+            # vLLM: use_thinking follows the requested graph (enable_thinking).
+            # _default_thinking only decides which pre-built graph is picked
+            # when a request omits reasoning_effort — see _select_agent().
+            use_thinking = enable_thinking
             log.info(
                 "LLM backend: %s (vLLM, thinking=%s [default_thinking=%s])",
                 self._llm_base_url, use_thinking, self._default_thinking,
@@ -333,9 +332,9 @@ class PlanReflectAgentRunner:
                 if text:
                     yield text
                     trace.append(text)
-            except Exception:
+            except Exception as exc:
                 log.exception("Fatal error in non-verbose plan/reflect invoke")
-                err = "\n\n[stream error — see server logs]\n"
+                err = stream_error_message(exc)
                 trace.append(err)
                 yield err
             finally:
@@ -427,9 +426,9 @@ class PlanReflectAgentRunner:
                             continue
                 except Exception:
                     log.exception("Error handling stream event kind=%s", event.get("event"))
-        except Exception:
+        except Exception as exc:
             log.exception("Fatal error in plan/reflect astream_events loop")
-            err = "\n\n[stream error — see server logs]\n"
+            err = stream_error_message(exc)
             trace.append(err)
             yield err
         finally:

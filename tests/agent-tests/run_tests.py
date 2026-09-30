@@ -73,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--agent-url", default=None)
     parser.add_argument("--temperature", type=float, default=None,
                         help="Sampling temperature passed to the agent (overrides config.yaml)")
+    parser.add_argument("--reasoning-effort", choices=["off", "low", "medium", "high"], default=None,
+                        help="reasoning_effort passed to the agent (overrides config.yaml; default: server default)")
     parser.add_argument("--config", type=Path, default=HERE / "config.yaml")
     parser.add_argument("--strict-validation", action="store_true",
                         help="Reject ambiguous queries instead of warning")
@@ -91,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     ])
     timeout = float(cfg.get("request_timeout_s", 300))
     temperature = args.temperature if args.temperature is not None else float(cfg.get("temperature", 0.7))
+    reasoning_effort = args.reasoning_effort if args.reasoning_effort is not None else cfg.get("reasoning_effort")
 
     include_tags = set(args.include_tags) if args.include_tags else None
     exclude_tags = set(args.exclude_tags) if args.exclude_tags is not None else None
@@ -106,8 +109,8 @@ def main(argv: list[str] | None = None) -> int:
         console.print("[red]no cases loaded[/red]")
         return 1
 
-    tester = AgentTester(agent_url=agent_url, timeout_s=timeout, temperature=temperature)
-    console.print(f"[dim]agent URL: {agent_url}  temperature: {temperature}[/dim]")
+    tester = AgentTester(agent_url=agent_url, timeout_s=timeout, temperature=temperature, reasoning_effort=reasoning_effort)
+    console.print(f"[dim]agent URL: {agent_url}  temperature: {temperature}  reasoning_effort: {reasoning_effort}[/dim]")
 
     ts = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H-%M-%SZ")
     incremental_path: Path = args.export or (HERE / "results" / f"run_{ts}.json")

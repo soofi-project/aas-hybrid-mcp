@@ -10,7 +10,11 @@ engine, the defaults are too aggressive and mid-stream disconnects
 import httpx
 
 # Per-connection idle timeout long enough for multi-step ReAct loops.
-_DEFAULT_TIMEOUT = 120  # seconds
+# Raised from 120s: with thinking on and heavy tool-call redundancy (some
+# checkpoints re-issue near-identical queries dozens of times), context can
+# grow past 1M tokens within one conversation, and late-conversation prefill
+# alone can exceed 120s before the first output token appears.
+_DEFAULT_TIMEOUT = 300  # seconds
 _MAX_KEEP_ALIVE_CONNECTIONS = 10
 _MAX_KEEP_ALIVE_EXPIRE = 5
 

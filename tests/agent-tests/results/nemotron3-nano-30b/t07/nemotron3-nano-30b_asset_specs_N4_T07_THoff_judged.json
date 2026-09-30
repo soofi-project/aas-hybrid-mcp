@@ -1,0 +1,416 @@
+{
+  "cases": [
+    "cases/asset_specs.yaml"
+  ],
+  "judge_model": "gpt-5.4",
+  "judge_base_url": "https://api.cortecs.ai",
+  "summary": {
+    "totals": {
+      "n": 8,
+      "correct": 0,
+      "correct_rate": 0.0,
+      "manuals_first": 8,
+      "manuals_first_rate": 1.0,
+      "tool_error_free": 3,
+      "tool_error_free_rate": 0.375,
+      "all_good": 0,
+      "all_good_rate": 0.0
+    },
+    "per_bucket": [
+      {
+        "variant": "react",
+        "case": "mir100_max_speed",
+        "n": 4,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 4,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 1,
+        "tool_error_free_rate": 0.25,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      },
+      {
+        "variant": "react",
+        "case": "ur3e_payload",
+        "n": 4,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 4,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 2,
+        "tool_error_free_rate": 0.5,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ],
+    "per_variant": [
+      {
+        "variant": "react",
+        "n": 8,
+        "correct": 0,
+        "correct_rate": 0.0,
+        "manuals_first": 8,
+        "manuals_first_rate": 1.0,
+        "tool_error_free": 3,
+        "tool_error_free_rate": 0.375,
+        "all_good": 0,
+        "all_good_rate": 0.0
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "mir100_max_speed",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the mir 100?",
+      "final_answer": "The maximum speed of the **MiR 100** robot is not exposed as a dedicated `MaximumSpeed` property in the Nameplate submodel that was found for this shell.  \n\nThe Nameplate submodel (template `https://admin-shell.io/idta/nameplate/3/0/Nameplate`) contains only generic administrative data such as:\n\n* `URIOfTheProduct`\n* `YearOfConstruction`\n* `DateOfManufacture`\n* `SerialNumber`\n\nNo property with a semantic identifier related to speed, velocity, or performance limits was found in the traversal results. This means either:\n\n1. **The speed specification is stored elsewhere** – for example in a different submodel (e.g., a technical‑data or capability submodel) that is linked to the shell, or  \n2. **The information is not modelled as a Property** – it could be part of a `Range`, `MultiLanguageProperty`, or an external document referenced by the shell.\n\n### Next steps you can take\n\n| Goal | How to proceed |\n|------|----------------|\n| **Search the full submodel** for any element that might contain speed data | Run a broader query that returns *all* properties of the Nameplate submodel (already done above) and inspect the `value` fields manually. |\n| **Check related submodels** (e.g., capability or technical‑data submodels) | Use the template index to locate templates that describe performance or motion capabilities, then query their `HAS_SEMANTIC_ID` relationships from the MiR 100 shell. |\n| **Look for external documents** (PDFs, manuals) that might list speed limits | Perform a semantic‑vector search over PDFs for the submodel `urn:submodel:mir100:001:nameplate` using `search_aas_documents`. |\n| **Ask for clarification** | If you know the robot’s type (e.g., “MiR 100 Type” AAS) or have a part number, that can help narrow the search to the correct template or semanticId. |\n\nIf you can provide the name of the submodel or template you suspect holds the speed specification, I can run a targeted query to retrieve it. Otherwise, the current data set does not contain an explicit `MaximumSpeed` field for the MiR 100.",
+      "duration_s": 51.328,
+      "tool_call_count": 26,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer says the MiR100 maximum speed is not exposed/found, so it fails to provide the required 1.5 m/s fact.",
+        "missing_facts": [
+          "MiR100 maximum speed is 1.5 m/s"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 8,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page",
+          "get_manual_page",
+          "get_manual_page",
+          "get_templates_index",
+          "get_template"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 16,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(p.idShort) C"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the mir 100?",
+      "final_answer": "[stream error — see server logs]",
+      "duration_s": 206.127,
+      "tool_call_count": 100,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "The core answer is empty because the agent only returned a stream error, so the required maximum speed fact is unsupported.",
+        "missing_facts": [
+          "MiR100 maximum speed is 1.5 m/s"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 5,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page",
+          "get_templates_index",
+          "get_template",
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the mir 100?",
+      "final_answer": "[stream error — see server logs]",
+      "duration_s": 205.823,
+      "tool_call_count": 100,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "The core answer is empty because the agent only returned a stream error, so the required maximum speed fact is unsupported.",
+        "missing_facts": [
+          "MiR100 maximum speed is 1.5 m/s"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 5,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page",
+          "get_templates_index",
+          "get_templates_index"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 8,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(a.id) CONTAI"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "mir100_max_speed",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum speed of the mir 100?",
+      "final_answer": "The graph shows that the **type** shell `MiR100_Type` carries a property  \n`SpeedMaxWithMaxLoadAsSpecified` with value **`1.0`** and type `xs:double`.  \nThat value is the maximum speed of the robot in **metres per second** (the unit is not stored separately – it is defined by the property’s semantics in the underlying IDTA template).\n\n**Answer**  \nThe maximum speed of the **MiR‑100** robot is **1.0 m/s** (as recorded in the `SpeedMaxWithMaxLoadAsSpecified` property of its type‑shell).  \n\nIf you need the full set of speed‑related properties or want to explore other shells, let me know and I can list them for you.",
+      "duration_s": 46.89,
+      "tool_call_count": 26,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer claims the MiR-100 maximum speed is 1.0 m/s, so it misses the required 1.5 m/s fact and positively asserts the wrong speed.",
+        "missing_facts": [
+          "MiR100 maximum speed is 1.5 m/s"
+        ],
+        "wrong_claims": [
+          "MiR100 maximum speed is 1.0 m/s"
+        ],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 12,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page",
+          "get_manual_page",
+          "get_manual_page",
+          "get_templates_index",
+          "get_manual_page"
+        ],
+        "tool_error_count": 1,
+        "tool_errors": [
+          {
+            "index": 17,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(p.idShort) C"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload",
+      "repetition": 0,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "[stream error — see server logs]",
+      "duration_s": 253.572,
+      "tool_call_count": 100,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is empty because the agent returned only a stream error, so the required payload fact is unsupported.",
+        "missing_facts": [
+          "UR3e maximum payload is 3 kg"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 4,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_graph_schema",
+          "get_templates_index"
+        ],
+        "tool_error_count": 4,
+        "tool_errors": [
+          {
+            "index": 4,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "id_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"id_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.id = 'urn:...'. See cypher.md anti-pattern #4.\",\"match\":\"sc.id CONTAINS\"}],\"hint\":\""
+          },
+          {
+            "index": 11,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          },
+          {
+            "index": 24,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          },
+          {
+            "index": 32,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "idShort_contains_or_regex"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"idShort_contains_or_regex\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"sm.idShort CON"
+          }
+        ]
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload",
+      "repetition": 1,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "The nameplate of the UR3e instance `UR3e_001` contains the following documented properties (as found in the AAS graph):\n\n- **DateOfManufacture** – `2024-03-22` (date)  \n- **YearOfConstruction** – `2024` (string)  \n- **URIOfTheProduct** – `urn:asset:ur3e:001` (anyURI)  \n- **SerialNumber** – `UR3E-2024-001` (string)\n\nThese values are extracted from the nameplate submodel of the UR3e shell. No formal “maximum payload” property appears in the nameplate’s documented elements, and the available documentation for this template (`https://admin-shell.io/idta/nameplate/3/0/Nameplate`) is not locally resolved (it is an external reference). Consequently, the current data source does not provide a payload‑capacity figure for the UR3e. \n\nIf you need the payload specification, it may be defined in a different submodel or external document that is not yet captured in the graph; you could search the associated PDFs for the UR3e’s technical data sheet, but that would require a separate document‑search step.",
+      "duration_s": 29.361,
+      "tool_call_count": 19,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is a nameplate-property list for UR3e_001, and it does not provide the UR3e maximum payload; instead it says the payload figure is not available.",
+        "missing_facts": [
+          "UR3e maximum payload is 3 kg"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 5,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page",
+          "get_templates_index",
+          "get_manual_page"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload",
+      "repetition": 2,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "The UR3e is an **AssetAdministrationShell** of type `UR3e_Type`.  \nIt contains a `TechnicalData` submodel that exposes a `Payload` **Property** element.  \nThis `Payload` property is the only element in that submodel that holds a numeric value representing the robot’s maximum payload capacity.\n\n**Answer**  \nAccording to the graph data, the UR3e’s maximum payload is stored in the `Payload` property of its `TechnicalData` submodel. (No explicit numeric value is exposed in the query results; the property itself is the identifier for that capacity.)  \n\nIf you need the exact numeric limit, you would retrieve it by expanding the `Payload` property’s value (e.g., via the associated `value` or `valueType` field). Let me know if you’d like to pull that value.",
+      "duration_s": 106.337,
+      "tool_call_count": 32,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core answer says the payload is stored in a Payload property but does not provide the required numeric maximum payload for UR3e.",
+        "missing_facts": [
+          "UR3e maximum payload is 3 kg"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 5,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_graph_schema",
+          "get_templates_index"
+        ],
+        "tool_error_count": 0,
+        "tool_errors": []
+      },
+      "all_good": false
+    },
+    {
+      "case": "ur3e_payload",
+      "repetition": 3,
+      "variant": "react",
+      "model_id": "aas-agent:react",
+      "query": "What is the maximum payload of the UR3e?",
+      "final_answer": "[stream error — see server logs]",
+      "duration_s": 432.084,
+      "tool_call_count": 100,
+      "judge": {
+        "answer_correct": false,
+        "reasoning": "Core list is empty because the agent returned only a stream error, so the required payload fact is unsupported.",
+        "missing_facts": [
+          "UR3e maximum payload is 3 kg"
+        ],
+        "wrong_claims": [],
+        "judge_error": false
+      },
+      "process": {
+        "read_manuals_first": true,
+        "first_manual_idx": 0,
+        "first_query_idx": 3,
+        "manual_tools_called": [
+          "get_manual_page",
+          "get_manual_page",
+          "get_template",
+          "get_templates_index"
+        ],
+        "tool_error_count": 2,
+        "tool_errors": [
+          {
+            "index": 2,
+            "tool": "get_template",
+            "kind": "tool_error",
+            "snippet": "Template 'Robot Application' not found."
+          },
+          {
+            "index": 6,
+            "tool": "query_aas_graph",
+            "kind": "validator_rejection",
+            "rules": [
+              "toLower_id_contains"
+            ],
+            "snippet": "{\"error\":\"forbidden_pattern\",\"violations\":[{\"rule\":\"toLower_id_contains\",\"hint\":\"Use exact match instead: WHERE aas.idShort = 'ExactName'. See cypher.md anti-pattern #4.\",\"match\":\"toLower(aas.idShort)"
+          }
+        ]
+      },
+      "all_good": false
+    }
+  ]
+}

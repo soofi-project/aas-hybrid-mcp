@@ -4,24 +4,33 @@
 # Usage:
 #   ./eval-model.sh qwen35-27b
 #   ./eval-model.sh qwen35-2b
-#   ./eval-model.sh qwen35-397b   # Cortecs — set OPENAI_API_KEY in ~/.env.secrets
+#   ./eval-model.sh qwen35-397b   # Cortecs — set CORTECSAI_API_KEY in ~/.env.secrets
+#   ./eval-model.sh soofi-s-m7    # external LiteLLM (mrk40) — set SOOFI_LLM_API_KEY in ~/.env.secrets
+#   ./eval-model.sh nemotron3-ultra-550b   # OpenRouter — set OPENROUTER_API_KEY in ~/.env.secrets
 #
 # Available slugs:
 #   qwen35-2b    qwen35-4b    qwen35-9b    qwen35-27b    qwen35-35b (MoE, ~3B active)
 #   qwen35-122b (MoE, ~10B active)    qwen35-397b (Cortecs)
 #   qwen36-27b   qwen36-35b (MoE, ~22B active)
+#   qwen38-27b-coding (H200, same LiteLLM as the qwen3x aliases above)
+#   soofi-s-m7   nemotron3-nano-30b   rlvr-spree-c1-3-hf_step_400 (external LiteLLM proxy at soofi-lite.l3s.de)
+#   nemotron3-ultra-550b (OpenRouter)
 #
 # How it works:
 #   Copies .env.model.<slug> to .env.model, then runs docker compose with
-#   docker-compose.eval-model-vllm.yml (H200 models) or
-#   docker-compose.eval-model-cortecs.yml (qwen35-397b) as final overlay.
+#   docker-compose.eval-model-vllm.yml (H200 models),
+#   docker-compose.eval-model-cortecs.yml (qwen35-397b),
+#   docker-compose.eval-model-litellm.yml (soofi-* models), or
+#   docker-compose.eval-model-openrouter.yml (nemotron3-ultra-550b) as final overlay.
 #   That overlay appends .env.model as the last env_file entry for each service,
 #   so its LLM_MODEL / LLM_BASE_URL / QUERY_REWRITE_* values win over .env.vllm.
 #
 # Prerequisites:
 #   - LiteLLM alias for the chosen model must be configured on the H200.
 #     See comments in .env.model.<slug> for the required alias name.
-#   - For qwen35-397b: OPENAI_API_KEY in ~/.env.secrets must be the Cortecs key.
+#   - For qwen35-397b: CORTECSAI_API_KEY in ~/.env.secrets must be the Cortecs key.
+#   - For soofi-*: SOOFI_LLM_API_KEY in ~/.env.secrets must be the mrk40 LiteLLM key.
+#   - For nemotron3-ultra-550b: OPENROUTER_API_KEY in ~/.env.secrets must be the OpenRouter key.
 
 set -e
 
@@ -34,7 +43,7 @@ if [ ! -f "idta_templates/README.md" ]; then
     git submodule update --init idta_templates
 fi
 
-SLUGS="qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-35b qwen35-122b qwen35-397b qwen36-27b qwen36-35b"
+SLUGS="qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-35b qwen35-122b qwen35-397b qwen36-27b qwen36-35b qwen38-27b-coding soofi-s-m7 nemotron3-nano-30b rlvr-spree-c1-3-hf_step_400 nemotron3-ultra-550b"
 
 MODEL=${1:-}
 if [ -z "$MODEL" ]; then
@@ -53,11 +62,20 @@ fi
 # .env.model is the temp file loaded by the eval-model overlay
 cp "$ENV_FILE" .env.model
 
-if [[ "$MODEL" == "qwen35-397b" ]]; then
-    EVAL_OVERLAY="docker-compose.eval-model-cortecs.yml"
-else
-    EVAL_OVERLAY="docker-compose.eval-model-vllm.yml"
-fi
+case "$MODEL" in
+    qwen35-397b)
+        EVAL_OVERLAY="docker-compose.eval-model-cortecs.yml"
+        ;;
+    soofi-*|nemotron3-nano-30b|rlvr-spree-c1-3-hf_step_400)
+        EVAL_OVERLAY="docker-compose.eval-model-litellm.yml"
+        ;;
+    nemotron3-ultra-550b)
+        EVAL_OVERLAY="docker-compose.eval-model-openrouter.yml"
+        ;;
+    *)
+        EVAL_OVERLAY="docker-compose.eval-model-vllm.yml"
+        ;;
+esac
 
 echo "========================================"
 echo "  Eval Model: $MODEL"
@@ -69,7 +87,7 @@ source .env 2>/dev/null || true
 set -a
 source .env.vllm
 source .env.model
-if [[ "$MODEL" == "qwen35-397b" ]]; then
+if [[ "$MODEL" == "qwen35-397b" || "$MODEL" == soofi-* || "$MODEL" == "nemotron3-nano-30b" || "$MODEL" == "rlvr-spree-c1-3-hf_step_400" || "$MODEL" == "nemotron3-ultra-550b" ]]; then
     source ~/.env.secrets 2>/dev/null || true
 fi
 set +a

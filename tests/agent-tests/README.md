@@ -46,8 +46,12 @@ tail -f logs/run_all_qwen35-27b_T07.out
 kill <PID>
 
 # 3 — Grade all 5 suites (skips already-judged files)
-# judge.sh uses the Cortecs gpt-5.4 endpoint as the judge (CORTECSAI_API_KEY).
-./judge.sh qwen35-27b T07
+# judge.sh is graded interactively by Claude Code (judge_claude.py), not an
+# external LLM API — no token cost, stays in the Claude Code plan budget.
+./judge.sh export qwen35-27b T07
+# ... Claude reads results/qwen35-27b/t07/*_export.jsonl, grades each record,
+#     writes matching *_verdicts.jsonl ...
+./judge.sh merge qwen35-27b T07
 
 # 4 — Analyse results
 python analyze_results.py qwen35-27b t07
@@ -65,7 +69,9 @@ python analyze_results.py qwen35-27b t07
 
 ```
 qwen35-2b → qwen35-4b → qwen35-9b → qwen35-27b → qwen35-122b
-→ qwen36-27b → qwen36-35b → qwen35-397b (Cortecs, last)
+→ qwen36-27b → qwen36-35b → qwen38-27b-coding
+→ soofi-s-m7 (external mrk40 LiteLLM, no H200 reload)
+→ qwen35-397b (Cortecs, last)
 ```
 
 ## Results structure
@@ -77,7 +83,7 @@ results/
     t00/                               ← temperature 0.0 (greedy decoding)
     t07/                               ← temperature 0.7 (sampling)
       {model}_{suite}_N10_{T}.json           ← raw output (run_tests.py)
-      {model}_{suite}_N10_{T}_judged.json    ← graded (judge.py)
+      {model}_{suite}_N10_{T}_judged.json    ← graded (judge_claude.py)
       analysis_{model}_{T}.md               ← per-model analysis (analyze_results.py)
 ```
 
@@ -102,7 +108,7 @@ results/
 
 | Field | Source | Meaning |
 |-------|--------|---------|
-| `judge.answer_correct` | LLM judge | Final answer satisfies `ground_truth:` |
+| `judge.answer_correct` | Claude (interactive) | Final answer satisfies `ground_truth:` |
 | `process.read_manuals_first` | programmatic | A manual/schema tool was called before the first query |
 | `process.tool_errors` | programmatic | Validator/syntax/tool errors during the run |
 | `all_good` | derived | All three signals satisfied |
@@ -122,16 +128,19 @@ python run_tests.py [options]
   --config PATH          Config file (default: config.yaml)
   --strict-validation    Fail the run on case schema issues
 
-python judge.py [options]
-  --input PATH           Raw output from run_tests.py
-  --cases PATH...        Case YAMLs with ground_truth: blocks
-  --output PATH          Output path (default: <input-stem>_judged.json)
-  --base-url URL         Judge LLM endpoint (default: $LLM_BASE_URL)
-  --model NAME           Judge model id (default: $LLM_MODEL)
-  --api-key-env NAME     Env var holding the bearer token (default: OPENAI_API_KEY)
-  --concurrency N        Parallel judge calls (default: 4)
-  --limit N              Smoke-test mode: only judge the first N records
+python judge_claude.py export <raw.json> <cases.yaml> [<cases2.yaml> ...] \
+    [--case-mapping-from <base.yaml>] --output <export>.jsonl
+  # Claude reads the export and writes a matching verdicts .jsonl by hand,
+  # grading against judge.py's JUDGE_PROMPT rubric.
+
+python judge_claude.py merge <raw.json> <cases.yaml> [<cases2.yaml> ...] \
+    [--case-mapping-from <base.yaml>] --verdicts <verdicts>.jsonl --output <out>_judged.json
 ```
+
+`judge.py` (the original cortecs/gpt-5.4-based LLM judge) is still present and
+usable stand-alone (`python judge.py --input ... --cases ... --base-url ... --model ...`)
+for a fully-automated, non-interactive judge run — e.g. pointed at a local
+vLLM endpoint instead of cortecs. `judge.sh` no longer calls it by default.
 
 ## Layout
 
@@ -141,10 +150,11 @@ cases/              # YAML test cases with ground_truth: blocks
 results/            # JSON exports + analyses (gitignored)
 config.yaml         # defaults (agent URL, variants)
 run_tests.py        # Phase 1: run agents, save raw results
-judge.py            # Phase 2: strict bool judge against ground_truth
+judge.py            # strict bool judge against ground_truth — LLM API version (cortecs/vLLM), not used by judge.sh by default
+judge_claude.py      # export/merge halves of the Claude-graded judge (imports judge.py's rubric + process checks)
 analyze_results.py  # Phase 3: Markdown analysis per model
 run_all.sh          # Run all 5 suites for one model in one go
-judge.sh            # Grade all 5 suites for one model (skips already-judged files)
+judge.sh            # export|merge all 5 suites for one model (skips already-judged files)
 ```
 
 ## Adding cases

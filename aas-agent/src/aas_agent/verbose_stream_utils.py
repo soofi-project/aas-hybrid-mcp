@@ -17,11 +17,29 @@ from __future__ import annotations
 from typing import Iterable
 
 from langchain_core.messages import AIMessage
+from langgraph.errors import GraphRecursionError
 
 
 def is_verbose(extra: dict | None) -> bool:
     """Return True when the caller requested verbose streaming."""
     return bool((extra or {}).get("verbose", False))
+
+
+def stream_error_message(exc: Exception) -> str:
+    """Classify a fatal stream-loop exception for the exported error text.
+
+    A bare ``except Exception`` around the astream loop previously collapsed
+    every failure — hitting the recursion-limit cap (``GraphRecursionError``,
+    a normal agent-behavior outcome) and genuine backend/network failures
+    (dropped connections, proxy timeouts, upstream 5xx) — into the identical
+    "[stream error]" string, making the two indistinguishable in eval
+    exports. This tags them so downstream analysis (`analyze_eval_run.py`,
+    eval reports) doesn't have to infer the cause from tool-call-count
+    proximity to the cap as a heuristic.
+    """
+    if isinstance(exc, GraphRecursionError):
+        return "\n\n[stream error: recursion-limit — see server logs]\n"
+    return "\n\n[stream error: other — see server logs]\n"
 
 
 def extract_final_text(result: dict) -> str:

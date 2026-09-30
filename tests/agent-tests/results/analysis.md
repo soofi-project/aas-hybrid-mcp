@@ -1,8 +1,13 @@
 # Cross-Model Evaluation Analysis — All Models, T07
 
-9 models · 5 suites · 1,800 total runs (200 each: 150 read-path + 50 SRN)
+10 models · 5 suites · 2,000 total runs (200 each: 150 read-path + 50 SRN)
 
-Models ordered by parameter count:
+Models ordered by parameter count. The core Qwen3.5 scaling axis is 9 models (rows 1–9,
+1,800 runs); **qwen38-27b** is a 10th, generation-only comparison point added at the
+same 27B-dense tier as qwen35-27b/qwen36-27b (matched active params, next generation) —
+it is **excluded** from the aggregate "Total" rows below to keep the scaling-axis
+statistics confined to a single model family (see paper pivot notes on generation/scale
+confounding).
 
 | Label | Architecture | Active params | N runs |
 |---|---|---|---|
@@ -15,6 +20,7 @@ Models ordered by parameter count:
 | qwen36-35b | 35B-A3B MoE, FP8 | ~3B | 200 |
 | qwen35-122b | 122B-A10B MoE, FP8 | ~10B | 200 |
 | qwen35-397b | 397B-A17B MoE (ext., Cortecs) | ~17B | 200 |
+| qwen38-27b *(generational comparison, not in scaling axis)* | 27B dense, FP8 | 27B | 200 |
 
 ---
 
@@ -22,16 +28,21 @@ Models ordered by parameter count:
 
 ### Correct rate per suite
 
-| Suite | 2B | 4B | 9B | 35-27B | 36-27B | 35-35B | 36-35B | 122B | 397B |
-|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| anti_pattern | 10% | 80% | 90% | 100% | 100% | 100% | 100% | 100% | 100% |
-| asset_specs | 20% | 85% | 70% | 100% | 100% | 100% | 100% | 100% | 100% |
-| bench_b | 3% | 45% | 55% | 78% | 85% | 73% | 87% | 72% | 82% |
-| containment_hall4 | 10% | 42% | 44% | 100% | 100% | 88% | 94% | 92% | 100% |
-| srn_autonomous | 0% | 4% | 14% | 32% | 14% | 34% | 18% | 22% | 26% |
-| **Overall** | **6.5%** | **41.5%** | **47%** | **76.5%** | **74%** | **72%** | **74%** | **70%** | **76%** |
+| Suite | 2B | 4B | 9B | 35-27B | 36-27B | 35-35B | 36-35B | 122B | 397B | **38-27B*** |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| anti_pattern | 10% | 80% | 90% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
+| asset_specs | 20% | 85% | 70% | 100% | 100% | 100% | 100% | 100% | 100% | 95% |
+| bench_b | 3% | 45% | 55% | 78% | 85% | 73% | 87% | 72% | 82% | 82% |
+| containment_hall4 | 10% | 42% | 44% | 100% | 100% | 88% | 94% | 92% | 100% | 82% |
+| srn_autonomous | 0% | 4% | 14% | 32% | 14% | 34% | 18% | 22% | 26% | **26%** |
+| **Overall** | **6.5%** | **41.5%** | **47%** | **76.5%** | **74%** | **72%** | **74%** | **70%** | **76%** | **71%** |
 
 qwen36-27b overall recalculated at N=200 (150 read-path + 50 SRN): (20+20+51+50+7)/200 = 74%.
+
+*qwen38-27b is shown for a matched-tier generational comparison against qwen35-27b/qwen36-27b
+(same 27B-dense architecture, next generation) — excluded from the scaling-axis narrative and
+from the "Overall correct rate by model size" chart below. See "Generational comparison" callout
+after §3 for the read/write-path trade-off this reveals.
 
 ### Overall correct rate by model size
 
@@ -70,6 +81,7 @@ The 27B dense models (qwen35-27b at 76.5%, qwen36-27b at 94% read-only) are comp
 | 36-35B | 39% | 95% |
 | 122B | 79% | 98% |
 | 397B | 62% | 100% |
+| 38-27B* | 54% | 99.1% |
 
 The self-correction rate is consistently high (95–100%) across all model sizes — the validator feedback loop works reliably regardless of model capacity. The variation is in violation rate:
 
@@ -103,6 +115,13 @@ See `task_paper_bench_c_bypass_rewrite.md` for root-cause details.
 | 122B | 22% | 92% | 46/50 |
 | 397B | 26% | 92% | 46/50 |
 | **Total** | — | **77% (345/450)** | |
+| 38-27B* | 26% | 90% | 45/50 |
+
+*Not included in the Total row (see scaling-axis note above). Wrote%/put_submodel calls
+recomputed directly from the structured `tool_calls[].name` field (counting both `put_submodel`
+and `put_submodel_element` as a write attempt) rather than the regex-based extractor — this
+reproduces the qwen35-27b (98%, 49/50) and qwen36-27b (96%, 48/50) figures exactly, confirming
+the method is consistent with the rest of this table.
 
 **Key finding:** The write success vs. semantic correctness gap is model-size-independent.
 Write success scales quickly (6% at 2B → 96–98% at 27B+) but SRN correctness peaks at 34%
@@ -113,15 +132,40 @@ rejections were recorded across all 450 runs (assignment-independent: no `valida
 
 ### Per-case SRN correct rate (models with SRN data)
 
-| Case | 2B | 4B | 9B | 35-27B | 35-35B | 36-35B | 122B | 397B |
-|---|--:|--:|--:|--:|--:|--:|--:|--:|
-| srn_from_fault_context | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 2% |
-| srn_routine_priority | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
-| srn_serial_number | 0% | 0% | 0% | 40% | 80% | 20% | 0% | 0% |
-| srn_spatial_hall4 | 0% | 0% | 20% | 40% | 60% | 50% | 70% | 100% |
-| srn_empty_submodel_bypass | 0% | 20% | 10% | 0% | 30% | 20% | 30% | 0% |
+| Case | 2B | 4B | 9B | 35-27B | 35-35B | 36-35B | 122B | 397B | 38-27B* |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| srn_from_fault_context | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 2% | 10% |
+| srn_routine_priority | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
+| srn_serial_number | 0% | 0% | 0% | 40% | 80% | 20% | 0% | 0% | 10% |
+| srn_spatial_hall4 | 0% | 0% | 20% | 40% | 60% | 50% | 70% | 100% | 70% |
+| srn_empty_submodel_bypass | 0% | 20% | 10% | 0% | 30% | 20% | 30% | 0% | 40% |
 
 Three cases are at 0% for almost all models: `srn_from_fault_context`, `srn_routine_priority`, and `srn_serial_number`. These require vocabulary inference (CorrectiveMaintenance, Inspection, Low priority) or serial-number resolution — capabilities that no model reliably possesses. The only consistently solvable case is `srn_spatial_hall4`, which requires only spatial reasoning without value inference.
+
+### Generational comparison: qwen38-27b vs. qwen36-27b (matched tier, next generation)
+
+Both are 27B-dense at FP8 — the only variable is generation (3.6 → 3.8). This isolates a
+generation effect that the 9-model scaling axis cannot show on its own.
+
+| Metric | 36-27b | 38-27b | Δ |
+|---|--:|--:|--:|
+| anti_pattern | 100% | 100% | 0 |
+| asset_specs | 100% | 95% | −5pp |
+| bench_b | 85% | 82% | −3pp |
+| containment_hall4 | 100% | 82% | **−18pp** |
+| srn_autonomous (correct) | 14% | **26%** | **+12pp** |
+| Write attempted (wrote%) | 96% | 90% | −6pp |
+| idShort violation rate | 48% | 54% | +6pp |
+
+**Reading:** qwen38-27b attempts the write slightly *less* often (90% vs 96%) but is nearly
+twice as likely to get the semantics right when it does (26% vs 14% SRN-correct) — the opposite
+of a "writes more, same accuracy" pattern. This is the first data point where a newer generation
+improves write-path correctness at matched parameter count; T7 (below) found the reverse for
+3.5→3.6 (write-path regressed while read-path improved). If this holds up at higher N, it would
+soften T7's "do not report a write-path generation ranking" caveat — but at N=10/case it is one
+data point, not a trend; the read-path regression on `containment_hall4` (100%→82%, 9/50 wrong)
+is large enough that it could equally be sampling noise at this N. **Do not cite this as a
+confirmed generational SRN improvement without a higher-N rerun.**
 
 ---
 
@@ -161,15 +205,20 @@ Two systemic failure modes are model-independent:
 
 ## 6. Duration: Median per Suite
 
-| Suite | 2B | 4B | 9B | 35-27B | 36-27B | 35-35B | 36-35B | 122B | 397B |
-|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| anti_pattern (correct) | 17.2 | 7.6 | 6.7 | 13.4 | 13.2 | 8.8 | 5.3 | 19.0 | 18.1 |
-| asset_specs (correct) | 15.1 | 9.4 | 8.9 | 11.4 | 12.7 | 10.2 | 5.2 | 18.1 | 17.9 |
-| bench_b (correct) | 14.9 | 13.4 | 10.5 | 28.8 | 33.0 | 18.2 | 17.3 | 29.3 | 34.3 |
-| bench_b (wrong) | 24.2 | 18.4 | 18.5 | 24.7 | 18.8 | 24.3 | 17.0 | 34.3 | 29.4 |
-| containment_hall4 (correct) | 14.1 | 7.0 | 6.6 | 26.9 | 29.0 | 19.4 | 17.7 | 24.2 | 33.2 |
-| srn_autonomous (correct) | — | 37.0 | 38.3 | 94.9 | — | 34.8 | 66.1 | 63.7 | 94.3 |
-| srn_autonomous (wrong) | 22.8 | 50.6 | 47.7 | 83.2 | — | 45.0 | 57.2 | 68.6 | 65.5 |
+| Suite | 2B | 4B | 9B | 35-27B | 36-27B | 35-35B | 36-35B | 122B | 397B | 38-27B* |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| anti_pattern (correct) | 17.2 | 7.6 | 6.7 | 13.4 | 13.2 | 8.8 | 5.3 | 19.0 | 18.1 | 8.1 |
+| asset_specs (correct) | 15.1 | 9.4 | 8.9 | 11.4 | 12.7 | 10.2 | 5.2 | 18.1 | 17.9 | 7.6 |
+| bench_b (correct) | 14.9 | 13.4 | 10.5 | 28.8 | 33.0 | 18.2 | 17.3 | 29.3 | 34.3 | 12.5 |
+| bench_b (wrong) | 24.2 | 18.4 | 18.5 | 24.7 | 18.8 | 24.3 | 17.0 | 34.3 | 29.4 | 52.9 |
+| containment_hall4 (correct) | 14.1 | 7.0 | 6.6 | 26.9 | 29.0 | 19.4 | 17.7 | 24.2 | 33.2 | 11.0 |
+| srn_autonomous (correct) | — | 37.0 | 38.3 | 94.9 | — | 34.8 | 66.1 | 63.7 | 94.3 | 45.3 |
+| srn_autonomous (wrong) | 22.8 | 50.6 | 47.7 | 83.2 | — | 45.0 | 57.2 | 68.6 | 65.5 | 68.4 |
+
+qwen38-27b is notably faster than the 27B-dense peers across every suite (e.g. 12.5s vs.
+28.8–33.0s on correct bench_b runs) — a serving/decoding-speed difference, not necessarily a
+capability difference; treat this column as informative only, not part of the duration-vs-quality
+argument built on the 9-model axis above.
 
 Two patterns:
 
@@ -192,6 +241,11 @@ Two patterns:
 | 36-35B | 71% | 82% | **−11 pp** | 150 | 50 |
 | 122B | 74% | 63% | **+11 pp** | 130 | 70 |
 | 397B | 78% | 64% | **+14 pp** | 167 | 33 |
+| 38-27B* | 70.4% | 100% | **−29.6 pp** | 196 | 4 |
+
+*Not comparable to the rows above — only 4 no-manuals runs occurred for qwen38-27b (vs. 29+ for
+every other 27B+ model), so the "100%" and the resulting delta are driven by a handful of easy
+cases rather than a real effect. Excluded from the size-dependence discussion below.
 
 The manuals-first effect is strongly size-dependent:
 

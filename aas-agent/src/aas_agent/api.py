@@ -25,6 +25,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 
 from aas_agent.mcp_client import MCPClientManager
+from aas_agent.verbose_stream_utils import stream_error_message
 from aas_agent.usage import (
     empty_usage,
     try_decode_usage_sentinel,
@@ -156,7 +157,7 @@ async def _get_runner(model_id: str, temperature: float | None = None) -> Any:
             llm_base_url=_llm_base_url,
             llm_model=_llm_model,
             system_prompt=system_prompt,
-            default_thinking=False,
+            default_thinking=os.environ.get("AGENT_DEFAULT_THINKING", "false").lower() == "true",
             log_dir=_log_dir,
             temperature=temperature,
         )
@@ -401,7 +402,7 @@ async def _stream_sse(
                     "choices": [
                         {
                             "index": 0,
-                            "delta": {"content": "\n\n[stream error — see server logs]"},
+                            "delta": {"content": stream_error_message(value)},
                             "finish_reason": None,
                         }
                     ],
