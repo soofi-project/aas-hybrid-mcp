@@ -35,7 +35,7 @@ COPY --from=builder /install /usr/local
 # invalidate it and re-fetch the models.
 RUN docling-tools models download
 
-COPY app.py config.py handlers.py pdf.py vectorstore.py ./
+COPY app.py config.py events.py handlers.py pdf.py vectorstore.py ./
 
 # Skip HuggingFace Hub revalidation at runtime; use the baked cache directly.
 ENV HF_HUB_OFFLINE=1

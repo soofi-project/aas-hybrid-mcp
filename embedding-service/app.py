@@ -5,6 +5,7 @@ import logging
 from flask import Flask, jsonify, request
 
 from config import ON_PROCESSING_ERROR
+from events import normalize
 from handlers import PermanentProcessingError, handle_create, handle_delete, handle_update
 
 logging.basicConfig(
@@ -18,11 +19,20 @@ app = Flask(__name__)
 
 @app.route("/events", methods=["POST"])
 def handle_aas_event():
-    event = request.get_json()
-    if not event:
-        return jsonify({"status": "error", "message": "No JSON body"}), 400
+    raw = request.get_json(silent=True)
+    if not isinstance(raw, dict):
+        return jsonify({"status": "error", "message": "No JSON object body"}), 400
 
-    event_type = str(event.get("type", "")).upper()
+    event, reason = normalize(raw)
+    if event is None:
+        # Well-formed but nothing to ingest (AAS-level event, unknown change
+        # type). ACK with 200 on purpose: the Kafka sink runs with
+        # errors.tolerance=none, so a 4xx here would kill the connector task
+        # and silently stop ingestion for every later event on the topic.
+        log.info("Ignoring event: %s", reason)
+        return jsonify({"status": "ignored", "message": reason}), 200
+
+    event_type = event["type"]
 
     handler = None
     if event_type.endswith("_CREATED"):
@@ -31,8 +41,8 @@ def handle_aas_event():
         handler = handle_update
     elif event_type.endswith("_DELETED"):
         handler = handle_delete
-    else:
-        return jsonify({"status": "ignored", "message": f"Unsupported event type: {event_type}"}), 400
+    else:  # pragma: no cover — normalize() only emits the three suffixes
+        return jsonify({"status": "ignored", "message": reason}), 200
 
     try:
         handler(event)

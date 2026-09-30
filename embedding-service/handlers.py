@@ -288,7 +288,13 @@ def handle_update(event: dict) -> None:
         el = event["smElement"]
         if _is_pdf(el):
             id_short = el.get("idShort", "")
-            path = AasPathBuilder(base_id_short_path=id_short)
+            # Prefer the producer's path over the bare idShort: the initial
+            # submodel walk nests elements ("Documents.Manual"), so writing an
+            # update under a flat idShort would leave the previous chunks
+            # behind under a path no later delete or replace can reach.
+            path = AasPathBuilder(
+                base_id_short_path=event.get("smElementPath") or id_short
+            )
             _ingest_pdf(
                 url=el.get("value", ""),
                 id_short=id_short,

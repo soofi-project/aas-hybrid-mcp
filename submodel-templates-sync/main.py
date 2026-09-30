@@ -27,6 +27,8 @@ import weaviate.classes.query as wvq
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from collection_names import collection_name
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -42,7 +44,7 @@ WEAVIATE_HOST = os.environ["WEAVIATE_HOST"]
 WEAVIATE_HTTP_PORT = int(os.environ["WEAVIATE_PORT"])
 WEAVIATE_GRPC_PORT = int(os.environ["WEAVIATE_GRPC_PORT"])
 TEMPLATES_OUTPUT_DIR = Path(os.environ["TEMPLATES_OUTPUT_DIR"])
-IDTA_COLLECTION = "IdtaTemplateSpec"
+IDTA_COLLECTION_BASE = "IdtaTemplateSpec"
 
 CHUNK_SIZE = int(os.environ["CHUNK_SIZE"])
 CHUNK_OVERLAP = int(os.environ["CHUNK_OVERLAP"])
@@ -53,6 +55,16 @@ BASYX_TIMEOUT = 30.0
 
 WEAVIATE_RETRY_INTERVAL = 5
 WEAVIATE_TIMEOUT = 120
+
+
+def _idta_collection() -> str:
+    """Actual Weaviate collection for the configured embedding model.
+
+    The reader (mcp-server) looks the templates up under exactly this
+    name, so writing to the bare base name left every vector search
+    empty while the index still looked fine.
+    """
+    return collection_name(IDTA_COLLECTION_BASE)
 
 
 # ---------------------------------------------------------------------------
@@ -736,7 +748,7 @@ def is_up_to_date(client: weaviate.WeaviateClient, repo_hash: str) -> bool:
     """
     if not client.collections.exists(SYNC_HASH_COLLECTION):
         return False
-    if not client.collections.exists(IDTA_COLLECTION):
+    if not client.collections.exists(_idta_collection()):
         return False
 
     # Regenerate classes if the output directory is missing or empty.
@@ -782,14 +794,15 @@ def store_sync_hash(client: weaviate.WeaviateClient, repo_hash: str) -> None:
 
 
 def setup_collection(client: weaviate.WeaviateClient) -> None:
-    """Drop and recreate the IdtaTemplateSpec collection."""
-    if client.collections.exists(IDTA_COLLECTION):
-        log.info("Deleting existing collection %s", IDTA_COLLECTION)
-        client.collections.delete(IDTA_COLLECTION)
+    """Drop and recreate the IDTA collection for the current embedding model."""
+    name = _idta_collection()
+    if client.collections.exists(name):
+        log.info("Deleting existing collection %s", name)
+        client.collections.delete(name)
 
-    log.info("Creating collection %s", IDTA_COLLECTION)
+    log.info("Creating collection %s", name)
     client.collections.create(
-        name=IDTA_COLLECTION,
+        name=name,
         vector_config=wvc.Configure.Vectors.self_provided(),
         properties=[
             wvc.Property(name="text", data_type=wvc.DataType.TEXT),
@@ -807,7 +820,7 @@ def ingest_pdfs(
     index_entries: list[dict],
 ) -> None:
     """Convert template PDFs to chunks and insert into Weaviate."""
-    collection = client.collections.get(IDTA_COLLECTION)
+    collection = client.collections.get(_idta_collection())
 
     # Build lookup for semantic IDs
     semantic_ids = {e["name"]: e.get("semanticId", "") for e in index_entries}
@@ -985,12 +998,12 @@ def sync_custom_templates(
 
     # 3. Ingest PDFs if Weaviate collection exists (may not if IDTA was skipped
     #     and this is a fresh run with only custom templates).
-    if client.collections.exists(IDTA_COLLECTION):
+    if client.collections.exists(_idta_collection()):
         ingest_pdfs(client, custom_templates, custom_index_entries)
     else:
         log.info(
             "Collection %s does not exist — skipping custom PDF ingestion",
-            IDTA_COLLECTION,
+            _idta_collection(),
         )
 
     # 4. Push ConceptDescriptions
@@ -1103,7 +1116,7 @@ def main():
             if is_up_to_date(client, repo_hash):
                 log.info(
                     "Collection %s already up-to-date (hash %s), skipping IDTA sync",
-                    IDTA_COLLECTION, repo_hash,
+                    _idta_collection(), repo_hash,
                 )
                 # Read existing index so custom templates can merge correctly.
                 existing_index = TEMPLATES_OUTPUT_DIR / "index.json"

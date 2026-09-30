@@ -17,6 +17,6 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
-COPY main.py .
+COPY collection_names.py main.py .
 
 CMD ["python", "main.py"]
