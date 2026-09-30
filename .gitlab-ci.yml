@@ -21,7 +21,11 @@ build-image:
   tags:
     - docker
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
+    # TLS off for the job-internal dind: with DOCKER_TLS_CERTDIR set, the TLS
+    # variables in the environment make `docker buildx create` refuse to build a
+    # builder. The daemon is only reachable from this job's own network.
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
     PLATFORMS: "linux/amd64,linux/arm64"
   parallel:
     matrix:
