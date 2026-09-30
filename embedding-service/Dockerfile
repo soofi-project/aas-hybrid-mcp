@@ -27,11 +27,15 @@ USER appuser
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
-COPY app.py config.py handlers.py pdf.py vectorstore.py ./
 
 # Pre-download docling models so the runtime container is offline-capable.
 # Models land in /home/appuser/.cache/docling/models (docling default cache path).
+# Deliberately above the COPY of the sources: the download is the slowest step
+# in this build by far, and below the COPY every one-line source change would
+# invalidate it and re-fetch the models.
 RUN docling-tools models download
+
+COPY app.py config.py handlers.py pdf.py vectorstore.py ./
 
 # Skip HuggingFace Hub revalidation at runtime; use the baked cache directly.
 ENV HF_HUB_OFFLINE=1

@@ -4,6 +4,7 @@
 #
 # push to the default branch -> :snapshot (moving) and :<short sha> (immutable)
 # push of a git tag          -> :<tag name> (immutable)
+# layer cache                -> :buildcache per image (see the script block)
 #
 # Both linux/amd64 and linux/arm64 are built so the same tag runs on amd64 dev
 # machines and on Apple Silicon. arm64 runs under QEMU, so the job needs a
@@ -43,10 +44,22 @@ build-image:
     - docker buildx create --name multiarch --driver docker-container --use
   script:
     - IMAGE="$CI_REGISTRY_IMAGE/$SUBDIR"
+    # Layer cache lives in this project's own registry, next to the image tags.
+    # Without it every run starts from an empty builder and re-downloads what
+    # the previous run already fetched — for embedding-service that is torch
+    # plus the Docling models, per platform. mode=max is what makes the
+    # expensive intermediate layers cacheable; the default (min) would only
+    # keep the final one and save nothing. First run populates the ref, later
+    # runs import from it; a cold ref is a warning, not a failure.
+    - CACHE_REF="$CI_REGISTRY_IMAGE/$SUBDIR:buildcache"
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
         TAGS="-t $IMAGE:$CI_COMMIT_TAG"
       else
         TAGS="-t $IMAGE:snapshot -t $IMAGE:$CI_COMMIT_SHORT_SHA"
       fi
-    - docker buildx build --platform "$PLATFORMS" $TAGS --push $SUBDIR
+    - >
+      docker buildx build --platform "$PLATFORMS"
+      --cache-from "type=registry,ref=$CACHE_REF"
+      --cache-to "type=registry,ref=$CACHE_REF,mode=max"
+      $TAGS --push $SUBDIR
