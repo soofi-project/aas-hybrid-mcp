@@ -50,6 +50,12 @@ CHUNK_SIZE = int(os.environ["CHUNK_SIZE"])
 CHUNK_OVERLAP = int(os.environ["CHUNK_OVERLAP"])
 EMBEDDING_BATCH_SIZE = int(os.environ["EMBEDDING_BATCH_SIZE"])
 
+# The generated classes only feed the MCP server's template-conformance check on
+# writes; without them it falls back to metamodel-only validation.
+GENERATE_TEMPLATE_CLASSES = (
+    os.environ.get("GENERATE_TEMPLATE_CLASSES", "true").strip().lower() == "true"
+)
+
 CD_REPO_URL = os.environ.get("CD_REPO_URL", "http://aas-environment:8081")
 BASYX_TIMEOUT = 30.0
 
@@ -675,6 +681,10 @@ def generate_classes(templates: list[dict]) -> int:
 
     Returns the number of successfully generated files.
     """
+    if not GENERATE_TEMPLATE_CLASSES:
+        log.info("GENERATE_TEMPLATE_CLASSES=false — skipping class generation")
+        return 0
+
     import logging as _logging
     from aas_submodel_to_py.generator import SubmodelCodegen
 
@@ -753,7 +763,9 @@ def is_up_to_date(client: weaviate.WeaviateClient, repo_hash: str) -> bool:
 
     # Regenerate classes if the output directory is missing or empty.
     generated_dir = TEMPLATES_OUTPUT_DIR / "generated"
-    if not generated_dir.exists() or not any(generated_dir.glob("*.py")):
+    if GENERATE_TEMPLATE_CLASSES and (
+        not generated_dir.exists() or not any(generated_dir.glob("*.py"))
+    ):
         return False
 
     collection = client.collections.get(SYNC_HASH_COLLECTION)
@@ -1033,6 +1045,10 @@ def generate_custom_classes(templates: list[dict]) -> int:
     Mirrors generate_classes() but operates on the ``json_path`` key provided
     by discover_custom_templates instead of directory-based look-up.
     """
+    if not GENERATE_TEMPLATE_CLASSES:
+        log.info("GENERATE_TEMPLATE_CLASSES=false — skipping custom class generation")
+        return 0
+
     import logging as _logging
     from aas_submodel_to_py.generator import SubmodelCodegen
 
