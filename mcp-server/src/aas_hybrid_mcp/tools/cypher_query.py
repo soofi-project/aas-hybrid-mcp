@@ -6,9 +6,19 @@ import re
 from fastmcp import FastMCP
 
 from aas_hybrid_mcp import cypher_validator, neo4j_client
+from aas_hybrid_mcp.tool_descriptions import lean_mode
 from aas_hybrid_mcp.tool_descriptions import load as load_description
 
 MAX_ROWS = 1000
+
+_FORBIDDEN_HINT = (
+    "Rewrite without CONTAINS/=~ on idShort/id. Call get_manual_page('cypher') "
+    "and get_templates_index() to learn the correct pattern before retrying."
+)
+_FORBIDDEN_HINT_LEAN = (
+    "Rewrite without CONTAINS/=~ on idShort/id: use exact equality "
+    "(WHERE x.idShort = 'ExactName') as the entry point."
+)
 
 # IDTA semanticIds are published in two forms — with and without a trailing
 # ``/Submodel`` segment. The official spec AASX files (and therefore our
@@ -20,6 +30,22 @@ _SUBMODEL_SUFFIX = "/Submodel"
 _LITERAL_RE = re.compile(
     r'("(?:[^"\\]|\\.)*?/Submodel"|\'(?:[^\'\\]|\\.)*?/Submodel\')'
 )
+
+
+_MANUAL_REF_RE = re.compile(r"\s*See cypher\.md anti-pattern #\d+\.")
+
+
+def _violations(violations) -> list[dict]:
+    """Serialize validator violations; drop manual references in lean mode."""
+    lean = lean_mode()
+    return [
+        {
+            "rule": v.rule,
+            "hint": _MANUAL_REF_RE.sub("", v.hint) if lean else v.hint,
+            "match": v.match,
+        }
+        for v in violations
+    ]
 
 
 def _strip_suffix_in_cypher(cypher: str) -> tuple[str, list[str]]:
@@ -98,11 +124,8 @@ def register(mcp: FastMCP) -> None:
         if not vr.allowed:
             return {
                 "error": "forbidden_pattern",
-                "violations": [
-                    {"rule": v.rule, "hint": v.hint, "match": v.match}
-                    for v in vr.violations
-                ],
-                "hint": "Rewrite without CONTAINS/=~ on idShort/id. Call get_manual_page('cypher') and get_templates_index() to learn the correct pattern before retrying.",
+                "violations": _violations(vr.violations),
+                "hint": _FORBIDDEN_HINT_LEAN if lean_mode() else _FORBIDDEN_HINT,
             }
 
         try:
@@ -123,8 +146,5 @@ def register(mcp: FastMCP) -> None:
                 "params": param_rewrites,
             }
         if vr.violations:
-            result["_warnings"] = [
-                {"rule": v.rule, "hint": v.hint, "match": v.match}
-                for v in vr.violations
-            ]
+            result["_warnings"] = _violations(vr.violations)
         return result

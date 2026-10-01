@@ -6,6 +6,7 @@ import uvicorn
 from fastmcp import FastMCP
 
 from aas_hybrid_mcp import manual
+from aas_hybrid_mcp.tool_descriptions import docs_mode, lean_mode
 from aas_hybrid_mcp.tools import (
     concept_lookup,
     cypher_query,
@@ -30,7 +31,9 @@ concept_lookup.register(mcp)
 write_tools.register(mcp)
 schema.register(mcp)
 templates.register(mcp)
-manual.register(mcp)
+if not lean_mode():
+    manual.register(mcp)
+logging.getLogger(__name__).info("DOCS_MODE=%s", docs_mode())
 
 
 def main():
