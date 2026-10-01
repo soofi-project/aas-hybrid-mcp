@@ -13,6 +13,7 @@
 #   qwen35-122b (MoE, ~10B active)    qwen35-397b (Cortecs)
 #   qwen36-27b   qwen36-35b (MoE, ~22B active)
 #   qwen38-27b-coding (H200, same LiteLLM as the qwen3x aliases above)
+#   soofi-s-spree (direct vLLM 10.2.10.44, Soofi-S-Spree-Preview)
 #   soofi-s-m7   nemotron3-nano-30b   rlvr-spree-c1-3-hf_step_400 (external LiteLLM proxy at soofi-lite.l3s.de)
 #   nemotron3-ultra-550b (OpenRouter)
 #
@@ -43,7 +44,7 @@ if [ ! -f "idta_templates/README.md" ]; then
     git submodule update --init idta_templates
 fi
 
-SLUGS="qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-35b qwen35-122b qwen35-397b qwen36-27b qwen36-35b qwen38-27b-coding soofi-s-m7 nemotron3-nano-30b rlvr-spree-c1-3-hf_step_400 nemotron3-ultra-550b"
+SLUGS="soofi-s-spree qwen35-2b qwen35-4b qwen35-9b qwen35-27b qwen35-35b qwen35-122b qwen35-397b qwen36-27b qwen36-35b qwen38-27b-coding soofi-s-m7 nemotron3-nano-30b rlvr-spree-c1-3-hf_step_400 nemotron3-ultra-550b"
 
 MODEL=${1:-}
 if [ -z "$MODEL" ]; then
@@ -65,6 +66,10 @@ cp "$ENV_FILE" .env.model
 case "$MODEL" in
     qwen35-397b)
         EVAL_OVERLAY="docker-compose.eval-model-cortecs.yml"
+        ;;
+    soofi-s-spree)
+        # direct vLLM (10.2.10.44), same shape as the H200 models: no proxy key
+        EVAL_OVERLAY="docker-compose.eval-model-vllm.yml"
         ;;
     soofi-*|nemotron3-nano-30b|rlvr-spree-c1-3-hf_step_400)
         EVAL_OVERLAY="docker-compose.eval-model-litellm.yml"
