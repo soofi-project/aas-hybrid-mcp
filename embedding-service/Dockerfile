@@ -43,4 +43,5 @@ ENV DOCLING_ARTIFACTS_PATH=/home/appuser/.cache/docling/models
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "1800", "app:app"]
+# One process, two threads: the second thread answers /health during a long ingestion; app.py serializes the handlers.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--worker-class", "gthread", "--threads", "2", "--timeout", "1800", "app:app"]

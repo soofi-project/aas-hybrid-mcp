@@ -8,6 +8,7 @@ spies, because the interesting question here is *which* handler is called with
 """
 
 import sys
+import threading
 import types
 
 import pytest
@@ -145,3 +146,33 @@ def test_transient_error_is_500_so_kafka_retries(service):
     )
     resp = service.client.post("/events", json=adapter_body())
     assert resp.status_code == 500
+
+
+def test_health_answers_while_an_event_is_processed_and_events_run_one_at_a_time(service):
+    entered, release = threading.Event(), threading.Event()
+    running, overlap = [], []
+
+    def slow_create(event):
+        running.append(1)
+        overlap.append(len(running))
+        entered.set()
+        release.wait(5)
+        running.pop()
+
+    service.module.handle_create = slow_create
+    results = []
+    posts = [
+        threading.Thread(target=lambda: results.append(service.client.post("/events", json=adapter_body()).status_code))
+        for _ in range(2)
+    ]
+    posts[0].start()
+    assert entered.wait(5)
+    posts[1].start()
+
+    assert service.client.get("/health").status_code == 200  # the first event is still running
+
+    release.set()
+    for p in posts:
+        p.join(5)
+    assert results == [200, 200]
+    assert max(overlap) == 1

@@ -1,6 +1,7 @@
 """Flask application — receives AAS Kafka events via HTTP sink."""
 
 import logging
+import threading
 
 from flask import Flask, jsonify, request
 
@@ -15,6 +16,11 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# The worker class is gthread so /health answers while a PDF is converted; the
+# handlers themselves (docling, Weaviate delete-and-insert) must still run one
+# at a time, in the order the events arrive per worker.
+_ingest_lock = threading.Lock()
 
 
 @app.route("/events", methods=["POST"])
@@ -45,7 +51,8 @@ def handle_aas_event():
         return jsonify({"status": "ignored", "message": reason}), 200
 
     try:
-        handler(event)
+        with _ingest_lock:
+            handler(event)
         return jsonify({"status": "success"}), 200
     except PermanentProcessingError as exc:
         # Permanent error — retrying won't help (corrupt PDF, 404, no text).
