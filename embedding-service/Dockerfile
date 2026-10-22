@@ -28,18 +28,18 @@ WORKDIR /app
 
 COPY --from=builder /install /usr/local
 
-# Pre-download docling models so the runtime container is offline-capable.
-# Models land in /home/appuser/.cache/docling/models (docling default cache path).
-# Deliberately above the COPY of the sources: the download is the slowest step
-# in this build by far, and below the COPY every one-line source change would
-# invalidate it and re-fetch the models.
-RUN docling-tools models download
+# No models are baked into the image: the full `docling-tools models download`
+# catalog (~1.7 GB, incl. CodeFormula, picture classifier and RapidOCR that
+# this service never uses — do_ocr is off and no enrichment is enabled) blew
+# up both the image and the mode=max buildcache in the project registry, per
+# platform, and pushed the CI build past its timeout under QEMU on arm64.
+# pdf.py instead downloads only the pipeline's needs (layout + tableformer,
+# ~600 MB) into DOCLING_ARTIFACTS_PATH on first use; the compose stack mounts
+# a volume there, so the download happens once and is reused across restarts
+# and image updates.
+ENV DOCLING_ARTIFACTS_PATH=/home/appuser/.cache/docling/models
 
 COPY app.py config.py events.py handlers.py pdf.py vectorstore.py ./
-
-# Skip HuggingFace Hub revalidation at runtime; use the baked cache directly.
-ENV HF_HUB_OFFLINE=1
-ENV DOCLING_ARTIFACTS_PATH=/home/appuser/.cache/docling/models
 
 EXPOSE 8000
 

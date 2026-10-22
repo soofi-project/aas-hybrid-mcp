@@ -1,5 +1,6 @@
 """PDF download, conversion to markdown, chunking, and embedding."""
 
+import inspect
 import logging
 import os
 import re
@@ -62,11 +63,54 @@ def reset_converter() -> None:
     gc.collect()
 
 
+def _ensure_artifacts(artifacts_path: str | None) -> None:
+    """Download the pipeline's models on first use into *artifacts_path*.
+
+    The image ships without baked models (they blew up the registry and the CI
+    build time), so the first conversion fetches exactly what this service's
+    pipeline needs — layout + tableformer, ~600 MB. CodeFormula, the picture
+    classifier and RapidOCR are skipped: do_ocr is off and no enrichment is
+    enabled, so docling would never read them. The compose stack mounts a
+    volume on the docling cache dir, so the download happens once per stack,
+    not once per container or image update.
+    """
+    if not artifacts_path:
+        return
+    if os.environ.get("DOCLING_SKIP_MODEL_DOWNLOAD", "").lower() == "true":
+        log.info("DOCLING_SKIP_MODEL_DOWNLOAD=true, not checking %s", artifacts_path)
+        return
+    from pathlib import Path
+    from docling.utils.model_downloader import download_models
+
+    path = Path(artifacts_path)
+    if path.exists() and any(path.iterdir()):
+        return
+    log.info(
+        "Docling artifacts missing at %s, downloading layout + tableformer "
+        "(~600 MB, happens once per mounted volume)...",
+        artifacts_path,
+    )
+    # Filter the skip-flags against the installed docling's signature: older
+    # releases name the optional stages differently, and a TypeError after the
+    # layout download would leave a half-populated cache dir.
+    wanted = {
+        name: False
+        for name in ("with_code_formula", "with_picture_classifier", "with_rapidocr", "with_easyocr")
+    }
+    supported = inspect.signature(download_models).parameters
+    download_models(
+        output_dir=path,
+        **{name: skip for name, skip in wanted.items() if name in supported},
+    )
+
+
 def _get_converter() -> "DocumentConverter":
     """Lazy-init the DocumentConverter on first use (loads layout models once)."""
     global _converter
     if _converter is None:
-        pipeline_options = PdfPipelineOptions(artifacts_path=os.environ.get("DOCLING_ARTIFACTS_PATH"))
+        artifacts_path = os.environ.get("DOCLING_ARTIFACTS_PATH")
+        _ensure_artifacts(artifacts_path)
+        pipeline_options = PdfPipelineOptions(artifacts_path=artifacts_path)
         pipeline_options.do_table_structure = os.environ.get("PDF_TABLE_STRUCTURE", "false").lower() == "true"
         pipeline_options.do_ocr = False
         pipeline_options.queue_max_size = int(os.environ.get("DOCLING_QUEUE_MAX_SIZE", "8"))
@@ -216,9 +260,9 @@ def convert_pdf_to_markdown(pdf_bytes: bytes) -> str:
         tmp_path = tmp.name
 
     try:
-        # artifacts_path points docling at models pre-fetched by `docling-tools models download`
-        # (flat layout under ~/.cache/docling/models/), bypassing huggingface_hub snapshot_download
-        # which expects a different on-disk format and would hit the network under HF_HUB_OFFLINE=1.
+        # artifacts_path points docling at the models _ensure_artifacts downloaded
+        # on first use (flat layout under the mounted cache dir), bypassing
+        # huggingface_hub snapshot_download which expects a different on-disk format.
         result = _get_converter().convert(tmp_path)
 
         if result.status == ConversionStatus.SUCCESS:

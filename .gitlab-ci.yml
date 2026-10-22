@@ -14,6 +14,7 @@
 
 stages:
   - build
+  - maintenance
 
 build-image:
   stage: build
@@ -63,3 +64,50 @@ build-image:
       --cache-from "type=registry,ref=$CACHE_REF"
       --cache-to "type=registry,ref=$CACHE_REF,mode=max"
       $TAGS --push $SUBDIR
+
+# Deletes the per-commit SHA tags of this project's registry once they are
+# older than REGISTRY_CLEANUP_DAYS (default 7). Without it the registry grows
+# forever: every push to the default branch leaves one immutable SHA tag per
+# image (x2 platforms of layers), nothing ever deletes them, and the instance
+# GC only reclaims space after tag deletion. snapshot/buildcache/semver tags
+# are protected by the pure-hex filter, not by an allowlist.
+#
+# Runs on scheduled pipelines only — create one in Build -> Pipelines schedules
+# (daily is fine, the job is idempotent). Needs a project access token with the
+# api scope as a masked CI variable REGISTRY_CLEANUP_TOKEN: CI_JOB_TOKEN cannot
+# delete registry tags. The token itself stays out of the repo.
+cleanup-registry:
+  stage: maintenance
+  image: alpine:3.21
+  tags:
+    - docker
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    REGISTRY_CLEANUP_DAYS: "7"
+  script:
+    - apk add --no-cache curl jq
+    - |
+      set -eu
+      if [ -z "${REGISTRY_CLEANUP_TOKEN:-}" ]; then
+        echo "REGISTRY_CLEANUP_TOKEN is not set (project access token, api scope, masked variable)"; exit 1
+      fi
+      API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"
+      for REPO in $(curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$API/registry/repositories?per_page=100" | jq -r '.[].id'); do
+        PATH_=$(curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$API/registry/repositories/$REPO" | jq -r '.path')
+        # pure-hex names = the per-commit SHA tags; snapshot (moving),
+        # buildcache (layer cache ref) and semver tags never match and survive.
+        curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" \
+          --get --data-urlencode "per_page=100" \
+          "$API/registry/repositories/$REPO/tags" \
+          | jq -r --argjson cutoff "now - ($REGISTRY_CLEANUP_DAYS * 86400)" \
+            '.[] | select(.name | test("^[0-9a-f]{7,40}$"))
+                 | select((.created_at | sub("\\.\\d+Z$"; "Z") | fromdateiso8601) < $cutoff)
+                 | .name' \
+          | while read -r TAG; do
+              echo "deleting $PATH_:$TAG"
+              curl -sf -X DELETE --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" \
+                "$API/registry/repositories/$REPO/tags/$TAG"
+            done
+      done
+      echo "registry cleanup done"
