@@ -70,17 +70,22 @@ build-image:
       --cache-to "type=registry,ref=$CACHE_REF,mode=max"
       $TAGS --push $SUBDIR
 
-# Deletes the per-commit SHA tags of this project's registry once they are
-# older than REGISTRY_CLEANUP_DAYS (default 7). Without it the registry grows
-# forever: every push to the default branch leaves one immutable SHA tag per
-# image (x2 platforms of layers), nothing ever deletes them, and the instance
-# GC only reclaims space after tag deletion. snapshot/buildcache/semver tags
-# are protected by the pure-hex filter, not by an allowlist.
+# Deletes the per-commit SHA tags of this project's registry. The registry only
+# serves the dev stack (releases go to Docker Hub with fixed tags), so a SHA tag
+# is needed for a short while: an expired tag is one older than
+# REGISTRY_CLEANUP_HOURS that is not among the newest REGISTRY_CLEANUP_KEEP SHA
+# tags. The newest ones stay for a rollback and so that the build behind
+# :snapshot is never without its SHA tag just because nobody pushed for a while.
+# Without any cleanup the registry grows forever: every push to the default
+# branch leaves one immutable SHA tag per image (x2 platforms of layers), and
+# the instance GC only reclaims space after tag deletion.
+# snapshot and semver tags are protected by the pure-hex filter, not by an allowlist.
 #
-# Runs on scheduled pipelines only — create one in Build -> Pipelines schedules
-# (daily is fine, the job is idempotent). Needs a project access token with the
-# api scope as a masked CI variable REGISTRY_CLEANUP_TOKEN: CI_JOB_TOKEN cannot
-# delete registry tags. The token itself stays out of the repo.
+# Runs on scheduled pipelines only: create one in Build -> Pipelines schedules
+# (every 4-6 hours matches the default age; the job is idempotent). Needs a
+# project access token with the api scope as a masked CI variable
+# REGISTRY_CLEANUP_TOKEN: CI_JOB_TOKEN cannot delete registry tags. The token
+# itself stays out of the repo.
 cleanup-registry:
   stage: maintenance
   image: alpine:3.21
@@ -89,7 +94,8 @@ cleanup-registry:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
-    REGISTRY_CLEANUP_DAYS: "7"
+    REGISTRY_CLEANUP_HOURS: "4"
+    REGISTRY_CLEANUP_KEEP: "3"
   script:
     - apk add --no-cache curl jq
     - |
@@ -99,31 +105,31 @@ cleanup-registry:
         echo "REGISTRY_CLEANUP_TOKEN is not set (project access token, api scope, masked variable)"; exit 1
       fi
       API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"
-      CUTOFF=$(( $(date +%s) - REGISTRY_CLEANUP_DAYS * 86400 ))
-      HDRS=$(mktemp); BODY=$(mktemp)
+      CUTOFF=$(( $(date +%s) - REGISTRY_CLEANUP_HOURS * 3600 ))
+      HDRS=$(mktemp); BODY=$(mktemp); ALL=$(mktemp)
       api() { curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$@"; }
       # Assigned first: a failing call inside "for ... in $(...)" would not stop the job
       # (a wrong token would end as "cleanup done" without deleting anything).
       REPOS=$(api "$API/registry/repositories?per_page=100" | jq -r '.[].id')
       for REPO in $REPOS; do
         PATH_=$(api "$API/registry/repositories/$REPO" | jq -r '.path')
-        # Collect the expired tags page by page first, delete afterwards:
-        # deleting while paging would shift the pages under us.
-        EXPIRED=""
+        # Read all tag pages first, decide afterwards (deleting while paging
+        # would shift the pages), and keep the newest tags by position.
+        : > "$ALL"
         PAGE=1
         while [ -n "$PAGE" ]; do
           api -D "$HDRS" -o "$BODY" --get --data-urlencode "per_page=100" --data-urlencode "page=$PAGE" \
             "$API/registry/repositories/$REPO/tags"
-          # created_at comes as 2026-10-20T10:11:12.229+00:00; fromdateiso8601 wants ...Z.
-          # Assigned on its own so a jq error stops the job (set -e does not see
-          # a failing substitution inside a string).
-          PAGE_EXPIRED=$(jq -r --argjson cutoff "$CUTOFF" \
-            '.[] | select(.name | test("^[0-9a-f]{7,40}$"))
-                 | select((.created_at | sub("[.][0-9]+"; "") | sub("([+]00:00|Z)$"; "Z") | fromdateiso8601) < $cutoff)
-                 | .name' "$BODY")
-          EXPIRED="$EXPIRED $PAGE_EXPIRED"
+          jq -c '.[]' "$BODY" >> "$ALL"
           PAGE=$(tr -d '\r' < "$HDRS" | sed -n 's/^[Xx]-[Nn]ext-[Pp]age: *//p')
         done
+        # created_at comes as 2026-10-20T10:11:12.229+00:00; fromdateiso8601 wants ...Z.
+        # Assigned on its own so a jq error stops the job (set -e does not see
+        # a failing substitution inside a string).
+        EXPIRED=$(jq -rs --argjson cutoff "$CUTOFF" --argjson keep "$REGISTRY_CLEANUP_KEEP" \
+          '[.[] | select(.name | test("^[0-9a-f]{7,40}$"))
+                | .ts = (.created_at | sub("[.][0-9]+"; "") | sub("([+]00:00|Z)$"; "Z") | fromdateiso8601)]
+           | sort_by(.ts) | reverse | .[$keep:][] | select(.ts < $cutoff) | .name' "$ALL")
         for TAG in $EXPIRED; do
           echo "deleting $PATH_:$TAG"
           api -X DELETE "$API/registry/repositories/$REPO/tags/$TAG" > /dev/null
