@@ -13,8 +13,31 @@
 # push to the project's own registry, subpaths included.
 
 stages:
+  - test
   - build
   - maintenance
+
+# Unit tests of the embedding service. They run in the Dockerfile's `test` stage because
+# the dependencies (docling, torch) only exist there; amd64 only, nothing is pushed, so no
+# QEMU and no registry traffic. Runs on merge requests and on the default branch, before
+# the multi-arch build.
+test-embedding:
+  stage: test
+  image: docker:27
+  services:
+    - docker:27-dind
+  tags:
+    - docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - docker build --target test embedding-service
 
 build-image:
   stage: build

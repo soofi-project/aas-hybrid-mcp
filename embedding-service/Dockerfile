@@ -22,12 +22,17 @@ RUN pip install --no-cache-dir . \
     # fail the build if a CUDA stack came back in with a dependency
     && ! pip list --format=freeze | grep -i -E '^(nvidia-|triton)'
 
-FROM python:3.11-slim
+# CI runs the unit tests with `docker build --target test` (no push); the default build below ends
+# in the runtime stage and never contains pytest or the tests.
+FROM builder AS test
+RUN pip install --no-cache-dir pytest
+COPY app.py config.py events.py handlers.py pdf.py vectorstore.py ./
+COPY tests ./tests
+RUN python -m pytest -q -p no:cacheprovider tests
 
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+# No libgl1/libglib2.0-0 (~300 MB with their X11/Mesa dependencies): the image has only
+# opencv-python-headless, and no library in the venv links against them.
+FROM python:3.11-slim
 
 # The cache dir and its parent (huggingface_hub writes next to it) must exist and belong to appuser: a named volume mounted on a path the image lacks is created root-owned.
 RUN useradd --create-home appuser \
