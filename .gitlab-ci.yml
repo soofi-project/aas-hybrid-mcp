@@ -94,25 +94,39 @@ cleanup-registry:
     - apk add --no-cache curl jq
     - |
       set -eu
+      set -o pipefail
       if [ -z "${REGISTRY_CLEANUP_TOKEN:-}" ]; then
         echo "REGISTRY_CLEANUP_TOKEN is not set (project access token, api scope, masked variable)"; exit 1
       fi
       API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"
-      for REPO in $(curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$API/registry/repositories?per_page=100" | jq -r '.[].id'); do
-        PATH_=$(curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$API/registry/repositories/$REPO" | jq -r '.path')
-        # pure-hex names = the per-commit SHA tags; snapshot (moving),
-        # buildcache (layer cache ref) and semver tags never match and survive.
-        curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" \
-          --get --data-urlencode "per_page=100" \
-          "$API/registry/repositories/$REPO/tags" \
-          | jq -r --argjson cutoff "now - ($REGISTRY_CLEANUP_DAYS * 86400)" \
+      CUTOFF=$(( $(date +%s) - REGISTRY_CLEANUP_DAYS * 86400 ))
+      HDRS=$(mktemp); BODY=$(mktemp)
+      api() { curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$@"; }
+      # Assigned first: a failing call inside "for ... in $(...)" would not stop the job
+      # (a wrong token would end as "cleanup done" without deleting anything).
+      REPOS=$(api "$API/registry/repositories?per_page=100" | jq -r '.[].id')
+      for REPO in $REPOS; do
+        PATH_=$(api "$API/registry/repositories/$REPO" | jq -r '.path')
+        # Collect the expired tags page by page first, delete afterwards:
+        # deleting while paging would shift the pages under us.
+        EXPIRED=""
+        PAGE=1
+        while [ -n "$PAGE" ]; do
+          api -D "$HDRS" -o "$BODY" --get --data-urlencode "per_page=100" --data-urlencode "page=$PAGE" \
+            "$API/registry/repositories/$REPO/tags"
+          # created_at comes as 2026-10-20T10:11:12.229+00:00; fromdateiso8601 wants ...Z.
+          # Assigned on its own so a jq error stops the job (set -e does not see
+          # a failing substitution inside a string).
+          PAGE_EXPIRED=$(jq -r --argjson cutoff "$CUTOFF" \
             '.[] | select(.name | test("^[0-9a-f]{7,40}$"))
-                 | select((.created_at | sub("\\.\\d+Z$"; "Z") | fromdateiso8601) < $cutoff)
-                 | .name' \
-          | while read -r TAG; do
-              echo "deleting $PATH_:$TAG"
-              curl -sf -X DELETE --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" \
-                "$API/registry/repositories/$REPO/tags/$TAG"
-            done
+                 | select((.created_at | sub("[.][0-9]+"; "") | sub("([+]00:00|Z)$"; "Z") | fromdateiso8601) < $cutoff)
+                 | .name' "$BODY")
+          EXPIRED="$EXPIRED $PAGE_EXPIRED"
+          PAGE=$(tr -d '\r' < "$HDRS" | sed -n 's/^[Xx]-[Nn]ext-[Pp]age: *//p')
+        done
+        for TAG in $EXPIRED; do
+          echo "deleting $PATH_:$TAG"
+          api -X DELETE "$API/registry/repositories/$REPO/tags/$TAG" > /dev/null
+        done
       done
-      echo "registry cleanup done"
+      echo "registry cleanup done (disk space is freed by the instance's registry garbage collection, not by this job)"

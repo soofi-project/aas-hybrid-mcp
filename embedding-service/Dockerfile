@@ -22,7 +22,10 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --create-home appuser
+# The cache dir and its parent (huggingface_hub writes next to it) must exist and belong to appuser: a named volume mounted on a path the image lacks is created root-owned.
+RUN useradd --create-home appuser \
+    && mkdir -p /home/appuser/.cache/docling/models \
+    && chown -R appuser:appuser /home/appuser/.cache
 USER appuser
 WORKDIR /app
 

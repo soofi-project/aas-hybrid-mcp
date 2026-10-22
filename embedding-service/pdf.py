@@ -63,6 +63,9 @@ def reset_converter() -> None:
     gc.collect()
 
 
+DOWNLOAD_MARKER = ".soofi-download-complete"
+
+
 def _ensure_artifacts(artifacts_path: str | None) -> None:
     """Download the pipeline's models on first use into *artifacts_path*.
 
@@ -83,7 +86,10 @@ def _ensure_artifacts(artifacts_path: str | None) -> None:
     from docling.utils.model_downloader import download_models
 
     path = Path(artifacts_path)
-    if path.exists() and any(path.iterdir()):
+    # Written only after a complete download: a non-empty dir alone may be the
+    # leftovers of an aborted one.
+    marker = path / DOWNLOAD_MARKER
+    if marker.exists():
         return
     log.info(
         "Docling artifacts missing at %s, downloading layout + tableformer "
@@ -102,6 +108,7 @@ def _ensure_artifacts(artifacts_path: str | None) -> None:
         output_dir=path,
         **{name: skip for name, skip in wanted.items() if name in supported},
     )
+    marker.touch()
 
 
 def _get_converter() -> "DocumentConverter":
