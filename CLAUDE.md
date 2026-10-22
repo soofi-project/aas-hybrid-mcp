@@ -4,7 +4,7 @@
 Hybrid MCP server combining Neo4j graph queries and Weaviate vector search for AAS environments. AI agents explore AAS structures via Cypher and search embedded PDF documents.
 
 ## Commands
-- `./up.sh` — start full stack (with `--vllm` for local backend, `--build` for first time)
+- `./up.sh` — start full stack (with `--vllm` for local backend, `--build` for first time, `--no-pull` to skip the registry freshness check)
 - `./down.sh` — stop stack
 - `./eval-model.sh` — run agent evaluations
 
