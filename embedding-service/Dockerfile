@@ -8,12 +8,19 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /build
 
-# Install PyTorch CPU-only first to avoid pulling ~3 GB of CUDA libraries
-RUN pip install --no-cache-dir --prefix=/install \
-    torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# The packages live in a venv: pip resolves against the environment it runs in, and with
+# `--prefix` that never includes the target, so an earlier CPU-only torch was invisible and
+# docling pulled the default PyPI wheel again (CUDA: ~4 GB of nvidia/triton libraries, unused,
+# this service runs on CPU). In the venv the CPU torch counts as installed.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 COPY pyproject.toml .
-RUN pip install --no-cache-dir --prefix=/install .
+RUN pip install --no-cache-dir . \
+    # fail the build if a CUDA stack came back in with a dependency
+    && ! pip list --format=freeze | grep -i -E '^(nvidia-|triton)'
 
 FROM python:3.11-slim
 
@@ -29,7 +36,8 @@ RUN useradd --create-home appuser \
 USER appuser
 WORKDIR /app
 
-COPY --from=builder /install /usr/local
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # No models are baked into the image: the full `docling-tools models download`
 # catalog (~1.7 GB, incl. CodeFormula, picture classifier and RapidOCR that
