@@ -24,11 +24,16 @@ source .env 2>/dev/null || true
 
 # Parse args (any order, both supported)
 BUILD_FLAG=""
+PULL_ENABLED=true
 COMPOSE_FILES=(-f docker-compose.yml)
 for arg in "$@"; do
     case "$arg" in
         --build)
             BUILD_FLAG="--build"
+            ;;
+        --no-pull)
+            PULL_ENABLED=false
+            echo "[INFO] Registry pull disabled — starting with local images"
             ;;
         --vllm)
             COMPOSE_FILES+=(-f docker-compose.vllm.yml)
@@ -55,6 +60,19 @@ for arg in "$@"; do
             ;;
     esac
 done
+
+# Refresh registry images before starting. Moving tags (snapshot & co.) are
+# NOT auto-detected by `compose up` — a tag that exists locally is used as-is,
+# however old it is. pull --ignore-buildable fetches newer images for every
+# registry service and skips the locally built ones (pulling a build-only
+# service's generated image name would fail; they come from --build).
+# Failure is a warning, not a hard gate, so the stack still starts offline.
+if $PULL_ENABLED; then
+    echo "[INFO] Checking registry for newer images (skip with --no-pull)..."
+    if ! docker compose "${COMPOSE_FILES[@]}" pull --ignore-buildable --quiet; then
+        echo "[WARN] Registry pull failed — starting with the local images (possibly stale)"
+    fi
+fi
 
 if [ -n "$BUILD_FLAG" ]; then
     echo "[INFO] Building and starting containers..."
@@ -91,4 +109,7 @@ echo ""
 echo "To stop and wipe ephemeral data (mongo/kafka/neo4j), keep weaviate:  ./down.sh"
 echo "To stop and wipe everything (incl. weaviate embeddings):           ./down.sh --clean"
 echo "To stop and keep all volumes:                                      ./down.sh --keep-all"
+echo ""
+echo "Start options: --build (build local services), --pull (default, registry check),"
+echo "               --no-pull (offline start, local images as-is), --vllm/--llmproxy/--thinking"
 echo ""
