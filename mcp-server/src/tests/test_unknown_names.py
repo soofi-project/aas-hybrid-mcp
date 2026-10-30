@@ -116,3 +116,9 @@ def test_other_notifications_skip_completion_and_unknown_name_statuses():
             "position": {"line": 1, "column": 7},
         }
     ]
+
+
+def test_notification_without_position_has_no_position_key():
+    summary = _summary(_status("03N90", "info: cartesian product.", position=None))
+    (entry,) = neo4j_client.other_notifications(summary)
+    assert "position" not in entry
