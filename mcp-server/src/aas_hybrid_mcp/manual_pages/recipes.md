@@ -15,7 +15,7 @@ templates use project-specific URIs — the pattern is the same.
 
 ```cypher
 MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
+      -[:HAS_SEMANTIC_ID]->({id: $containerTemplateSemanticId})
 MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)
 MATCH (parent)-[:HAS_ELEMENT]->(child:Entity)
 MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
@@ -69,7 +69,7 @@ Then run the combined query with the discovered idShort:
 ```cypher
 MATCH (aas:AssetAdministrationShell {idShort: $exactIdShort})
       -[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: $templateSemanticId})
+      -[:HAS_SEMANTIC_ID]->(sc {id: $templateSemanticId})
 MATCH (sm)-[:HAS_ELEMENT*]->(p:Property)
 WHERE p.idShort IN $propertyIdShorts
 RETURN aas.idShort, p.idShort, p.value, p.valueType
@@ -89,7 +89,7 @@ Find all shells that carry the relevant submodel template, then read and rank:
 ```cypher
 MATCH (aas:AssetAdministrationShell)
       -[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: $templateSemanticId})
+      -[:HAS_SEMANTIC_ID]->(sc {id: $templateSemanticId})
 MATCH (sm)-[:HAS_ELEMENT*]->(p:Property {idShort: $propertyIdShort})
 RETURN aas.idShort, p.value
 ORDER BY toFloat(p.value) DESC
@@ -104,7 +104,7 @@ When you have an AAS ID but don't know what submodels it exposes:
 
 ```cypher
 MATCH (aas:AssetAdministrationShell {id: $aasId})-[:HAS_SUBMODEL]->(sm:Submodel)
-OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc)
 RETURN sm.idShort, sm.id, sc.id AS templateSemanticId
 ```
 

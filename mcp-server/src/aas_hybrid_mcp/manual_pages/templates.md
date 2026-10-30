@@ -8,11 +8,11 @@ user intent → template → semanticId → graph traversal.
 ## Three-step lookup
 
 1. **Skim `get_templates_index()`** for templates matching the concept.
-2. **Confirm against the graph.** Only `-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: ...})`
+2. **Confirm against the graph.** Only `-[:HAS_SEMANTIC_ID]->({id: ...})`
    proves conformance. If the index ID matches nothing, discover what
    the graph actually carries:
    ```cypher
-   MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+   MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc)
    RETURN DISTINCT sc.id ORDER BY sc.id
    ```
 3. **Read `get_template(name)`** for field-level structure before

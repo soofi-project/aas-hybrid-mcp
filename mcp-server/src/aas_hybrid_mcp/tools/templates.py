@@ -47,7 +47,8 @@ async def _discover_graph_semantic_ids() -> list[str]:
     """Fetch all live semanticIds present in the Neo4j graph."""
     try:
         rows = await neo4j_client.read_query(
-            "MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)\n"
+            "MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc)\n"
+            "WHERE sc.id IS NOT NULL\n"
             "RETURN DISTINCT sc.id AS graphSemanticId",
             {},
         )
