@@ -13,7 +13,7 @@ zero-row results.
 MATCH (sm:Submodel {semanticId: 'https://...'})
 
 // RIGHT
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'})
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->({id: 'https://...'})
 ```
 
 **2. Use semanticIds verbatim.** Exact strings from `get_templates_index()`
@@ -46,20 +46,20 @@ List all submodels of a shell with their template's semanticId — the
 fastest way to learn what kind of shell you are looking at:
 ```cypher
 MATCH (aas:AssetAdministrationShell {id: $aasId})-[:HAS_SUBMODEL]->(sm:Submodel)
-OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc)
 RETURN sm.idShort, sm.id, sc.id AS templateSemanticId
 ```
 
 Discover which semanticIds are actually present in the graph (use this
 when the templates index ID does not match):
 ```cypher
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc)
 RETURN DISTINCT sc.id ORDER BY sc.id
 ```
 
 All submodels conforming to a given template across all shells:
 ```cypher
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $semanticId})
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->({id: $semanticId})
 MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm)
 RETURN aas.idShort, aas.id, sm.idShort, sm.id
 ```
@@ -76,7 +76,7 @@ Container traversal — a container submodel owns an Entity tree linked
 to the contained assets:
 ```cypher
 MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
+      -[:HAS_SEMANTIC_ID]->({id: $containerTemplateSemanticId})
 MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
 MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
 RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId

@@ -2,9 +2,11 @@
 
 from fastmcp import FastMCP
 
+from aas_hybrid_mcp.tool_descriptions import lean_mode
 from aas_hybrid_mcp.tool_descriptions import load as load_description
 
-_GRAPH_SCHEMA = """\
+# Facts: what the graph contains. Served in every DOCS_MODE.
+_SCHEMA_FACTS = """\
 # AAS Graph Schema
 
 All nodes also carry the label `GraphNode`.
@@ -38,8 +40,8 @@ Groups related SubmodelElements, belongs to an AAS.
 - Properties: `id`, `idShort`, `category`, `kind`
 - Relationships:
   - `-[:HAS_ELEMENT]->(:SubmodelElement)` (direct children)
-  - `-[:HAS_SEMANTIC_ID]->(:SemanticConcept|ConceptDescription)`
-  - `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(:SemanticConcept)`
+  - `-[:HAS_SEMANTIC_ID]->(target)`
+  - `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(target)`
   - `-[:HAS_ADMIN_INFO]->(:AdminInfo)`
   - `-[:HAS_DISPLAY_NAME]->(:LangString)`
   - `-[:HAS_DESCRIPTION]->(:LangString)`
@@ -52,8 +54,8 @@ All SubmodelElements share:
 - Labels: SubmodelElement, Referable, Referenceable, [ConcreteType]
 - Common Properties: `idShort`, `smId`, `idShortPath`, `category`
 - Common Relationships:
-  - `-[:HAS_SEMANTIC_ID]->(:SemanticConcept)`
-  - `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(:SemanticConcept)`
+  - `-[:HAS_SEMANTIC_ID]->(target)`
+  - `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(target)`
   - `-[:HAS_DESCRIPTION]->(:LangString)`
   - `-[:HAS_DISPLAY_NAME]->(:LangString)`
   - `-[:HAS_QUALIFIER]->(:Qualifier)`
@@ -142,12 +144,16 @@ Declares a capability (no additional properties or relationships).
 ## Auxiliary Nodes
 
 ### SemanticConcept
-Semantic identifier referenced via HAS_SEMANTIC_ID.
-- Labels: SemanticConcept, Referenceable
+Semantic identifier referenced via HAS_SEMANTIC_ID or HAS_SUPPLEMENTAL_SEMANTIC_ID.
+- Labels: SemanticConcept, Referenceable, and in some graphs a different label
+  instead (e.g. only Submodel when the target is also a submodel)
 - Properties: `id`
+- The `(target)` of those two relationships is usually a SemanticConcept, but a
+  target may carry only another label. Match it by `{id: ...}` alone, without a
+  label.
 
 ### ConceptDescription
-Formal semantic definition (also target of HAS_SEMANTIC_ID from Submodels).
+Formal semantic definition (also target of HAS_SEMANTIC_ID).
 - Labels: ConceptDescription, Identifiable, Referable, Referenceable
 - Properties: `id`
 
@@ -210,7 +216,11 @@ Operations: `HAS_INPUT_VARIABLE`, `HAS_OUTPUT_VARIABLE`, `HAS_INOUTPUT_VARIABLE`
 Events: `OBSERVES`, `USES_MESSAGE_BROKER`
 Data specs: `HAS_EMBEDDED_DATA_SPECIFICATION`, `HAS_DATA_SPECIFICATION`, `HAS_DEFINITION`, `HAS_PREFERRED_NAME`, `HAS_SHORT_NAME`, `HAS_ALLOWED_VALUE`
 Other: `CREATED_BY`, `REFERS_TO`
+"""
 
+# Guidance: how to query it (traversal tips, anti-patterns, example queries).
+# Full mode only; lean mode expects guidance from outside the server.
+_SCHEMA_GUIDANCE = """
 ## Traversal Tips
 
 `[:HAS_ELEMENT*]` covers all generic containment — Submodel contents,
@@ -236,14 +246,14 @@ Read this section before writing queries.
 
 **1. `semanticId` is a relation, not a property.**
 Submodels and SubmodelElements do not carry a `semanticId` *property*.
-The semantic-id is a relation `-[:HAS_SEMANTIC_ID]->(:SemanticConcept)`.
+The semantic-id is a relation `-[:HAS_SEMANTIC_ID]->(target)`.
 
 ```cypher
 // WRONG — silently returns 0 rows
 MATCH (sm:Submodel {semanticId: 'https://...'}) ...
 
 // RIGHT
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: 'https://...'}) ...
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->({id: 'https://...'}) ...
 ```
 
 **3. Use semanticIds verbatim — do not enrich them.**
@@ -264,11 +274,11 @@ Using it to locate a specific shell the user named is acceptable as an
 entry point — but do not derive its purpose, capabilities, or structure
 from `idShort` alone. Verify by listing submodels and their template
 semanticIds. The semantic meaning of a shell, submodel, or element is
-expressed exclusively through `-[:HAS_SEMANTIC_ID]->(:SemanticConcept)`
-and `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(:SemanticConcept)`.
+expressed exclusively through `-[:HAS_SEMANTIC_ID]->(target)`
+and `-[:HAS_SUPPLEMENTAL_SEMANTIC_ID]->(target)`.
 To find what semanticIds exist in the graph, list them:
 ```cypher
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc)
 RETURN DISTINCT sc.id ORDER BY sc.id
 ```
 Then match the correct id against the templates index (`get_templates_index()`)
@@ -311,7 +321,7 @@ RETURN p.idShort, p.value, p.valueType
 
 Find elements by semantic concept:
 ```cypher
-MATCH (el:SubmodelElement)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: $semanticId})
+MATCH (el:SubmodelElement)-[:HAS_SEMANTIC_ID]->(sc {id: $semanticId})
 RETURN el.idShort, el.smId, labels(el) AS types
 ```
 
@@ -354,7 +364,7 @@ submodel whose contents are Entity nodes with REPRESENTS_ASSET links to
 the actual Asset nodes:
 ```cypher
 MATCH (container:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm:Submodel)
-      -[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $containerTemplateSemanticId})
+      -[:HAS_SEMANTIC_ID]->({id: $containerTemplateSemanticId})
 MATCH (sm)-[:HAS_ELEMENT*]->(parent:Entity)-[:HAS_ELEMENT]->(child:Entity)
 MATCH (child)-[:REPRESENTS_ASSET]->(asset:Asset)
 RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId
@@ -362,7 +372,7 @@ RETURN container.idShort, parent.idShort, child.idShort, asset.globalAssetId
 
 Find all submodels conforming to a given IDTA template, across all shells:
 ```cypher
-MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(:SemanticConcept {id: $templateSemanticId})
+MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->({id: $templateSemanticId})
 MATCH (aas:AssetAdministrationShell)-[:HAS_SUBMODEL]->(sm)
 RETURN aas.idShort, aas.id, sm.idShort, sm.id
 ```
@@ -371,10 +381,12 @@ List the submodels of a shell with their template's semanticId
 (useful to identify what kind of shell you're looking at):
 ```cypher
 MATCH (aas:AssetAdministrationShell {id: $aasId})-[:HAS_SUBMODEL]->(sm:Submodel)
-OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept)
+OPTIONAL MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc)
 RETURN sm.idShort, sm.id, sc.id AS templateSemanticId
 ```
 """
+
+_GRAPH_SCHEMA = _SCHEMA_FACTS + _SCHEMA_GUIDANCE
 
 
 def register(mcp: FastMCP) -> None:
@@ -382,5 +394,5 @@ def register(mcp: FastMCP) -> None:
 
     @mcp.tool(description=load_description("get_graph_schema"))
     def get_graph_schema() -> str:
-        """AAS graph schema: all node labels, relationships, properties, and example Cypher queries."""
-        return _GRAPH_SCHEMA
+        """AAS graph schema: all node labels, relationships and properties (plus query guidance in full mode)."""
+        return _SCHEMA_FACTS if lean_mode() else _GRAPH_SCHEMA

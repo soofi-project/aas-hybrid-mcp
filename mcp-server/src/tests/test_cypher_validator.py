@@ -121,6 +121,15 @@ class TestAllowedPatterns:
         q = "MATCH (sm)-[:HAS_SEMANTIC_ID]->(sc:SemanticConcept {id: 'https://admin-shell.io/...'})"
         assert not _forbidden(q)
 
+    def test_semanticId_id_equals_label_free(self):
+        # The form the schema guidance teaches: target matched by id alone
+        for q in (
+            "MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->({id: $templateSemanticId}) RETURN sm.id",
+            "MATCH (el:SubmodelElement)-[:HAS_SEMANTIC_ID]->(sc {id: $semanticId}) RETURN el.idShort",
+            "MATCH (sm:Submodel)-[:HAS_SEMANTIC_ID]->(sc) WHERE sc.id IS NOT NULL RETURN DISTINCT sc.id",
+        ):
+            assert not _forbidden(q), q
+
     def test_return_idShort(self):
         # RETURN clause mentioning idShort must not be flagged
         q = "RETURN aas.idShort, p.value"
