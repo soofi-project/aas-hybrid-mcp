@@ -99,6 +99,31 @@ async def _unknown_names_warnings(unknown: dict[str, list[str]]) -> list[dict]:
     return warnings
 
 
+# Property keys the Kafka plugin writes for its own bookkeeping (MERGE key of
+# every GraphNode). The hash is not a stable AAS identifier, so agents must
+# not see it and start using it as a lookup key.
+_INTERNAL_KEYS = frozenset({"internalGraphAnchorId"})
+_INTERNAL_COLUMN_SUFFIXES = tuple(f".{k}" for k in _INTERNAL_KEYS)
+
+
+def _strip_internal(value):
+    """Drop internal property keys from nodes, relationships, lists and paths.
+
+    Also drops default projection columns such as ``a.internalGraphAnchorId``.
+    An explicit alias (``AS id``) is the agent's deliberate request and stays.
+    """
+    if isinstance(value, dict):
+        return {
+            k: _strip_internal(v)
+            for k, v in value.items()
+            if k not in _INTERNAL_KEYS
+            and not (isinstance(k, str) and k.endswith(_INTERNAL_COLUMN_SUFFIXES))
+        }
+    if isinstance(value, (list, tuple)):
+        return type(value)(_strip_internal(v) for v in value)
+    return value
+
+
 def _strip_suffix_in_cypher(cypher: str) -> tuple[str, list[str]]:
     """Drop ``/Submodel`` from quoted string literals inside the query.
 
@@ -188,7 +213,7 @@ def register(mcp: FastMCP) -> None:
 
         truncated = len(rows) > MAX_ROWS
         result: dict = {
-            "rows": rows[:MAX_ROWS],
+            "rows": _strip_internal(rows[:MAX_ROWS]),
             "total": len(rows),
             "truncated": truncated,
         }
