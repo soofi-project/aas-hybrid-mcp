@@ -25,24 +25,34 @@ async def _get_driver():
     return _driver
 
 
-# GQL status Neo4j attaches to a query that names a relationship type which
-# has never been created in the database; the type name is in backticks.
-_UNKNOWN_REL_TYPE_STATUS = "01N51"
-_UNKNOWN_REL_TYPE_RE = re.compile(r"The relationship type `(.+?)` does not exist")
+# GQL statuses Neo4j attaches to a query that names a relationship type,
+# label or property key which has never been created in the database. The
+# name is in backticks in the description.
+_UNKNOWN_NAME_STATUSES = {
+    "01N51": (
+        "relationship_types",
+        re.compile(r"The relationship type `(.+?)` does not exist"),
+    ),
+    "01N50": ("labels", re.compile(r"The label `(.+?)` does not exist")),
+    "01N52": ("property_keys", re.compile(r"The property `(.+?)` does not exist")),
+}
 
 
-def unknown_relationship_types(summary) -> list[str]:
-    """Names of relationship types in the query that do not exist in the DB."""
-    names: list[str] = []
+def unknown_names(summary) -> dict[str, list[str]]:
+    """Relationship types, labels and property keys the DB does not know, by kind."""
+    found: dict[str, list[str]] = {}
     for status in summary.gql_status_objects:
-        if status.gql_status != _UNKNOWN_REL_TYPE_STATUS:
+        kind_re = _UNKNOWN_NAME_STATUSES.get(status.gql_status)
+        if kind_re is None:
             continue
-        m = _UNKNOWN_REL_TYPE_RE.search(status.status_description)
+        kind, regex = kind_re
+        m = regex.search(status.status_description)
         # Keep the warning visible even if Neo4j rewords the description.
         name = m.group(1) if m else "<unparsed>"
+        names = found.setdefault(kind, [])
         if name not in names:
             names.append(name)
-    return names
+    return found
 
 
 async def _run_query(tx, cypher: str, params: dict):
@@ -51,13 +61,13 @@ async def _run_query(tx, cypher: str, params: dict):
     async for record in result:
         records.append(record.data())
     summary = await result.consume()
-    return records, unknown_relationship_types(summary)
+    return records, unknown_names(summary)
 
 
-async def read_query_with_unknown_types(
+async def read_query_with_unknown_names(
     cypher: str, params: dict | None = None
-) -> tuple[list[dict], list[str]]:
-    """Run a read-only query; also return relationship types Neo4j does not know."""
+) -> tuple[list[dict], dict[str, list[str]]]:
+    """Run a read-only query; also return names Neo4j does not know, by kind."""
     driver = await _get_driver()
     async with driver.session(database=NEO4J_DATABASE) as session:
         return await session.execute_read(_run_query, cypher, params or {})
@@ -65,7 +75,7 @@ async def read_query_with_unknown_types(
 
 async def read_query(cypher: str, params: dict | None = None) -> list[dict]:
     """Execute a read-only Cypher query and return results as list of dicts."""
-    rows, _ = await read_query_with_unknown_types(cypher, params)
+    rows, _ = await read_query_with_unknown_names(cypher, params)
     return rows
 
 
@@ -76,6 +86,12 @@ async def relationship_types() -> list[str]:
         "RETURN relationshipType ORDER BY relationshipType"
     )
     return [r["relationshipType"] for r in rows]
+
+
+async def labels() -> list[str]:
+    """All node labels present in the database, sorted."""
+    rows = await read_query("CALL db.labels() YIELD label RETURN label ORDER BY label")
+    return [r["label"] for r in rows]
 
 
 async def close():

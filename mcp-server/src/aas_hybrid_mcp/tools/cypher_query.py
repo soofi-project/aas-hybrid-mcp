@@ -51,24 +51,52 @@ def _violations(violations) -> list[dict]:
     ]
 
 
-async def _unknown_types_warning(unknown_types: list[str]) -> dict:
-    """Warning for relationship types the graph does not contain."""
-    try:
-        known = await neo4j_client.relationship_types()
-    except Exception:
-        log.warning("Could not list relationship types", exc_info=True)
-        known = []
-    warning = {
-        "rule": "unknown_relationship_type",
-        "unknown": unknown_types,
-        "hint": (
-            "These relationship types do not exist in the database, so the "
-            "pattern cannot match. Check the spelling and use only existing types."
-        ),
-    }
-    if known:
-        warning["known_relationship_types"] = known
-    return warning
+# (kind from neo4j_client.unknown_names, warning rule, whether to list the
+# known names via the neo4j_client function of the same name, hint). Property
+# keys get a weaker hint and no known list: a key can be unknown just because
+# no node has carried it yet.
+_UNKNOWN_NAME_KINDS = (
+    (
+        "relationship_types",
+        "unknown_relationship_type",
+        True,
+        "These relationship types do not exist in the database, so the "
+        "pattern cannot match. Check the spelling and use only existing types.",
+    ),
+    (
+        "labels",
+        "unknown_label",
+        True,
+        "These labels do not exist in the database, so the pattern cannot "
+        "match. Check the spelling and use only existing labels.",
+    ),
+    (
+        "property_keys",
+        "unknown_property_key",
+        False,
+        "No node or relationship in the database carries these property keys. "
+        "Check the spelling; if the key is optional, an empty result may be correct.",
+    ),
+)
+
+
+async def _unknown_names_warnings(unknown: dict[str, list[str]]) -> list[dict]:
+    """Warnings for relationship types, labels and property keys the graph lacks."""
+    warnings = []
+    for kind, rule, list_known, hint in _UNKNOWN_NAME_KINDS:
+        if kind not in unknown:
+            continue
+        warning = {"rule": rule, "unknown": unknown[kind], "hint": hint}
+        if list_known:
+            try:
+                known = await getattr(neo4j_client, kind)()
+            except Exception:
+                log.warning("Could not list known %s", kind, exc_info=True)
+                known = []
+            if known:
+                warning[f"known_{kind}"] = known
+        warnings.append(warning)
+    return warnings
 
 
 def _strip_suffix_in_cypher(cypher: str) -> tuple[str, list[str]]:
@@ -152,7 +180,7 @@ def register(mcp: FastMCP) -> None:
             }
 
         try:
-            rows, unknown_types = await neo4j_client.read_query_with_unknown_types(
+            rows, unknown = await neo4j_client.read_query_with_unknown_names(
                 cypher, params
             )
         except Exception as e:
@@ -171,8 +199,7 @@ def register(mcp: FastMCP) -> None:
                 "params": param_rewrites,
             }
         warnings = _violations(vr.violations)
-        if unknown_types:
-            warnings.append(await _unknown_types_warning(unknown_types))
+        warnings.extend(await _unknown_names_warnings(unknown))
         if warnings:
             result["_warnings"] = warnings
         return result
