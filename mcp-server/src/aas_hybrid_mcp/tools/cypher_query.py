@@ -48,6 +48,25 @@ def _violations(violations) -> list[dict]:
     ]
 
 
+async def _unknown_types_warning(unknown_types: list[str]) -> dict:
+    """Warning for relationship types the graph does not contain."""
+    try:
+        known = await neo4j_client.relationship_types()
+    except Exception:
+        known = []
+    warning = {
+        "rule": "unknown_relationship_type",
+        "unknown": unknown_types,
+        "hint": (
+            "These relationship types do not exist in the database, so the "
+            "pattern cannot match. Check the spelling and use only existing types."
+        ),
+    }
+    if known:
+        warning["known_relationship_types"] = known
+    return warning
+
+
 def _strip_suffix_in_cypher(cypher: str) -> tuple[str, list[str]]:
     """Drop ``/Submodel`` from quoted string literals inside the query.
 
@@ -129,7 +148,9 @@ def register(mcp: FastMCP) -> None:
             }
 
         try:
-            rows = await neo4j_client.read_query(cypher, params)
+            rows, unknown_types = await neo4j_client.read_query_with_unknown_types(
+                cypher, params
+            )
         except Exception as e:
             return {"error": str(e)}
 
@@ -145,6 +166,9 @@ def register(mcp: FastMCP) -> None:
                 "cypher_literals": cypher_rewrites,
                 "params": param_rewrites,
             }
-        if vr.violations:
-            result["_warnings"] = _violations(vr.violations)
+        warnings = _violations(vr.violations)
+        if unknown_types:
+            warnings.append(await _unknown_types_warning(unknown_types))
+        if warnings:
+            result["_warnings"] = warnings
         return result

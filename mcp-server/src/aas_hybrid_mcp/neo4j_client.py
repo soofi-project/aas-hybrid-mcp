@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 
 from neo4j import AsyncGraphDatabase
 
@@ -24,19 +25,55 @@ async def _get_driver():
     return _driver
 
 
+# GQL status Neo4j attaches to a query that names a relationship type which
+# has never been created in the database; the type name is in backticks.
+_UNKNOWN_REL_TYPE_STATUS = "01N51"
+_BACKTICKED_RE = re.compile(r"The relationship type `(.+?)` does not exist")
+
+
+def unknown_relationship_types(summary) -> list[str]:
+    """Names of relationship types in the query that do not exist in the DB."""
+    names: list[str] = []
+    for status in summary.gql_status_objects:
+        if status.gql_status != _UNKNOWN_REL_TYPE_STATUS:
+            continue
+        m = _BACKTICKED_RE.search(status.status_description)
+        if m and m.group(1) not in names:
+            names.append(m.group(1))
+    return names
+
+
 async def _run_query(tx, cypher: str, params: dict):
     result = await tx.run(cypher, params)
     records = []
     async for record in result:
         records.append(record.data())
-    return records
+    summary = await result.consume()
+    return records, unknown_relationship_types(summary)
+
+
+async def read_query_with_unknown_types(
+    cypher: str, params: dict | None = None
+) -> tuple[list[dict], list[str]]:
+    """Run a read-only query; also return relationship types Neo4j does not know."""
+    driver = await _get_driver()
+    async with driver.session(database=NEO4J_DATABASE) as session:
+        return await session.execute_read(_run_query, cypher, params or {})
 
 
 async def read_query(cypher: str, params: dict | None = None) -> list[dict]:
     """Execute a read-only Cypher query and return results as list of dicts."""
-    driver = await _get_driver()
-    async with driver.session(database=NEO4J_DATABASE) as session:
-        return await session.execute_read(_run_query, cypher, params or {})
+    rows, _ = await read_query_with_unknown_types(cypher, params)
+    return rows
+
+
+async def relationship_types() -> list[str]:
+    """All relationship types present in the database, sorted."""
+    rows = await read_query(
+        "CALL db.relationshipTypes() YIELD relationshipType "
+        "RETURN relationshipType ORDER BY relationshipType"
+    )
+    return [r["relationshipType"] for r in rows]
 
 
 async def close():
