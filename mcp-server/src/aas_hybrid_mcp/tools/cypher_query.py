@@ -1,6 +1,7 @@
 """MCP tool for querying the AAS Neo4j knowledge graph."""
 
 import json as _json
+import logging
 import re
 
 from fastmcp import FastMCP
@@ -8,6 +9,8 @@ from fastmcp import FastMCP
 from aas_hybrid_mcp import cypher_validator, neo4j_client
 from aas_hybrid_mcp.tool_descriptions import lean_mode
 from aas_hybrid_mcp.tool_descriptions import load as load_description
+
+log = logging.getLogger(__name__)
 
 MAX_ROWS = 1000
 
@@ -53,6 +56,7 @@ async def _unknown_types_warning(unknown_types: list[str]) -> dict:
     try:
         known = await neo4j_client.relationship_types()
     except Exception:
+        log.warning("Could not list relationship types", exc_info=True)
         known = []
     warning = {
         "rule": "unknown_relationship_type",

@@ -28,7 +28,7 @@ async def _get_driver():
 # GQL status Neo4j attaches to a query that names a relationship type which
 # has never been created in the database; the type name is in backticks.
 _UNKNOWN_REL_TYPE_STATUS = "01N51"
-_BACKTICKED_RE = re.compile(r"The relationship type `(.+?)` does not exist")
+_UNKNOWN_REL_TYPE_RE = re.compile(r"The relationship type `(.+?)` does not exist")
 
 
 def unknown_relationship_types(summary) -> list[str]:
@@ -37,9 +37,11 @@ def unknown_relationship_types(summary) -> list[str]:
     for status in summary.gql_status_objects:
         if status.gql_status != _UNKNOWN_REL_TYPE_STATUS:
             continue
-        m = _BACKTICKED_RE.search(status.status_description)
-        if m and m.group(1) not in names:
-            names.append(m.group(1))
+        m = _UNKNOWN_REL_TYPE_RE.search(status.status_description)
+        # Keep the warning visible even if Neo4j rewords the description.
+        name = m.group(1) if m else "<unparsed>"
+        if name not in names:
+            names.append(name)
     return names
 
 
