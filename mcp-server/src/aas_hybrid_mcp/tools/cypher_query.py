@@ -99,6 +99,32 @@ async def _unknown_names_warnings(unknown: dict[str, list[str]]) -> list[dict]:
     return warnings
 
 
+# Property the Kafka plugin uses as the MERGE key of every GraphNode. It is a
+# fixed id for updates, an implementation detail that carries no information
+# about the asset. It stays in the results (filtering is trivially bypassed,
+# e.g. via keys(n) or toJson(n)); the agent gets a warning instead.
+_INTERNAL_KEY = "internalGraphAnchorId"
+_INTERNAL_KEY_HINT = (
+    f"The result contains {_INTERNAL_KEY}. It is an internal import hash used "
+    "by the graph writer, not an AAS identifier. Do not use it for lookups "
+    "or in answers; identify things by id, idShort path, semanticId or "
+    "globalAssetId."
+)
+
+
+def _internal_key_warnings(rows: list) -> list[dict]:
+    """One warning if the (already truncated) rows mention the internal key."""
+    if _INTERNAL_KEY not in _json.dumps(rows, default=str):
+        return []
+    return [
+        {
+            "rule": "internal_property",
+            "keys": [_INTERNAL_KEY],
+            "hint": _INTERNAL_KEY_HINT,
+        }
+    ]
+
+
 def _strip_suffix_in_cypher(cypher: str) -> tuple[str, list[str]]:
     """Drop ``/Submodel`` from quoted string literals inside the query.
 
@@ -199,6 +225,7 @@ def register(mcp: FastMCP) -> None:
                 "params": param_rewrites,
             }
         warnings = _violations(vr.violations)
+        warnings.extend(_internal_key_warnings(result["rows"]))
         warnings.extend(await _unknown_names_warnings(notices["unknown_names"]))
         warnings.extend(
             {"rule": "neo4j_notification", **n} for n in notices["notifications"]
