@@ -99,29 +99,30 @@ async def _unknown_names_warnings(unknown: dict[str, list[str]]) -> list[dict]:
     return warnings
 
 
-# Property keys the Kafka plugin writes for its own bookkeeping (MERGE key of
-# every GraphNode). The hash is not a stable AAS identifier, so agents must
-# not see it and start using it as a lookup key.
-_INTERNAL_KEYS = frozenset({"internalGraphAnchorId"})
-_INTERNAL_COLUMN_SUFFIXES = tuple(f".{k}" for k in _INTERNAL_KEYS)
+# Property the Kafka plugin uses as the MERGE key of every GraphNode. It is a
+# fixed id for updates, an implementation detail that carries no information
+# about the asset. It stays in the results (filtering is trivially bypassed,
+# e.g. via keys(n) or toJson(n)); the agent gets a warning instead.
+_INTERNAL_KEY = "internalGraphAnchorId"
+_INTERNAL_KEY_HINT = (
+    f"The result contains {_INTERNAL_KEY}. It is an internal import hash used "
+    "by the graph writer, not an AAS identifier. Do not use it for lookups "
+    "or in answers; identify things by id, idShort path, semanticId or "
+    "globalAssetId."
+)
 
 
-def _strip_internal(value):
-    """Drop internal property keys from nodes, relationships, lists and paths.
-
-    Also drops default projection columns such as ``a.internalGraphAnchorId``.
-    An explicit alias (``AS id``) is the agent's deliberate request and stays.
-    """
-    if isinstance(value, dict):
-        return {
-            k: _strip_internal(v)
-            for k, v in value.items()
-            if k not in _INTERNAL_KEYS
-            and not (isinstance(k, str) and k.endswith(_INTERNAL_COLUMN_SUFFIXES))
+def _internal_key_warnings(rows: list) -> list[dict]:
+    """One warning if the (already truncated) rows mention the internal key."""
+    if _INTERNAL_KEY not in _json.dumps(rows, default=str):
+        return []
+    return [
+        {
+            "rule": "internal_property",
+            "keys": [_INTERNAL_KEY],
+            "hint": _INTERNAL_KEY_HINT,
         }
-    if isinstance(value, (list, tuple)):
-        return type(value)(_strip_internal(v) for v in value)
-    return value
+    ]
 
 
 def _strip_suffix_in_cypher(cypher: str) -> tuple[str, list[str]]:
@@ -213,7 +214,7 @@ def register(mcp: FastMCP) -> None:
 
         truncated = len(rows) > MAX_ROWS
         result: dict = {
-            "rows": _strip_internal(rows[:MAX_ROWS]),
+            "rows": rows[:MAX_ROWS],
             "total": len(rows),
             "truncated": truncated,
         }
@@ -224,6 +225,7 @@ def register(mcp: FastMCP) -> None:
                 "params": param_rewrites,
             }
         warnings = _violations(vr.violations)
+        warnings.extend(_internal_key_warnings(result["rows"]))
         warnings.extend(await _unknown_names_warnings(notices["unknown_names"]))
         warnings.extend(
             {"rule": "neo4j_notification", **n} for n in notices["notifications"]

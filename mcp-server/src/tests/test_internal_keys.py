@@ -1,53 +1,19 @@
-"""query_aas_graph must not return the plugin-internal internalGraphAnchorId."""
+"""query_aas_graph warns when the plugin-internal internalGraphAnchorId is in the result."""
 
 import asyncio
 
 from fastmcp import FastMCP
+from neo4j.time import Duration
 
 from aas_hybrid_mcp import neo4j_client
 from aas_hybrid_mcp.tools import cypher_query
-from aas_hybrid_mcp.tools.cypher_query import _strip_internal
 
 KEY = "internalGraphAnchorId"
 
 
-def test_removes_key_from_node_dict():
-    node = {KEY: "abc", "idShort": "MiR100_001"}
-    assert _strip_internal({"a": node}) == {"a": {"idShort": "MiR100_001"}}
-
-
-def test_removes_key_from_nested_list_and_relationship_tuple():
-    rows = [
-        {
-            "nodes": [{KEY: "1", "id": "x"}, {KEY: "2", "id": "y"}],
-            "r": ({KEY: "1"}, "HAS_ELEMENT", {KEY: "2", "id": "y"}),
-        }
-    ]
-    assert _strip_internal(rows) == [
-        {
-            "nodes": [{"id": "x"}, {"id": "y"}],
-            "r": ({}, "HAS_ELEMENT", {"id": "y"}),
-        }
-    ]
-
-
-def test_removes_default_projection_column():
-    assert _strip_internal([{f"a.{KEY}": "abc", "a.idShort": "x"}]) == [
-        {"a.idShort": "x"}
-    ]
-
-
-def test_keeps_other_keys_and_explicit_alias():
-    row = {"id": "abc", "idShort": "x", "n": 3, "none": None}
-    assert _strip_internal([row]) == [row]
-
-
-def _call_tool(monkeypatch, rows):
+def _call_tool(monkeypatch, rows, unknown_names=None):
     async def fake_read(cypher, params=None):
-        return rows, {
-            "unknown_names": {"labels": ["Foo"]},
-            "notifications": [],
-        }
+        return rows, {"unknown_names": unknown_names or {}, "notifications": []}
 
     async def fake_labels():
         return ["Asset"]
@@ -59,16 +25,63 @@ def _call_tool(monkeypatch, rows):
 
     async def call():
         tool = await mcp.get_tool("query_aas_graph")
-        return await tool.fn(cypher="MATCH (a:Foo) RETURN a")
+        return await tool.fn(cypher="MATCH (a:Asset) RETURN a")
 
     return asyncio.run(call())
 
 
-def test_tool_strips_key_and_keeps_total_truncated_and_warnings(monkeypatch):
-    monkeypatch.setattr(cypher_query, "MAX_ROWS", 2)
-    rows = [{"a": {KEY: str(i), "idShort": f"r{i}"}} for i in range(3)]
+def _rules(result):
+    return [w["rule"] for w in result.get("_warnings", [])]
+
+
+def test_rows_are_returned_unchanged_and_warned_about(monkeypatch):
+    rows = [{"a": {KEY: "abc", "idShort": "MiR100_001"}}]
     result = _call_tool(monkeypatch, rows)
-    assert result["rows"] == [{"a": {"idShort": "r0"}}, {"a": {"idShort": "r1"}}]
+    assert result["rows"] == rows
+    (warning,) = result["_warnings"]
+    assert warning["rule"] == "internal_property"
+    assert warning["keys"] == [KEY]
+    assert "not an AAS identifier" in warning["hint"]
+
+
+def test_warns_for_key_in_list_tuple_projection_column_and_value(monkeypatch):
+    for rows in (
+        [{"ns": [{KEY: "1"}, {KEY: "2"}]}],
+        [{"r": ({KEY: "1"}, "HAS_ELEMENT", {"id": "y"})}],
+        [{f"a.{KEY}": "abc"}],
+        [{"k": KEY}],
+    ):
+        assert _rules(_call_tool(monkeypatch, rows)) == ["internal_property"]
+
+
+def test_one_warning_for_many_occurrences(monkeypatch):
+    rows = [{"a": {KEY: str(i)}} for i in range(5)]
+    assert _rules(_call_tool(monkeypatch, rows)) == ["internal_property"]
+
+
+def test_no_warning_without_the_key(monkeypatch):
+    result = _call_tool(monkeypatch, [{"a": {"idShort": "x"}}])
+    assert "_warnings" not in result
+
+
+def test_neo4j_time_values_pass_through(monkeypatch):
+    rows = [{"d": Duration(days=1)}]
+    result = _call_tool(monkeypatch, rows)
+    assert result["rows"] == rows
+    assert "_warnings" not in result
+
+
+def test_total_truncated_and_other_warnings_unchanged(monkeypatch):
+    monkeypatch.setattr(cypher_query, "MAX_ROWS", 2)
+    rows = [{"a": {KEY: str(i)}} for i in range(3)]
+    result = _call_tool(monkeypatch, rows, {"labels": ["Foo"]})
+    assert result["rows"] == rows[:2]
     assert result["total"] == 3
     assert result["truncated"] is True
-    assert result["_warnings"][0]["rule"] == "unknown_label"
+    assert sorted(_rules(result)) == ["internal_property", "unknown_label"]
+
+
+def test_key_only_in_truncated_rows_does_not_warn(monkeypatch):
+    monkeypatch.setattr(cypher_query, "MAX_ROWS", 1)
+    rows = [{"a": {"idShort": "x"}}, {"a": {KEY: "hidden-by-truncation"}}]
+    assert "_warnings" not in _call_tool(monkeypatch, rows)
