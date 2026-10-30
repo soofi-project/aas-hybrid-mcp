@@ -1,161 +1,46 @@
-# Builds the container image and pushes it to this project's own registry.
+# Builds the container images and pushes them to this project's own registry.
 # Four images from subfolders: mcp-server, submodel-templates-sync,
 # embedding-service and kafka-connect-rag.
 #
-# push to the default branch -> :snapshot (moving) and :<short sha> (immutable)
-# push of a git tag          -> :<tag name> (immutable)
-# layer cache                -> :buildcache per image (see the script block)
+# The build job and the tag scheme (timestamp + snapshot on the default branch,
+# tag name + stable on git tags) come from the shared template, see
+# https://mrk40.dfki.de/administration/scripts
 #
-# Both linux/amd64 and linux/arm64 are built so the same tag runs on amd64 dev
-# machines and on Apple Silicon. arm64 runs under QEMU, so the job needs a
-# runner with a docker executor in privileged mode (the dind service and the
-# binfmt registration below both require it). No registry PAT: CI_JOB_TOKEN may
-# push to the project's own registry, subpaths included.
+# The layer cache lives in the registry (:buildcache per image, USE_CACHE): without
+# it every run re-downloads what the previous one fetched, for embedding-service
+# torch plus the Docling models, per platform.
+
+include:
+  - project: administration/scripts
+    ref: v1.2.0
+    file: ci/gitlab/build-image.yml
 
 stages:
   - test
   - build
-  - maintenance
 
 # Unit tests of the embedding service. They run in the Dockerfile's `test` stage because
 # the dependencies (docling, torch) only exist there; amd64 only, nothing is pushed, so no
 # QEMU and no registry traffic. Runs on merge requests and on the default branch, before
 # the multi-arch build.
 test-embedding:
+  extends: .dind
   stage: test
-  image: docker:27
-  services:
-    - docker:27-dind
-  tags:
-    - docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - docker build --target test embedding-service
 
 build-image:
-  stage: build
-  image: docker:27
-  services:
-    - docker:27-dind
-  tags:
-    - docker
+  extends: .build-image
   variables:
-    # TLS off for the job-internal dind: with DOCKER_TLS_CERTDIR set, the TLS
-    # variables in the environment make `docker buildx create` refuse to build a
-    # builder. The daemon is only reachable from this job's own network.
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    PLATFORMS: "linux/amd64,linux/arm64"
+    IMAGE_SUFFIX: "/$SUBDIR"
+    CONTEXT: "$SUBDIR"
+    USE_CACHE: "true"
   parallel:
     matrix:
       # embedding-service is the long one of the four: torch CPU plus the
       # Docling models its Dockerfile downloads, per platform, under QEMU on
       # arm64. If the job ever needs a timeout, it is this entry, not the rest.
       - SUBDIR: [mcp-server, submodel-templates-sync, embedding-service, kafka-connect-rag]
-  rules:
-    # Scheduled pipelines run only the cleanup job below — rebuilding the
-    # images on every schedule tick would push a fresh SHA tag per day and
-    # re-run the hour-long embedding build for nothing.
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-      when: never
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
-  before_script:
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
-    - docker run --privileged --rm tonistiigi/binfmt --install arm64
-    - docker buildx create --name multiarch --driver docker-container --use
-  script:
-    - IMAGE="$CI_REGISTRY_IMAGE/$SUBDIR"
-    # Layer cache lives in this project's own registry, next to the image tags.
-    # Without it every run starts from an empty builder and re-downloads what
-    # the previous run already fetched — for embedding-service that is torch
-    # plus the Docling models, per platform. mode=max is what makes the
-    # expensive intermediate layers cacheable; the default (min) would only
-    # keep the final one and save nothing. First run populates the ref, later
-    # runs import from it; a cold ref is a warning, not a failure.
-    - CACHE_REF="$CI_REGISTRY_IMAGE/$SUBDIR:buildcache"
-    - |
-      if [ -n "$CI_COMMIT_TAG" ]; then
-        TAGS="-t $IMAGE:$CI_COMMIT_TAG"
-      else
-        TAGS="-t $IMAGE:snapshot -t $IMAGE:$CI_COMMIT_SHORT_SHA"
-      fi
-    - >
-      docker buildx build --platform "$PLATFORMS"
-      --cache-from "type=registry,ref=$CACHE_REF"
-      --cache-to "type=registry,ref=$CACHE_REF,mode=max"
-      $TAGS --push $SUBDIR
-
-# Deletes the per-commit SHA tags of this project's registry. The registry only
-# serves the dev stack (releases go to Docker Hub with fixed tags), so a SHA tag
-# is needed for a short while: an expired tag is one older than
-# REGISTRY_CLEANUP_HOURS that is not among the newest REGISTRY_CLEANUP_KEEP SHA
-# tags. The newest ones stay for a rollback and so that the build behind
-# :snapshot is never without its SHA tag just because nobody pushed for a while.
-# Without any cleanup the registry grows forever: every push to the default
-# branch leaves one immutable SHA tag per image (x2 platforms of layers), and
-# the instance GC only reclaims space after tag deletion.
-# snapshot and semver tags are protected by the pure-hex filter, not by an allowlist.
-#
-# Runs on scheduled pipelines only: create one in Build -> Pipelines schedules
-# (every 4-6 hours matches the default age; the job is idempotent). Needs a
-# project access token with the api scope as a masked CI variable
-# REGISTRY_CLEANUP_TOKEN: CI_JOB_TOKEN cannot delete registry tags. The token
-# itself stays out of the repo.
-cleanup-registry:
-  stage: maintenance
-  image: alpine:3.21
-  tags:
-    - docker
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-  variables:
-    REGISTRY_CLEANUP_HOURS: "4"
-    REGISTRY_CLEANUP_KEEP: "3"
-  script:
-    - apk add --no-cache curl jq
-    - |
-      set -eu
-      set -o pipefail
-      if [ -z "${REGISTRY_CLEANUP_TOKEN:-}" ]; then
-        echo "REGISTRY_CLEANUP_TOKEN is not set (project access token, api scope, masked variable)"; exit 1
-      fi
-      API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"
-      CUTOFF=$(( $(date +%s) - REGISTRY_CLEANUP_HOURS * 3600 ))
-      HDRS=$(mktemp); BODY=$(mktemp); ALL=$(mktemp)
-      api() { curl -sf --header "PRIVATE-TOKEN: $REGISTRY_CLEANUP_TOKEN" "$@"; }
-      # Assigned first: a failing call inside "for ... in $(...)" would not stop the job
-      # (a wrong token would end as "cleanup done" without deleting anything).
-      REPOS=$(api "$API/registry/repositories?per_page=100" | jq -r '.[].id')
-      for REPO in $REPOS; do
-        PATH_=$(api "$API/registry/repositories/$REPO" | jq -r '.path')
-        # Read all tag pages first, decide afterwards (deleting while paging
-        # would shift the pages), and keep the newest tags by position.
-        : > "$ALL"
-        PAGE=1
-        while [ -n "$PAGE" ]; do
-          api -D "$HDRS" -o "$BODY" --get --data-urlencode "per_page=100" --data-urlencode "page=$PAGE" \
-            "$API/registry/repositories/$REPO/tags"
-          jq -c '.[]' "$BODY" >> "$ALL"
-          PAGE=$(tr -d '\r' < "$HDRS" | sed -n 's/^[Xx]-[Nn]ext-[Pp]age: *//p')
-        done
-        # created_at comes as 2026-10-20T10:11:12.229+00:00; fromdateiso8601 wants ...Z.
-        # Assigned on its own so a jq error stops the job (set -e does not see
-        # a failing substitution inside a string).
-        EXPIRED=$(jq -rs --argjson cutoff "$CUTOFF" --argjson keep "$REGISTRY_CLEANUP_KEEP" \
-          '[.[] | select(.name | test("^[0-9a-f]{7,40}$"))
-                | .ts = (.created_at | sub("[.][0-9]+"; "") | sub("([+]00:00|Z)$"; "Z") | fromdateiso8601)]
-           | sort_by(.ts) | reverse | .[$keep:][] | select(.ts < $cutoff) | .name' "$ALL")
-        for TAG in $EXPIRED; do
-          echo "deleting $PATH_:$TAG"
-          api -X DELETE "$API/registry/repositories/$REPO/tags/$TAG" > /dev/null
-        done
-      done
-      echo "registry cleanup done (disk space is freed by the instance's registry garbage collection, not by this job)"
