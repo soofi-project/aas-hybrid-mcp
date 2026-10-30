@@ -55,19 +55,49 @@ def unknown_names(summary) -> dict[str, list[str]]:
     return found
 
 
+def other_notifications(summary) -> list[dict]:
+    """Neo4j notifications that have no dedicated warning (e.g. cartesian product).
+
+    The completion statuses 00000 / 02000 are not notifications and are left
+    out: ``total`` already says whether the result was empty.
+    """
+    out = []
+    for status in summary.gql_status_objects:
+        if not status.is_notification or status.gql_status in _UNKNOWN_NAME_STATUSES:
+            continue
+        entry = {
+            "code": status.gql_status,
+            "message": status.status_description,
+            "severity": status.raw_severity,
+        }
+        pos = getattr(status, "position", None)
+        if pos is not None:
+            entry["position"] = {"line": pos.line, "column": pos.column}
+        out.append(entry)
+    return out
+
+
 async def _run_query(tx, cypher: str, params: dict):
     result = await tx.run(cypher, params)
     records = []
     async for record in result:
         records.append(record.data())
     summary = await result.consume()
-    return records, unknown_names(summary)
+    notices = {
+        "unknown_names": unknown_names(summary),
+        "notifications": other_notifications(summary),
+    }
+    return records, notices
 
 
-async def read_query_with_unknown_names(
+async def read_query_with_notices(
     cypher: str, params: dict | None = None
-) -> tuple[list[dict], dict[str, list[str]]]:
-    """Run a read-only query; also return names Neo4j does not know, by kind."""
+) -> tuple[list[dict], dict]:
+    """Run a read-only query; also return what Neo4j said about it.
+
+    The second value has ``unknown_names`` (by kind, see ``unknown_names``) and
+    ``notifications`` (everything else worth passing on).
+    """
     driver = await _get_driver()
     async with driver.session(database=NEO4J_DATABASE) as session:
         return await session.execute_read(_run_query, cypher, params or {})
@@ -75,7 +105,7 @@ async def read_query_with_unknown_names(
 
 async def read_query(cypher: str, params: dict | None = None) -> list[dict]:
     """Execute a read-only Cypher query and return results as list of dicts."""
-    rows, _ = await read_query_with_unknown_names(cypher, params)
+    rows, _ = await read_query_with_notices(cypher, params)
     return rows
 
 

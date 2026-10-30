@@ -47,4 +47,7 @@ to find the relevant capability template, then query its semanticId via
 INPUT: Cypher with `$paramName` placeholders + a `params` dict. Write
 operations are rejected at the driver level.
 OUTPUT: rows as a list of dicts; capped at 1000 rows (the response carries
-`total` and `truncated` for paging decisions).
+`total` and `truncated` for paging decisions). `_warnings` (optional) lists
+problems with the query itself, e.g. relationship types, labels or property
+keys that do not exist in the graph (with the known ones), or other Neo4j
+notices. Read it when a result is empty or unexpected.

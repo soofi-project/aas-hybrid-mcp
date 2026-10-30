@@ -180,7 +180,7 @@ def register(mcp: FastMCP) -> None:
             }
 
         try:
-            rows, unknown = await neo4j_client.read_query_with_unknown_names(
+            rows, notices = await neo4j_client.read_query_with_notices(
                 cypher, params
             )
         except Exception as e:
@@ -199,7 +199,10 @@ def register(mcp: FastMCP) -> None:
                 "params": param_rewrites,
             }
         warnings = _violations(vr.violations)
-        warnings.extend(await _unknown_names_warnings(unknown))
+        warnings.extend(await _unknown_names_warnings(notices["unknown_names"]))
+        warnings.extend(
+            {"rule": "neo4j_notification", **n} for n in notices["notifications"]
+        )
         if warnings:
             result["_warnings"] = warnings
         return result
